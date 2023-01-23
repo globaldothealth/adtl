@@ -1,0 +1,28 @@
+[build-system]
+requires = ['setuptools>=40.8.0']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = "adtl"
+version = "0.1.0"
+description = "Another data transformation language"
+authors = [{name = "Abhishek Dasgupta", email = "abhishek.dasgupta@dtc.ox.ac.uk"}]
+license = {file = "LICENSE"}
+requires-python = ">=3.10"
+readme = "README.md"
+classifiers = ["License :: OSI Approved :: MIT License"]
+dependencies = [
+  "pint>=0.20",
+  "tqdm"
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest"
+]
+
+[project.urls]
+Home = "https://github.com/globaldothealth/adtl"
+
+[project.scripts]
+adtl = "adtl:main"
