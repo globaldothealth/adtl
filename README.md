@@ -1,5 +1,8 @@
 # adtl -- another data transformation language
 
+[![](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![tests](https://github.com/globaldothealth/adtl/actions/workflows/tests.yml/badge.svg)](https://github.com/globaldothealth/adtl/actions/workflows/tests.yml)
+
 adtl is a data transformation language (DTL) used by some applications in
 [Global.health](https://global.health), notably for the ISARIC clinical data pipeline at
 [globaldothealth/isaric](https://github.com/globaldothealth/isaric). This package
