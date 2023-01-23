@@ -5,7 +5,7 @@ import json
 import logging
 import hashlib
 import argparse
-from typing import Optional, Any, Union, Iterable
+from typing import Optional, Any, Union, Iterable, Dict, List
 from collections import defaultdict
 from pathlib import Path
 from enum import Enum
@@ -13,8 +13,11 @@ from enum import Enum
 import pint
 from tqdm import tqdm
 
+StrDict = Dict[str, Any]
+Rule = Union[str, StrDict]
 
-def get_value(row: dict[str, Any], rule: Union[str, dict[str, Any]]) -> Any:
+
+def get_value(row: StrDict, rule: Rule) -> Any:
     """Gets value from row using rule
 
     Same as get_value_unhashed(), except it hashes if sensitive = True in rule.
@@ -28,7 +31,7 @@ def get_value(row: dict[str, Any], rule: Union[str, dict[str, Any]]) -> Any:
         return value
 
 
-def get_value_unhashed(row: dict[str, Any], rule: Union[str, dict[str, Any]]) -> Any:
+def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
     """Gets value from row using rule (unhashed)
 
     Unlike get_value() this function does NOT hash sensitive data
@@ -63,13 +66,13 @@ def get_value_unhashed(row: dict[str, Any], rule: Union[str, dict[str, Any]]) ->
         raise ValueError(f"Could not return value for {rule}")
 
 
-def matching_fields(fields: list[str], pattern: str) -> list[str]:
+def matching_fields(fields: List[str], pattern: str) -> List[str]:
     "Returns fields matching pattern"
     compiled_pattern = re.compile(pattern)
     return [f for f in fields if compiled_pattern.match(f)]
 
 
-def parse_if(row: dict[str, Any], rule: dict[str, Any]) -> bool:
+def parse_if(row: StrDict, rule: StrDict) -> bool:
     "Parse conditional statements and return a boolean"
 
     n_keys = len(rule.keys())
@@ -102,7 +105,7 @@ def parse_if(row: dict[str, Any], rule: dict[str, Any]) -> bool:
         return attr_value == value
 
 
-def get_list(row: dict[str, Any], rule: dict[str, Any]) -> list[Any]:
+def get_list(row: StrDict, rule: StrDict) -> List[Any]:
     """Gets values from row for a combinedType: list rule"""
 
     assert "fields" in rule
@@ -134,7 +137,7 @@ def get_list(row: dict[str, Any], rule: dict[str, Any]) -> list[Any]:
         return [v for v in values if v not in exclude]
 
 
-def get_combined_type(row: dict[str, Any], rule: dict[str, Any]):
+def get_combined_type(row: StrDict, rule: StrDict):
     """Gets value from row for a combinedType rule.
 
     A rule with the combinedType key combines multiple fields in the row
@@ -185,8 +188,8 @@ def hash_sensitive(value: str) -> str:
 
 class Parser:
 
-    data: dict[str, Any] = {}
-    fieldnames: dict[str, list[str]] = {}
+    data: StrDict = {}
+    fieldnames: Dict[str, List[str]] = {}
 
     def __init__(self, spec: str):
         with open(spec) as fp:
@@ -199,7 +202,7 @@ class Parser:
                 )
             self.fieldnames[table] = list(self.spec[table].keys())
 
-    def update_table(self, table: str, row: dict[str, Any]):
+    def update_table(self, table: str, row: StrDict):
         # Currently only aggregations are supported
 
         aggregation = self.tables[table].get("aggregation")
@@ -254,7 +257,7 @@ class Parser:
         "Clears parser state"
         self.data = {}
 
-    def read_table(self, table: str) -> Iterable[dict[str, Any]]:
+    def read_table(self, table: str) -> Iterable[StrDict]:
         if table not in self.tables:
             raise ValueError(f"Invalid table: {table}")
         if "groupBy" in self.tables[table]:
@@ -269,7 +272,7 @@ class Parser:
         self,
         table: str,
         output: Optional[str] = None,
-    ) -> str | None:
+    ) -> Optional[str]:
         "Writes to output as CSV a particular table"
 
         def writerows(fp, table):
