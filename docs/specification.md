@@ -1,14 +1,14 @@
 # Specification format
 
 The specification file describes the field mappings from the source file to the
-ISARIC schemas defined in [isaric/schemas.py](../isaric/schemas.py). The format
-is under development and expected to change.
+target schema. The format is under development and expected to change.
 
-Specification files are located under [isaric/parsers](../isaric/parsers).
 Specification files are in JSON and have the suffix `.json`.
 
-Each specification file can refer to one or more tables defined in the [ISARIC
-schema](../isaric/schemas.py)
+Each specification file can refer to one or more tables, which are
+created in parallel from one source file.
+
+## metadata
 
 **Required fields**. These metadata fields are defined at the top level of the specification
 
@@ -16,19 +16,21 @@ schema](../isaric/schemas.py)
   lowercase and hyphenated. By convention, this is the same name as the
   specification file.
 * **description**: Description of the specification
-* **primaryKey**: Key value dictionary with keys as the table name and value as
-  the primary key for the table. The primary key should be guaranteed to be
-  unique within the table.
+* **tables**: Dictionary with keys as names of tables that are
+  mapped from the source file. Each table key contains a dictionary
+  with the following optional keys:
 
-Each table within the ISARIC schema has its associated field mappings.
+  * *kind*: If this is set to *groupBy* the parser will group
+    rows together according to the *groupBy* key
+  * *groupBy*: Attribute(s) to group by
+  * *aggregation*: Aggregation type. Currently only one
+    type*lastNotNull* is supported which sets a particular
+    attribute to the last non-null value in the grouped dataset.
 
-### study
+## table mappings
 
-Key value pairs describing the study table
-
-### subject / visit
-
-Keys are **fields / attributes** in the ISARIC schema. Values are **rules**
+Each table has its associated field mappings under a key of the same
+name. Within the table dictionary, keys are **fields / attributes** in the schema. Values are **rules**
 that describe the mapping from the source data format. There are several valid
 rule patterns, listed below. Each rule will either have a `field` attribute
 that is the corresponding field in the source format, or a `combinedField`
@@ -194,8 +196,3 @@ such as hashing the field.
   or the strings `null | falsy`. The exclude key can be `null` in which cases we drop the null values (None in Python) or it can be `falsy`in which case falsy values are excluded (empty lists, boolean False, 0). Alternatively a list of values to be excluded can be provided.
 
   If the exclude attribute is not set, no exclusions take place and all values are returned as-is.
-
-
-### observation
-
-Support for parsing observations has not been added yet

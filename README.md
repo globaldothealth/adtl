@@ -45,7 +45,7 @@ adtl specification-file input-file -o output
 ```
 
 Python library:
-```
+```python
 import adtl
 
 parser = adtl.Parser(specification)
