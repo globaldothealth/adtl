@@ -1,5 +1,4 @@
 import pytest
-from pprint import pprint
 
 import adtl as parser
 

@@ -199,32 +199,32 @@ such as hashing the field.
 
   If the exclude attribute is not set, no exclusions take place and all values are returned as-is.
 
-  * **Conditional rows**: For the *oneToMany* case, each row in the source file generates
-    multiple rows for the target. This is expressed in the specification by making the
-    value corresponding to the table key a list instead of an object. Additionally
-    an `#if` key sets the condition under which the row is emitted.
+* **Conditional rows**: For the *oneToMany* case, each row in the source file generates
+  multiple rows for the target. This is expressed in the specification by making the
+  value corresponding to the table key a list instead of an object. Additionally
+  an `#if` key sets the condition under which the row is emitted.
 
-    ```json
-    {
-     "table": [
-        {
-          "date": {
-            "field": "dsstdtc"
-          },
-          "name": "headache",
-          "#if": {
-            "headache_symptom": 1
-          }
+  ```json
+  {
+    "table": [
+      {
+        "date": {
+          "field": "dsstdtc"
         },
-        {
-          "date": {
-            "field": "dsstdtc"
-          },
-          "name": "cough",
-          "#if": {
-            "cough_symptoms": 1
-          }
+        "name": "headache",
+        "#if": {
+          "headache_symptom": 1
         }
+      },
+      {
+        "date": {
+          "field": "dsstdtc"
+        },
+        "name": "cough",
+        "#if": {
+          "cough_symptoms": 1
+        }
+      }
     ]
   }
-    ```
+  ```
