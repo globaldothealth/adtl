@@ -1,4 +1,5 @@
 import pytest
+from pprint import pprint
 
 import adtl as parser
 
@@ -50,6 +51,41 @@ RULE_COMBINED_TYPE_LIST_PATTERN = {
 
 RULE_NON_SENSITIVE = {"field": "id"}
 RULE_SENSITIVE = {"field": "id", "sensitive": True}
+
+ONE_MANY_SPEC = {
+    "name": "sampleOneToMany",
+    "description": "One to Many example",
+    "tables": {"observation": {"kind": "oneToMany"}},
+    "observation": [
+        {
+            "date": {"field": "dt"},
+            "name": "headache",
+            "is_present": True,
+            "#if": {"headache_cmyn": 1},
+        },
+        {
+            "date": {"field": "dt"},
+            "name": "cough",
+            "is_present": True,
+            "#if": {"cough_cmyn": 1},
+        },
+        {
+            "date": {"field": "dt"},
+            "name": "dyspnea",
+            "is_present": True,
+            "#if": {"dyspnea_cmyn": 1},
+        },
+    ],
+}
+
+ONE_MANY_SOURCE = [
+    {"dt": "2022-02-05", "headache_cmyn": 1, "cough_cmyn": 1, "dyspnea_cmyn": 0}
+]
+
+ONE_MANY_OUTPUT = [
+    {"date": "2022-02-05", "name": "headache", "is_present": True},
+    {"date": "2022-02-05", "name": "cough", "is_present": True},
+]
 
 
 @pytest.mark.parametrize(
@@ -122,3 +158,12 @@ def test_get_value(row_rule, expected):
 )
 def test_parse_if(row_rule, expected):
     assert parser.parse_if(*row_rule) == expected
+
+
+def test_one_to_many():
+    actual_one_many_output = list(
+        parser.Parser(ONE_MANY_SPEC)
+        .parse_rows(ONE_MANY_SOURCE)
+        .read_table("observation")
+    )
+    assert actual_one_many_output == ONE_MANY_OUTPUT
