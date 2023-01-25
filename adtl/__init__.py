@@ -240,6 +240,13 @@ class Parser:
             for attr in self.spec[table]:
                 if (value := get_value(row, self.spec[table][attr])) is not None:
                     self.data[table][group_key][attr] = value
+        elif kind == "oneToMany":
+            for match in self.spec[table]:
+                rowIf = match.pop("#if", None)
+                if rowIf is None or parse_if(row, rowIf):
+                    self.data[table].append(
+                        {attr: get_value(row, match[attr]) for attr in match}
+                    )
         elif kind == "constant":  # only one row
             self.data[table] = [self.spec[table]]
         else:
