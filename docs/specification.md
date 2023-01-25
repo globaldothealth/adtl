@@ -21,7 +21,9 @@ created in parallel from one source file.
   with the following optional keys:
 
   * *kind*: If this is set to *groupBy* the parser will group
-    rows together according to the *groupBy* key
+    rows together according to the *groupBy* key. The other
+    allowed value is *oneToMany* when multiple rows are
+    generated from the same row.
   * *groupBy*: Attribute(s) to group by
   * *aggregation*: Aggregation type. Currently only one
     type*lastNotNull* is supported which sets a particular
@@ -196,3 +198,33 @@ such as hashing the field.
   or the strings `null | falsy`. The exclude key can be `null` in which cases we drop the null values (None in Python) or it can be `falsy`in which case falsy values are excluded (empty lists, boolean False, 0). Alternatively a list of values to be excluded can be provided.
 
   If the exclude attribute is not set, no exclusions take place and all values are returned as-is.
+
+  * **Conditional rows**: For the *oneToMany* case, each row in the source file generates
+    multiple rows for the target. This is expressed in the specification by making the
+    value corresponding to the table key a list instead of an object. Additionally
+    an `#if` key sets the condition under which the row is emitted.
+
+    ```json
+    {
+     "table": [
+        {
+          "date": {
+            "field": "dsstdtc"
+          },
+          "name": "headache",
+          "#if": {
+            "headache_symptom": 1
+          }
+        },
+        {
+          "date": {
+            "field": "dsstdtc"
+          },
+          "name": "cough",
+          "#if": {
+            "cough_symptoms": 1
+          }
+        }
+    ]
+  }
+    ```
