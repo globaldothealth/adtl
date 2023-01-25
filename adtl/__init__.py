@@ -194,6 +194,20 @@ class Parser:
     def __init__(self, spec: str):
         with open(spec) as fp:
             self.spec = json.load(fp)
+        self.validate_spec()
+        for table in self.tables:
+            if self.tables[table].get("groupBy"):
+                self.data[table] = defaultdict(dict)
+            else:
+                self.data[table] = []
+            self.fieldnames[table] = list(self.spec[table].keys())
+
+    def validate_spec(self):
+        "Raises exceptions if specification is invalid"
+        errors = []
+        for required in ["tables", "name", "description"]:
+            if required not in self.spec:
+                raise ValueError(f"Specification requires key: {required}")
         self.tables = self.spec["tables"]
         for table in self.tables:
             if table not in self.spec:
@@ -201,21 +215,24 @@ class Parser:
                     f"Parser specification missing required '{table}' element"
                 )
             self.fieldnames[table] = list(self.spec[table].keys())
+        for table in self.tables:
+            aggregation = self.tables[table].get("aggregation")
+            group_field = self.tables[table].get("groupBy")
+            kind = self.tables[table].get("kind")
+            if kind is None:
+                raise ValueError(
+                    f"Required 'kind' attribute within 'tables' not present for {table}"
+                )
+            if group_field is not None and aggregation != "lastNotNull":
+                raise ValueError(
+                    f"groupBy needs aggregation=lastNotNull to be set for table: {table}"
+                )
 
     def update_table(self, table: str, row: StrDict):
         # Currently only aggregations are supported
 
-        aggregation = self.tables[table].get("aggregation")
         group_field = self.tables[table].get("groupBy")
         kind = self.tables[table].get("kind")
-        if kind is None:
-            raise ValueError(
-                f"Required 'kind' attribute within 'tables' not present for {table}"
-            )
-        if group_field is not None and aggregation != "lastNotNull":
-            raise ValueError(
-                f"groupBy needs aggregation=lastNotNull to be set for table: {table}"
-            )
         if group_field:
             if table not in self.data:
                 self.data[table] = defaultdict(dict)
