@@ -38,7 +38,9 @@ def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
     and should not be called directly, except for debugging. Use
     get_value() instead.
     """
-    if isinstance(rule, str):  # constant
+    if not isinstance(rule, dict) or isinstance(
+        rule, list
+    ):  # not a container, is constant
         return rule
     if "field" in rule:
         # do not parse field if condition is not met
@@ -191,16 +193,18 @@ class Parser:
     data: StrDict = {}
     fieldnames: Dict[str, List[str]] = {}
 
-    def __init__(self, spec: str):
-        with open(spec) as fp:
-            self.spec = json.load(fp)
+    def __init__(self, spec: Union[str, Path, StrDict]):
+        if isinstance(spec, str) or isinstance(spec, Path):
+            with open(spec) as fp:
+                self.spec = json.load(fp)
+        else:
+            self.spec = spec
         self.validate_spec()
         for table in self.tables:
             if self.tables[table].get("groupBy"):
                 self.data[table] = defaultdict(dict)
             else:
                 self.data[table] = []
-            self.fieldnames[table] = list(self.spec[table].keys())
 
     def validate_spec(self):
         "Raises exceptions if specification is invalid"
@@ -214,7 +218,12 @@ class Parser:
                 raise ValueError(
                     f"Parser specification missing required '{table}' element"
                 )
-            self.fieldnames[table] = list(self.spec[table].keys())
+            if self.tables[table].get("kind") != "oneToMany":
+                self.fieldnames[table] = list(self.spec[table].keys())
+            else:
+                self.fieldnames[table] = list(
+                    set(sum([list(m.keys()) for m in self.spec[table]], []))
+                )
         for table in self.tables:
             aggregation = self.tables[table].get("aggregation")
             group_field = self.tables[table].get("groupBy")
@@ -261,6 +270,7 @@ class Parser:
             )
 
     def parse(self, file: str):
+        "Transform file according to specification"
         self.clear()
         with open(file) as fp:
             reader = csv.DictReader(fp)
@@ -271,6 +281,15 @@ class Parser:
                 for table in self.tables:
                     self.update_table(table, row)
         self.validate()
+        return self
+
+    def parse_rows(self, rows: List[StrDict], validate: bool = False):
+        "Transform rows according to specification"
+        for row in rows:
+            for table in self.tables:
+                self.update_table(table, row)
+        if validate:
+            self.validate()
         return self
 
     def validate(self):
@@ -288,7 +307,6 @@ class Parser:
             for i in self.data[table]:
                 yield self.data[table][i]
         else:
-            print(f"groupBy not in table {table}")
             for row in self.data[table]:
                 yield row
 
