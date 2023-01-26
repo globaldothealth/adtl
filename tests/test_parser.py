@@ -21,6 +21,11 @@ LIVER_DISEASE = [
     },
 ]
 
+ROW_CONCISE = {"mildliv": 0, "modliv": 2}
+RULE_EXCLUDE = {
+    "combinedType": "list",
+    "fields": [{"field": "mildliv"}, {"field": "modliv"}],
+}
 
 ROW_CONDITIONAL = {"outcome_date": "2022-01-01", "outcome_type": 4}
 RULE_CONDITIONAL_OK = {"field": "outcome_date", "if": {"outcome_type": 4}}
@@ -135,21 +140,25 @@ def test_get_value(row_rule, expected):
     "row_rule,expected",
     [
         ((ROW_CONDITIONAL, {"outcome_type": 4}), True),
+        ((ROW_CONDITIONAL, {"outcome_type": {"==": 4}}), True),
         ((ROW_CONDITIONAL, {"outcome_type": 3}), False),
         ((ROW_CONDITIONAL, {"outcome_type": {">": 2}}), True),
+        ((ROW_CONDITIONAL, {"outcome_type": {"<": 10}}), True),
+        ((ROW_CONDITIONAL, {"outcome_type": {"<=": 4}}), True),
+        ((ROW_CONDITIONAL, {"outcome_type": {">=": 4}}), True),
         ((ROW_CONDITIONAL, {"outcome_type": {"<": 10}}), True),
         ((ROW_CONDITIONAL, {"outcome_type": {"!=": 4}}), False),
         (
             (
                 ROW_CONDITIONAL,
-                {"any": [{"outcome_type": {">": 2}}, {"outcome_date": {"<", "2022"}}]},
+                {"any": [{"outcome_type": {">": 2}}, {"outcome_date": {"<": "2022"}}]},
             ),
             True,
         ),
         (
             (
                 ROW_CONDITIONAL,
-                {"all": [{"outcome_type": {">": 2}}, {"outcome_date": {"<", "2022"}}]},
+                {"all": [{"outcome_type": {">": 2}}, {"outcome_date": {"<": "2022"}}]},
             ),
             False,
         ),
@@ -166,3 +175,69 @@ def test_one_to_many():
         .read_table("observation")
     )
     assert actual_one_many_output == ONE_MANY_OUTPUT
+
+
+# test exceptions
+
+
+def test_exception_get_value_unhashed():
+    with pytest.raises(ValueError, match="Could not convert"):
+        parser.get_value_unhashed(
+            {"age_unit": "years", "age": "a"},
+            {"source_unit": {"field": "age_unit"}, "field": "age", "unit": "months"},
+        )
+
+
+def test_invalid_rule():
+    with pytest.raises(ValueError, match="Could not return value for"):
+        parser.get_value_unhashed({"age_unit": "years", "age": "a"}, {})
+
+
+def test_invalid_operand_parse_if():
+    with pytest.raises(ValueError, match="Unrecognized operand"):
+        parser.parse_if(
+            {"outcome_type": 1, "outcome_date": "2022-06-04"},
+            {"outcome_type": {"<>": 5}},
+        )
+    with pytest.raises(ValueError, match="if-subexpressions should be a dictionary"):
+        parser.parse_if(
+            {"outcome_type": 1, "outcome_date": "2022-06-04"},
+            {"outcome_type": {"<>", 5}},
+        )
+
+
+@pytest.mark.parametrize(
+    "rowrule,expected",
+    [
+        ((ROW_CONCISE, RULE_EXCLUDE), [0, 2]),
+        ((ROW_CONCISE, {**RULE_EXCLUDE, "exclude": "falsy"}), [2]),
+        ((ROW_CONCISE, {**RULE_EXCLUDE, "exclude": "null"}), [0, 2]),
+        ((ROW_CONCISE, {**RULE_EXCLUDE, "exclude": [2]}), [0]),
+    ],
+)
+def test_list_exclude(rowrule, expected):
+    assert parser.get_list(*rowrule) == expected
+
+
+def test_invalid_list_exclude():
+    with pytest.raises(
+        ValueError, match="exclude rule should be 'null', 'falsy' or a list of values"
+    ):
+        parser.get_list(
+            {"modliv": 1, "mildliv": 2},
+            {
+                "combinedType": "list",
+                "fields": [{"field": "modliv"}, {"field": "mildliv"}],
+                "exclude": 5,
+            },
+        )
+
+
+def test_invalid_combined_type():
+    with pytest.raises(ValueError, match="Unknown"):
+        parser.get_combined_type(ROW_CONCISE, {"combinedType": "collage", "fields": []})
+
+
+def test_validate_spec():
+    with pytest.raises(ValueError, match="Specification requires key"):
+        ps = parser.Parser(dict())

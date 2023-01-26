@@ -54,6 +54,7 @@ such as hashing the field.
       "description": "Date of death"
      }
   }
+  ```
 
 * **Single field with conditional**: Maps to a single field from the source format
   only if condition(s) are met. The value is set to *null* if the condition fails.
