@@ -56,14 +56,10 @@ def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
             try:
                 value = pint.Quantity(float(value), source_unit).to(unit).m
             except ValueError:
-                logging.error(f"Could not convert {value} to a floating point")
-                raise
+                raise ValueError(f"Could not convert {value} to a floating point")
         return value
     elif "combinedType" in rule:
         return get_combined_type(row, rule)
-    elif "otherField" in rule:
-        logging.info("otherField not supported, returning None")
-        return None
     else:
         raise ValueError(f"Could not return value for {rule}")
 
@@ -102,6 +98,10 @@ def parse_if(row: StrDict, rule: StrDict) -> bool:
             return attr_value == value
         else:
             raise ValueError(f"Unrecognized operand: {cmp}")
+    elif isinstance(rule[key], set):  # common error, missed colon to make it a dict
+        raise ValueError(
+            f"if-subexpressions should be a dictionary, is a set: {rule[key]}"
+        )
     else:
         value = rule[key]
         return attr_value == value
