@@ -52,7 +52,6 @@ def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
         if "source_unit" in rule and "unit" in rule:  # perform unit conversion
             source_unit = get_value(row, rule["source_unit"])
             unit = rule["unit"]
-            print(f"Will convert from {source_unit} to {unit}")
             try:
                 value = pint.Quantity(float(value), source_unit).to(unit).m
             except ValueError:
@@ -85,17 +84,17 @@ def parse_if(row: StrDict, rule: StrDict) -> bool:
         cmp = next(iter(rule[key]))
         value = rule[key][cmp]
         if cmp == ">":
-            return attr_value > value
+            return type(value)(attr_value) > value
         elif cmp == ">=":
-            return attr_value >= value
+            return type(value)(attr_value) >= value
         elif cmp == "<":
-            return attr_value < value
+            return type(value)(attr_value) < value
         elif cmp == "<=":
-            return attr_value <= value
+            return type(value)(attr_value) <= value
         elif cmp == "!=":
-            return attr_value != value
+            return type(value)(attr_value) != value
         elif cmp in ["=", "=="]:
-            return attr_value == value
+            return type(value)(attr_value) == value
         else:
             raise ValueError(f"Unrecognized operand: {cmp}")
     elif isinstance(rule[key], set):  # common error, missed colon to make it a dict
@@ -104,7 +103,7 @@ def parse_if(row: StrDict, rule: StrDict) -> bool:
         )
     else:
         value = rule[key]
-        return attr_value == value
+        return type(value)(attr_value) == value
 
 
 def get_list(row: StrDict, rule: StrDict) -> List[Any]:
@@ -271,7 +270,6 @@ class Parser:
 
     def parse(self, file: str):
         "Transform file according to specification"
-        self.clear()
         with open(file) as fp:
             reader = csv.DictReader(fp)
             for row in tqdm(
