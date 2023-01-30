@@ -1,0 +1,8 @@
+# name: test_parse_write_buffer
+  '''
+  sex_at_birth,subject_id,dataset_id,country_iso3,enrolment_date,admission_date
+  male,007,dataset-2020-03-23,GBR,2020-05-06,2020-06-08
+  female,001,dataset-2020-03-23,GBR,2022-01-11,2020-06-08
+  
+  '''
+# ---
