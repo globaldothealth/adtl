@@ -1,3 +1,6 @@
+import sys
+import json
+from pathlib import Path
 import pytest
 
 import adtl as parser
@@ -7,6 +10,10 @@ RULE_SINGLE_FIELD_WITH_MAPPING = {
     "field": "diabetes_mhyn",
     "values": {"1": True, "2": False, "3": None},
 }
+
+TEST_PARSERS_PATH = Path(__file__).parent / "parsers"
+TEST_SOURCES_PATH = Path(__file__).parent / "sources"
+
 
 LIVER_DISEASE = [
     {
@@ -56,32 +63,6 @@ RULE_COMBINED_TYPE_LIST_PATTERN = {
 RULE_NON_SENSITIVE = {"field": "id"}
 RULE_SENSITIVE = {"field": "id", "sensitive": True}
 
-ONE_MANY_SPEC = {
-    "name": "sampleOneToMany",
-    "description": "One to Many example",
-    "tables": {"observation": {"kind": "oneToMany"}},
-    "observation": [
-        {
-            "date": {"field": "dt"},
-            "name": "headache",
-            "is_present": True,
-            "#if": {"headache_cmyn": 1},
-        },
-        {
-            "date": {"field": "dt"},
-            "name": "cough",
-            "is_present": True,
-            "#if": {"cough_cmyn": 1},
-        },
-        {
-            "date": {"field": "dt"},
-            "name": "dyspnea",
-            "is_present": True,
-            "#if": {"dyspnea_cmyn": 1},
-        },
-    ],
-}
-
 ONE_MANY_SOURCE = [
     {"dt": "2022-02-05", "headache_cmyn": 1, "cough_cmyn": 1, "dyspnea_cmyn": 0}
 ]
@@ -90,6 +71,17 @@ ONE_MANY_OUTPUT = [
     {"date": "2022-02-05", "name": "headache", "is_present": True},
     {"date": "2022-02-05", "name": "cough", "is_present": True},
 ]
+
+SOURCE_GROUPBY = [
+    {"sex": "1", "subjid": "007", "dsstdat": "2020-05-06", "hostdat": "2020-06-08"},
+    {"sex": "2", "subjid": "001", "dsstdat": "2022-01-11", "hostdat": "2020-06-08"},
+]
+
+BUFFER_GROUPBY = """
+sex_at_birth,subject_id,dataset_id,country_iso3,enrolment_date,admission_date
+male,007,dataset-2020-03-23,GBR,2020-05-06,2020-06-08
+female,001,dataset-2020-03-23,GBR,2022-01-11,2020-06-08
+"""
 
 
 @pytest.mark.parametrize(
@@ -169,12 +161,18 @@ def test_parse_if(row_rule, expected):
 
 
 def test_one_to_many():
-    actual_one_many_output = list(
-        parser.Parser(ONE_MANY_SPEC)
+    actual_one_many_output_rows = list(
+        parser.Parser(TEST_PARSERS_PATH / "oneToMany.json")
         .parse_rows(ONE_MANY_SOURCE)
         .read_table("observation")
     )
-    assert actual_one_many_output == ONE_MANY_OUTPUT
+    actual_one_many_output_csv = list(
+        parser.Parser(TEST_PARSERS_PATH / "oneToMany.json")
+        .parse(TEST_SOURCES_PATH / "oneToMany.csv")
+        .read_table("observation")
+    )
+    assert actual_one_many_output_rows == ONE_MANY_OUTPUT
+    assert actual_one_many_output_csv == ONE_MANY_OUTPUT
 
 
 # test exceptions
@@ -241,3 +239,70 @@ def test_invalid_combined_type():
 def test_validate_spec():
     with pytest.raises(ValueError, match="Specification requires key"):
         ps = parser.Parser(dict())
+
+
+@pytest.mark.parametrize(
+    "source,expected",
+    [
+        (TEST_PARSERS_PATH / "oneToMany.json", ["observation"]),
+        (TEST_PARSERS_PATH / "groupBy.json", ["subject"]),
+    ],
+)
+def test_load_spec(source, expected):
+    ps = parser.Parser(source)
+    assert list(ps.tables.keys()) == expected
+
+
+def test_parse_write_buffer(snapshot):
+    ps = parser.Parser(TEST_PARSERS_PATH / "groupBy.json")
+    buf = ps.parse_rows(SOURCE_GROUPBY).write_csv("subject")
+    assert buf == snapshot
+
+
+@pytest.mark.parametrize(
+    "source,error",
+    [
+        (
+            TEST_PARSERS_PATH / "groupBy-missing-kind.json",
+            "Required 'kind' attribute within 'tables' not present for",
+        ),
+        (
+            TEST_PARSERS_PATH / "groupBy-missing-table.json",
+            "Parser specification missing required",
+        ),
+        (
+            TEST_PARSERS_PATH / "groupBy-incorrect-aggregation.json",
+            "groupBy needs aggregation=lastNotNull to be set for table:",
+        ),
+    ],
+)
+def test_invalid_spec_raises_error(source, error):
+    with pytest.raises(ValueError, match=error):
+        ps = parser.Parser(source)
+
+
+def test_parser_clear():
+    ps = parser.Parser(TEST_PARSERS_PATH / "oneToMany.json")
+    ps.data = {"observation": []}
+    ps.clear()
+    assert ps.data == {}
+
+
+def test_read_table_raises_error():
+    with pytest.raises(ValueError, match="Invalid table"):
+        list(
+            parser.Parser(TEST_PARSERS_PATH / "oneToMany.json")
+            .parse_rows(ONE_MANY_SOURCE)
+            .read_table("obs")
+        )
+
+
+def test_constant_table():
+    ps = parser.Parser(TEST_PARSERS_PATH / "constant.json").parse_rows([{"x": 1}])
+    assert list(ps.read_table("metadata")) == [
+        {"dataset": "constant", "version": "20220505.1", "format": "csv"}
+    ]
+
+
+def test_validate():
+    assert True

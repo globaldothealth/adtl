@@ -1,0 +1,14 @@
+{
+    "name": "constant",
+    "description": "Fixed table",
+    "tables": {
+        "metadata": {
+            "kind": "constant"
+        }
+    },
+    "metadata": {
+        "dataset": "constant",
+        "version": "20220505.1",
+        "format": "csv"
+    }
+}
