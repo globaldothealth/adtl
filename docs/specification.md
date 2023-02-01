@@ -29,6 +29,41 @@ created in parallel from one source file.
     type*lastNotNull* is supported which sets a particular
     attribute to the last non-null value in the grouped dataset.
 
+* **#defs**: Definitions that can be referred to elsewhere in the schema
+
+## references
+
+Often, a part of the schema is repeated, and it is better to
+[avoid repeated code](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself). adtl
+supports references anywhere a dictionary or object is allowed:
+
+```json
+{ "#ref": "someReference" }
+```
+
+This would require a `someReference` key within the top-level definitions section:
+
+```json
+{
+  "name": "parser",
+  "tables": {
+    "someTable": {
+      "groupBy": "subjid",
+      "aggregation": "lastNotNull"
+    }
+  },
+  "#defs": {
+    "someReference": {
+      "values": {
+        "1": true,
+        "2": false,
+        "3": null
+      }
+    }
+  }
+}
+```
+
 ## table mappings
 
 Each table has its associated field mappings under a key of the same

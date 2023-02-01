@@ -306,3 +306,34 @@ def test_constant_table():
 
 def test_validate():
     assert True
+
+
+@pytest.mark.parametrize(
+    "source,expected",
+    [
+        (({}, {}), {}),
+        (
+            (
+                {"a": {"#ref": "map"}, "b": 2},
+                {"map": {"values": {"1": True, "2": False}}},
+            ),
+            {"a": {"values": {"1": True, "2": False}}, "b": 2},
+        ),
+        (
+            (
+                {"a": [{"#ref": "map"}, {"x": 4}]},
+                {"map": {"values": {"1": True, "2": False}}},
+            ),
+            {"a": [{"values": {"1": True, "2": False}}, {"x": 4}]},
+        ),
+    ],
+)
+def test_expand_refs(source, expected):
+    assert parser.expand_refs(*source) == expected
+
+
+def test_reference_expansion():
+    ps_noref = parser.Parser(TEST_PARSERS_PATH / "groupBy.json")
+    ps_ref = parser.Parser(TEST_PARSERS_PATH / "groupBy-defs.json")
+    del ps_ref.spec["#defs"]
+    assert ps_ref.spec == ps_noref.spec
