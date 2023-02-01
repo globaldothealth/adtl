@@ -180,6 +180,23 @@ def get_combined_type(row: StrDict, rule: StrDict):
         raise ValueError(f"Unknown {combined_type} in {rule}")
 
 
+def expand_refs(spec_fragment: StrDict, defs: StrDict) -> Union[StrDict, List[StrDict]]:
+    "Expand all references (#ref) with definitions (#defs)"
+
+    if spec_fragment == {}:
+        return {}
+    if isinstance(spec_fragment, dict):
+        if "#ref" in spec_fragment:
+            reference_expanded = defs[spec_fragment["#ref"]]
+            del spec_fragment["#ref"]
+            spec_fragment = {**reference_expanded, **spec_fragment}
+        return {k: expand_refs(spec_fragment[k], defs) for k in spec_fragment}
+    elif isinstance(spec_fragment, list):
+        return [expand_refs(m, defs) for m in spec_fragment]
+    else:
+        return spec_fragment
+
+
 def hash_sensitive(value: str) -> str:
     """Hashes sensitive values. This is not generally sufficient for
     anonymisation, as the value still serves as a unique identifier,
@@ -188,8 +205,8 @@ def hash_sensitive(value: str) -> str:
 
 
 class Parser:
-
     data: StrDict = {}
+    defs: StrDict = {}
     fieldnames: Dict[str, List[str]] = {}
 
     def __init__(self, spec: Union[str, Path, StrDict]):
@@ -198,6 +215,8 @@ class Parser:
                 self.spec = json.load(fp)
         else:
             self.spec = spec
+        self.defs = self.spec.get("#defs", {})
+        self.spec = expand_refs(self.spec, self.defs)
         self.validate_spec()
         for table in self.tables:
             if self.tables[table].get("groupBy"):
