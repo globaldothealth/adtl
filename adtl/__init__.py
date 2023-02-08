@@ -9,6 +9,7 @@ from typing import Optional, Any, Union, Iterable, Dict, List
 from collections import defaultdict
 from pathlib import Path
 from enum import Enum
+from datetime import datetime
 
 import pint
 from tqdm import tqdm
@@ -49,13 +50,21 @@ def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
         value = row[rule["field"]]
         if "values" in rule:
             value = rule["values"].get(value)
-        if "source_unit" in rule and "unit" in rule:  # perform unit conversion
+        # Either source_unit / unit OR source_date / date triggers conversion
+        if "source_unit" in rule and "unit" in rule:
+            assert "source_date" not in rule and "date" not in rule
             source_unit = get_value(row, rule["source_unit"])
             unit = rule["unit"]
             try:
                 value = pint.Quantity(float(value), source_unit).to(unit).m
             except ValueError:
                 raise ValueError(f"Could not convert {value} to a floating point")
+        if "source_date" in rule:
+            assert "source_unit" not in rule and "unit" not in rule
+            target_date = rule.get("date", "%Y-%m-%d")
+            source_date = get_value(row, rule["source_date"])
+            if source_date != target_date:
+                value = datetime.strptime(value, source_date).strftime(target_date)
         return value
     elif "combinedType" in rule:
         return get_combined_type(row, rule)
