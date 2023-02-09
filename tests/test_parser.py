@@ -63,6 +63,9 @@ RULE_COMBINED_TYPE_LIST_PATTERN = {
 RULE_NON_SENSITIVE = {"field": "id"}
 RULE_SENSITIVE = {"field": "id", "sensitive": True}
 
+RULE_DATE_MDY = {"field": "outcome_date", "source_date": "%d/%m/%Y", "date": "%m/%d/%Y"}
+RULE_DATE_ISO = {"field": "outcome_date", "source_date": "%d/%m/%Y"}
+
 ONE_MANY_SOURCE = [
     {"dt": "2022-02-05", "headache_cmyn": 1, "cough_cmyn": 1, "dyspnea_cmyn": 0}
 ]
@@ -121,6 +124,8 @@ female,001,dataset-2020-03-23,GBR,2022-01-11,2020-06-08
         ((ROW_CONDITIONAL, RULE_CONDITIONAL_FAIL), None),
         ((ROW_UNIT_MONTH, RULE_UNIT), 1.5),
         ((ROW_UNIT_YEAR, RULE_UNIT), 18),
+        (({"outcome_date": "02/05/2022"}, RULE_DATE_MDY), "05/02/2022"),
+        (({"outcome_date": "02/05/2022"}, RULE_DATE_ISO), "2022-05-02"),
     ],
 )
 def test_get_value(row_rule, expected):

@@ -139,6 +139,22 @@ such as hashing the field.
   }
   ```
 
+* **Single field with date**: Normalising date formats is a common transformation.
+  The date format in the source file is indicated in the `source_date` key (which
+  can itself refer to a field, like `source_unit`), and the date format to be
+  transformed to is indicated in the `date` field. By default, if `date` is not
+  specified, it defaults to ISO 8601 date format `%Y-%m-%d`.
+
+  Date formats are specified in [strftime(3)](http://man.openbsd.org/strftime) format.
+
+  ```json
+  {
+    "field": "outcome_date",
+    "source_date": "%d/%m/%Y",
+    "date": "%Y-%m-%d"
+  }
+  ```
+
 * **Single field with mapping**: Same as **Single field**, but with an extra
   `values` key that describes the mapping from the values to the ones in the
   schema. This covers boolean fields, with the mappings being to `true` | `false` | `null`.
