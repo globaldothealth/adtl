@@ -19,7 +19,7 @@ dependencies = [
 [project.optional-dependencies]
 test = [
   "pytest",
-  "syrupy>=3.0.0"
+  "syrupy==4.*"
 ]
 
 [project.urls]
