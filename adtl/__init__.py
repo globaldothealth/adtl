@@ -92,18 +92,25 @@ def parse_if(row: StrDict, rule: StrDict) -> bool:
     if isinstance(rule[key], dict):
         cmp = next(iter(rule[key]))
         value = rule[key][cmp]
+        try:
+            cast_value = type(value)(attr_value)
+        except ValueError:
+            logging.debug(
+                f"Error when casting value {attr_value!r} with rule: {rule}, defaulting to False"
+            )
+            return False
         if cmp == ">":
-            return type(value)(attr_value) > value
+            return cast_value > value
         elif cmp == ">=":
-            return type(value)(attr_value) >= value
+            return cast_value >= value
         elif cmp == "<":
-            return type(value)(attr_value) < value
+            return cast_value < value
         elif cmp == "<=":
-            return type(value)(attr_value) <= value
+            return cast_value <= value
         elif cmp == "!=":
-            return type(value)(attr_value) != value
+            return cast_value != value
         elif cmp in ["=", "=="]:
-            return type(value)(attr_value) == value
+            return cast_value == value
         else:
             raise ValueError(f"Unrecognized operand: {cmp}")
     elif isinstance(rule[key], set):  # common error, missed colon to make it a dict
@@ -112,7 +119,14 @@ def parse_if(row: StrDict, rule: StrDict) -> bool:
         )
     else:
         value = rule[key]
-        return type(value)(attr_value) == value
+        try:
+            cast_value = type(value)(attr_value)
+        except ValueError:
+            logging.debug(
+                f"Error when casting value {attr_value!r} with rule: {rule}, defaulting to False"
+            )
+            return False
+        return cast_value == value
 
 
 def get_list(row: StrDict, rule: StrDict) -> List[Any]:
