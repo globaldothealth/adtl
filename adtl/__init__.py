@@ -50,7 +50,7 @@ def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
         value = row[rule["field"]]
         if "values" in rule:
             value = rule["values"].get(value)
-        # Either source_unit / unit OR source_date / date triggers conversion
+        # Either source_unit`` / unit OR source_date / date triggers conversion
         if "source_unit" in rule and "unit" in rule:
             assert "source_date" not in rule and "date" not in rule
             source_unit = get_value(row, rule["source_unit"])
@@ -135,13 +135,9 @@ def get_list(row: StrDict, rule: StrDict) -> List[Any]:
     assert "fields" in rule
     assert len(rule["fields"]) >= 1
     rules = []
-    exclude = rule.get("exclude")
-    if (
-        exclude is not None
-        and exclude not in ["null", "falsy"]
-        and not isinstance(exclude, list)
-    ):
-        raise ValueError("exclude rule should be 'null', 'falsy' or a list of values")
+    excludeWhen = rule.get("excludeWhen", ...)  # use ... as sentinel
+    if excludeWhen not in [None, False, ...] and not isinstance(excludeWhen, list):
+        raise ValueError("excludeWhen rule should be null, false, or a list of values")
 
     # expand fieldPattern rules
     for r in rule["fields"]:
@@ -151,14 +147,14 @@ def get_list(row: StrDict, rule: StrDict) -> List[Any]:
         else:
             rules.append(r)
     values = [get_value(row, r) for r in rules]
-    if exclude is None:
+    if excludeWhen == ...:
         return values
-    if exclude == "null":
+    if excludeWhen is None:
         return [v for v in values if v is not None]
-    elif exclude == "falsy":
+    elif excludeWhen is False:
         return [v for v in values if v]
     else:
-        return [v for v in values if v not in exclude]
+        return [v for v in values if v not in excludeWhen]
 
 
 def get_combined_type(row: StrDict, rule: StrDict):

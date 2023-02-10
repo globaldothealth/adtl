@@ -103,7 +103,7 @@ female,001,dataset-2020-03-23,GBR,2022-01-11,2020-06-08
         (
             (
                 {"modliv": "1", "mildliver": "3"},
-                {**RULE_COMBINED_TYPE_LIST_PATTERN, "exclude": "null"},
+                {**RULE_COMBINED_TYPE_LIST_PATTERN, "excludeWhen": None},
             ),
             [True],
         ),
@@ -213,9 +213,9 @@ def test_invalid_operand_parse_if():
     "rowrule,expected",
     [
         ((ROW_CONCISE, RULE_EXCLUDE), [0, 2]),
-        ((ROW_CONCISE, {**RULE_EXCLUDE, "exclude": "falsy"}), [2]),
-        ((ROW_CONCISE, {**RULE_EXCLUDE, "exclude": "null"}), [0, 2]),
-        ((ROW_CONCISE, {**RULE_EXCLUDE, "exclude": [2]}), [0]),
+        ((ROW_CONCISE, {**RULE_EXCLUDE, "excludeWhen": False}), [2]),
+        ((ROW_CONCISE, {**RULE_EXCLUDE, "excludeWhen": None}), [0, 2]),
+        ((ROW_CONCISE, {**RULE_EXCLUDE, "excludeWhen": [2]}), [0]),
     ],
 )
 def test_list_exclude(rowrule, expected):
@@ -224,14 +224,14 @@ def test_list_exclude(rowrule, expected):
 
 def test_invalid_list_exclude():
     with pytest.raises(
-        ValueError, match="exclude rule should be 'null', 'falsy' or a list of values"
+        ValueError, match="excludeWhen rule should be null, false, or a list of values"
     ):
         parser.get_list(
             {"modliv": 1, "mildliv": 2},
             {
                 "combinedType": "list",
                 "fields": [{"field": "modliv"}, {"field": "mildliv"}],
-                "exclude": 5,
+                "excludeWhen": 5,
             },
         )
 
