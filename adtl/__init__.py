@@ -1,15 +1,15 @@
-import io
-import re
+import argparse
 import csv
+import hashlib
+import io
 import json
 import logging
-import hashlib
-import argparse
-from typing import Optional, Any, Union, Iterable, Dict, List
+import re
 from collections import defaultdict
-from pathlib import Path
-from enum import Enum
 from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import pint
 from tqdm import tqdm
@@ -129,34 +129,6 @@ def parse_if(row: StrDict, rule: StrDict) -> bool:
         return cast_value == value
 
 
-def get_list(row: StrDict, rule: StrDict) -> List[Any]:
-    """Gets values from row for a combinedType: list rule"""
-
-    assert "fields" in rule
-    assert len(rule["fields"]) >= 1
-    rules = []
-    excludeWhen = rule.get("excludeWhen", ...)  # use ... as sentinel
-    if excludeWhen not in [None, False, ...] and not isinstance(excludeWhen, list):
-        raise ValueError("excludeWhen rule should be null, false, or a list of values")
-
-    # expand fieldPattern rules
-    for r in rule["fields"]:
-        if "fieldPattern" in r:
-            for match in matching_fields(list(row.keys()), r.get("fieldPattern")):
-                rules.append({"field": match, **r})
-        else:
-            rules.append(r)
-    values = [get_value(row, r) for r in rules]
-    if excludeWhen == ...:
-        return values
-    if excludeWhen is None:
-        return [v for v in values if v is not None]
-    elif excludeWhen is False:
-        return [v for v in values if v]
-    else:
-        return [v for v in values if v not in excludeWhen]
-
-
 def get_combined_type(row: StrDict, rule: StrDict):
     """Gets value from row for a combinedType rule.
 
@@ -183,7 +155,14 @@ def get_combined_type(row: StrDict, rule: StrDict):
     """
     assert "combinedType" in rule
     combined_type = rule["combinedType"]
-    rules = rule["fields"]
+    rules = []
+    # expand fieldPattern rules
+    for r in rule["fields"]:
+        if "fieldPattern" in r:
+            for match in matching_fields(list(row.keys()), r.get("fieldPattern")):
+                rules.append({"field": match, **r})
+        else:
+            rules.append(r)
     if combined_type == "all":
         return all(get_value(row, r) for r in rules)
     elif combined_type == "any":
@@ -194,7 +173,21 @@ def get_combined_type(row: StrDict, rule: StrDict):
         except StopIteration:
             return None
     elif combined_type == "list":
-        return get_list(row, rule)
+        excludeWhen = rule.get("excludeWhen", ...)  # use ... as sentinel
+        if excludeWhen not in [None, False, ...] and not isinstance(excludeWhen, list):
+            raise ValueError(
+                "excludeWhen rule should be null, false, or a list of values"
+            )
+
+        values = [get_value(row, r) for r in rules]
+        if excludeWhen == ...:
+            return values
+        if excludeWhen is None:
+            return [v for v in values if v is not None]
+        elif excludeWhen is False:
+            return [v for v in values if v]
+        else:
+            return [v for v in values if v not in excludeWhen]
     else:
         raise ValueError(f"Unknown {combined_type} in {rule}")
 

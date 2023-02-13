@@ -77,11 +77,13 @@ the fields should be combined. Fields can be marked as privacy sensitive using
 such as hashing the field.
 
 * **Constant**: Every value in the table is the same constant value
+
   ```json
   { "country_iso3": "GBR" }
   ```
 
 * **Single field**: Maps to a single field from the source format
+
   ```json
   {
     "date_death": {
@@ -158,6 +160,7 @@ such as hashing the field.
 * **Single field with mapping**: Same as **Single field**, but with an extra
   `values` key that describes the mapping from the values to the ones in the
   schema. This covers boolean fields, with the mappings being to `true` | `false` | `null`.
+
   ```json
   {
     "sex_at_birth": {
@@ -196,6 +199,30 @@ such as hashing the field.
   * *firstNonNull* - First in the list of fields that has a non-null value
   * *list* - List of various fields
 
+  A combinedType can have multiple fields within a `fields` key, or can specify
+  multiple fields with a `fieldPattern` key which is a regex that is matched to the
+  list of fields:
+
+  ```json
+  {
+    "liver_disease": {
+       "combinedType": "list",
+       "fields": [
+          {
+            "fieldPattern": ".*liv.*",
+            "values": {
+              "1": true,
+              "0": false,
+              "2": null
+            }
+          }
+        ]
+     }
+  }
+  ```
+
+  Example of a `combinedType: list` mapping:
+
   ```json
   {
     "has_liver_disease": {
@@ -221,28 +248,6 @@ such as hashing the field.
         }
       ]
     }
-  }
-  ```
-
-  A list type can have multiple fields within a `fields` key, or can specify
-  multiple fields with a fieldPattern which is a regex that is matched to the
-  list of fields
-
-  ```json
-  {
-    "liver_disease": {
-       "combinedType": "list",
-       "fields": [
-          {
-            "fieldPattern": ".*liv.*",
-            "values": {
-              "1": true,
-              "0": false,
-              "2": null
-            }
-          }
-        ]
-     }
   }
   ```
 

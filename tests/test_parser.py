@@ -219,14 +219,14 @@ def test_invalid_operand_parse_if():
     ],
 )
 def test_list_exclude(rowrule, expected):
-    assert parser.get_list(*rowrule) == expected
+    assert parser.get_combined_type(*rowrule) == expected
 
 
 def test_invalid_list_exclude():
     with pytest.raises(
         ValueError, match="excludeWhen rule should be null, false, or a list of values"
     ):
-        parser.get_list(
+        parser.get_combined_type(
             {"modliv": 1, "mildliv": 2},
             {
                 "combinedType": "list",
