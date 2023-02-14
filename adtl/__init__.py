@@ -51,14 +51,21 @@ def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
         if "values" in rule:
             value = rule["values"].get(value)
         # Either source_unit / unit OR source_date / date triggers conversion
-        if "source_unit" in rule and "unit" in rule:
+        # do not parse units if value is empty
+        if "source_unit" in rule and "unit" in rule and value != "":
             assert "source_date" not in rule and "date" not in rule
             source_unit = get_value(row, rule["source_unit"])
             unit = rule["unit"]
-            try:
-                value = pint.Quantity(float(value), source_unit).to(unit).m
-            except ValueError:
-                raise ValueError(f"Could not convert {value} to a floating point")
+            if type(source_unit) != str:
+                logging.debug(
+                    f"Error converting source_unit {source_unit} to {unit!r} with rule: {rule}, defaulting to assume source_unit is {unit}"
+                )
+                value = pint.Quantity(float(value), unit).to(unit).m
+            else:
+                try:
+                    value = pint.Quantity(float(value), source_unit).to(unit).m
+                except ValueError:
+                    raise ValueError(f"Could not convert {value} to a floating point")
         if "source_date" in rule:
             assert "source_unit" not in rule and "unit" not in rule
             target_date = rule.get("date", "%Y-%m-%d")
