@@ -135,9 +135,9 @@ such as hashing the field.
     "values": {
        "1": "months",
        "2": "years"
-    },
-    "unit": "years"
     }
+  },
+  "unit": "years"
   }
   ```
 
