@@ -1,9 +1,11 @@
 {
-    "name": "constant",
-    "description": "Fixed table",
-    "tables": {
-        "metadata": {
-            "kind": "constant"
+    "adtl": {
+        "name": "constant",
+        "description": "Fixed table",
+        "tables": {
+            "metadata": {
+                "kind": "constant"
+            }
         }
     },
     "metadata": {

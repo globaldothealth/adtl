@@ -242,7 +242,7 @@ def test_invalid_combined_type():
 
 
 def test_validate_spec():
-    with pytest.raises(ValueError, match="Specification requires key"):
+    with pytest.raises(ValueError, match="Specification header requires key"):
         ps = parser.Parser(dict())
 
 
@@ -319,14 +319,14 @@ def test_validate():
         (({}, {}), {}),
         (
             (
-                {"a": {"#ref": "map"}, "b": 2},
+                {"a": {"ref": "map"}, "b": 2},
                 {"map": {"values": {"1": True, "2": False}}},
             ),
             {"a": {"values": {"1": True, "2": False}}, "b": 2},
         ),
         (
             (
-                {"a": [{"#ref": "map"}, {"x": 4}]},
+                {"a": [{"ref": "map"}, {"x": 4}]},
                 {"map": {"values": {"1": True, "2": False}}},
             ),
             {"a": [{"values": {"1": True, "2": False}}, {"x": 4}]},
@@ -340,5 +340,5 @@ def test_expand_refs(source, expected):
 def test_reference_expansion():
     ps_noref = parser.Parser(TEST_PARSERS_PATH / "groupBy.json")
     ps_ref = parser.Parser(TEST_PARSERS_PATH / "groupBy-defs.json")
-    del ps_ref.spec["#defs"]
+    del ps_ref.spec["adtl"]["defs"]
     assert ps_ref.spec == ps_noref.spec

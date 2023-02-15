@@ -1,11 +1,13 @@
 {
-    "name": "groupBy",
-    "description": "Example using groupBy",
-    "tables": {
-        "subject": {
-            "kind": "groupBy",
-            "groupBy": "subject_id",
-            "aggregation": "lastNotNull"
+    "adtl": {
+        "name": "groupBy",
+        "description": "Example using groupBy",
+        "tables": {
+            "subject": {
+                "kind": "groupBy",
+                "groupBy": "subject_id",
+                "aggregation": "lastNotNull"
+            }
         }
     },
     "subject": {

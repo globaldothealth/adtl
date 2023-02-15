@@ -199,14 +199,14 @@ def get_combined_type(row: StrDict, rule: StrDict):
 
 
 def expand_refs(spec_fragment: StrDict, defs: StrDict) -> Union[StrDict, List[StrDict]]:
-    "Expand all references (#ref) with definitions (#defs)"
+    "Expand all references (ref) with definitions (defs)"
 
     if spec_fragment == {}:
         return {}
     if isinstance(spec_fragment, dict):
-        if "#ref" in spec_fragment:
-            reference_expanded = defs[spec_fragment["#ref"]]
-            del spec_fragment["#ref"]
+        if "ref" in spec_fragment:
+            reference_expanded = defs[spec_fragment["ref"]]
+            del spec_fragment["ref"]
             spec_fragment = {**reference_expanded, **spec_fragment}
         return {k: expand_refs(spec_fragment[k], defs) for k in spec_fragment}
     elif isinstance(spec_fragment, list):
@@ -233,7 +233,8 @@ class Parser:
                 self.spec = json.load(fp)
         else:
             self.spec = spec
-        self.defs = self.spec.get("#defs", {})
+        self.header = self.spec.get("adtl", {})
+        self.defs = self.header.get("defs", {})
         self.spec = expand_refs(self.spec, self.defs)
         self.validate_spec()
         for table in self.tables:
@@ -246,9 +247,11 @@ class Parser:
         "Raises exceptions if specification is invalid"
         errors = []
         for required in ["tables", "name", "description"]:
-            if required not in self.spec:
-                raise ValueError(f"Specification requires key: {required}")
-        self.tables = self.spec["tables"]
+            if required not in self.header:
+                raise ValueError(f"Specification header requires key: {required}")
+        self.tables = self.header["tables"]
+        self.name = self.header["name"]
+        self.description = self.header["description"]
         for table in self.tables:
             if table not in self.spec:
                 raise ValueError(
@@ -287,7 +290,7 @@ class Parser:
                     self.data[table][group_key][attr] = value
         elif kind == "oneToMany":
             for match in self.spec[table]:
-                rowIf = match.pop("#if", None)
+                rowIf = match.pop("if", None)
                 if rowIf is None or parse_if(row, rowIf):
                     self.data[table].append(
                         {attr: get_value(row, match[attr]) for attr in match}
@@ -311,7 +314,7 @@ class Parser:
             reader = csv.DictReader(fp)
             for row in tqdm(
                 reader,
-                desc=f"[{self.spec['name']}] parsing {Path(file).name}",
+                desc=f"[{self.name}] parsing {Path(file).name}",
             ):
                 for table in self.tables:
                     self.update_table(table, row)
