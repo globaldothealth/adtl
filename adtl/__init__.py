@@ -182,18 +182,20 @@ def get_combined_type(row: StrDict, rule: StrDict):
         except StopIteration:
             return None
     elif combined_type == "list":
-        excludeWhen = rule.get("excludeWhen", ...)  # use ... as sentinel
-        if excludeWhen not in [None, False, ...] and not isinstance(excludeWhen, list):
+        excludeWhen = rule.get("excludeWhen")
+        if excludeWhen not in [None, "false-like", "none"] and not isinstance(
+            excludeWhen, list
+        ):
             raise ValueError(
-                "excludeWhen rule should be null, false, or a list of values"
+                "excludeWhen rule should be 'none', 'false-like', or a list of values"
             )
 
         values = [get_value(row, r) for r in rules]
-        if excludeWhen == ...:
-            return values
         if excludeWhen is None:
+            return values
+        if excludeWhen == "none":
             return [v for v in values if v is not None]
-        elif excludeWhen is False:
+        elif excludeWhen == "false-like":
             return [v for v in values if v]
         else:
             return [v for v in values if v not in excludeWhen]
