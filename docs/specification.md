@@ -10,7 +10,7 @@ created in parallel from one source file.
 
 ## metadata
 
-**Required fields**. These metadata fields are defined at the top level of the specification
+**Required fields**. These metadata fields are defined under a header key `adtl`.
 
 * **name**: Name of the specification, usually the source data name in
   lowercase and hyphenated. By convention, this is the same name as the
@@ -29,7 +29,7 @@ created in parallel from one source file.
     type*lastNotNull* is supported which sets a particular
     attribute to the last non-null value in the grouped dataset.
 
-* **#defs**: Definitions that can be referred to elsewhere in the schema
+* **defs**: Definitions that can be referred to elsewhere in the schema
 
 ## references
 
@@ -38,21 +38,23 @@ Often, a part of the schema is repeated, and it is better to
 supports references anywhere a dictionary or object is allowed:
 
 ```json
-{ "#ref": "someReference" }
+{ "ref": "someReference" }
 ```
 
 This would require a `someReference` key within the top-level definitions section:
 
 ```json
 {
-  "name": "parser",
-  "tables": {
-    "someTable": {
-      "groupBy": "subjid",
-      "aggregation": "lastNotNull"
+  "adtl": {
+    "name": "parser",
+    "tables": {
+      "someTable": {
+        "groupBy": "subjid",
+        "aggregation": "lastNotNull"
+      }
     }
   },
-  "#defs": {
+  "defs": {
     "someReference": {
       "values": {
         "1": true,
@@ -258,7 +260,7 @@ such as hashing the field.
 * **Conditional rows**: For the *oneToMany* case, each row in the source file generates
   multiple rows for the target. This is expressed in the specification by making the
   value corresponding to the table key a list instead of an object. Additionally
-  an `#if` key sets the condition under which the row is emitted.
+  an `if` key sets the condition under which the row is emitted.
 
   ```json
   {
@@ -268,7 +270,7 @@ such as hashing the field.
           "field": "dsstdtc"
         },
         "name": "headache",
-        "#if": {
+        "if": {
           "headache_symptom": 1
         }
       },
@@ -277,7 +279,7 @@ such as hashing the field.
           "field": "dsstdtc"
         },
         "name": "cough",
-        "#if": {
+        "if": {
           "cough_symptoms": 1
         }
       }

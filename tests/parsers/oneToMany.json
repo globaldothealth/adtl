@@ -1,9 +1,11 @@
 {
-    "name": "sampleOneToMany",
-    "description": "One to Many example",
-    "tables": {
-        "observation": {
-            "kind": "oneToMany"
+    "adtl": {
+        "name": "sampleOneToMany",
+        "description": "One to Many example",
+        "tables": {
+            "observation": {
+                "kind": "oneToMany"
+            }
         }
     },
     "observation": [
@@ -13,7 +15,7 @@
             },
             "name": "headache",
             "is_present": true,
-            "#if": {
+            "if": {
                 "headache_cmyn": 1
             }
         },
@@ -23,7 +25,7 @@
             },
             "name": "cough",
             "is_present": true,
-            "#if": {
+            "if": {
                 "cough_cmyn": 1
             }
         },
@@ -33,7 +35,7 @@
             },
             "name": "dyspnea",
             "is_present": true,
-            "#if": {
+            "if": {
                 "dyspnea_cmyn": 1
             }
         }

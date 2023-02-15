@@ -1,25 +1,27 @@
 {
-    "name": "groupBy",
-    "description": "Example using groupBy",
-    "#defs": {
-        "sexMapping": {
-            "values": {
-                "1": "male",
-                "2": "female",
-                "3": "non_binary"
+    "adtl": {
+        "name": "groupBy",
+        "description": "Example using groupBy",
+        "defs": {
+            "sexMapping": {
+                "values": {
+                    "1": "male",
+                    "2": "female",
+                    "3": "non_binary"
+                }
             }
-        }
-    },
-    "tables": {
-        "subject": {
-            "kind": "groupBy",
-            "groupBy": "subject_id",
-            "aggregation": "lastNotNull"
+        },
+        "tables": {
+            "subject": {
+                "kind": "groupBy",
+                "groupBy": "subject_id",
+                "aggregation": "lastNotNull"
+            }
         }
     },
     "subject": {
         "sex_at_birth": {
-            "#ref": "sexMapping",
+            "ref": "sexMapping",
             "field": "sex",
             "description": "Sex at Birth"
         },
