@@ -60,12 +60,11 @@ def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
                 logging.debug(
                     f"Error converting source_unit {source_unit} to {unit!r} with rule: {rule}, defaulting to assume source_unit is {unit}"
                 )
-                value = pint.Quantity(float(value), unit).to(unit).m
-            else:
-                try:
-                    value = pint.Quantity(float(value), source_unit).to(unit).m
-                except ValueError:
-                    raise ValueError(f"Could not convert {value} to a floating point")
+                return float(value)
+            try:
+                value = pint.Quantity(float(value), source_unit).to(unit).m
+            except ValueError:
+                raise ValueError(f"Could not convert {value} to a floating point")
         if "source_date" in rule:
             assert "source_unit" not in rule and "unit" not in rule
             target_date = rule.get("date", "%Y-%m-%d")
