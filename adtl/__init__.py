@@ -12,7 +12,10 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Union
 
 import pint
+import tomli
 from tqdm import tqdm
+
+SUPPORTED_FORMATS = {"json": json.load, "toml": tomli.load}
 
 StrDict = Dict[str, Any]
 Rule = Union[str, StrDict]
@@ -228,9 +231,15 @@ class Parser:
     fieldnames: Dict[str, List[str]] = {}
 
     def __init__(self, spec: Union[str, Path, StrDict]):
-        if isinstance(spec, str) or isinstance(spec, Path):
-            with open(spec) as fp:
-                self.spec = json.load(fp)
+        "Loads specification from spec in format (default json)"
+        if isinstance(spec, str):
+            spec = Path(spec)
+        if isinstance(spec, Path):
+            fmt = spec.suffix[1:]
+            if fmt not in SUPPORTED_FORMATS:
+                raise ValueError(f"adtl specification format not supported: {fmt}")
+            with spec.open() as fp:
+                self.spec = SUPPORTED_FORMATS[fmt](fp)
         else:
             self.spec = spec
         self.header = self.spec.get("adtl", {})

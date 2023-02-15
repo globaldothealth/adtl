@@ -3,7 +3,7 @@
 The specification file describes the field mappings from the source file to the
 target schema. The format is under development and expected to change.
 
-Specification files are in JSON and have the suffix `.json`.
+Specification files can be in the following formats: JSON, TOML
 
 Each specification file can refer to one or more tables, which are
 created in parallel from one source file.
