@@ -1,0 +1,34 @@
+[adtl]
+name = "groupBy"
+description = "Example using groupBy"
+
+[adtl.defs.sexMapping.values]
+1 = "male"
+2 = "female"
+3 = "non_binary"
+
+[subject]
+dataset_id = "dataset-2020-03-23"
+country_iso3 = "GBR"
+
+[subject.sex_at_birth]
+ref = "sexMapping"
+field = "sex"
+description = "Sex at Birth"
+
+[subject.subject_id]
+field = "subjid"
+description = "Subject ID"
+
+[subject.enrolment_date]
+field = "dsstdat"
+description = "Date of Enrolment"
+
+[subject.admission_date]
+field = "hostdat"
+description = "Admission date at this facility"
+
+[adtl.tables.subject]
+kind = "groupBy"
+groupBy = "subject_id"
+aggregation = "lastNotNull"

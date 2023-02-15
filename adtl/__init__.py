@@ -238,7 +238,7 @@ class Parser:
             fmt = spec.suffix[1:]
             if fmt not in SUPPORTED_FORMATS:
                 raise ValueError(f"adtl specification format not supported: {fmt}")
-            with spec.open() as fp:
+            with spec.open("rb") as fp:
                 self.spec = SUPPORTED_FORMATS[fmt](fp)
         else:
             self.spec = spec
