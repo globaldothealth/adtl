@@ -253,7 +253,7 @@ such as hashing the field.
   }
   ```
 
-  **excludeWhen**: List fields can have an optional *excludeWhen* key which can either be a list of values or `null` or `false`. When it is `null` we drop the null values (None in Python) or it can be `false` in which case falsy values are excluded (empty lists, boolean False, 0). Alternatively a list of values to be excluded can be provided.
+  **excludeWhen**: List fields can have an optional *excludeWhen* key which can either be a list of values or `none` or `false-like`. When it is `none` we drop the null values (None in Python) or it can be `false-like` in which case false-like values (`bool(x) == False` in Python) are excluded (empty lists, boolean False, 0). Alternatively a list of values to be excluded can be provided.
 
   If *excludeWhen* is not set, no exclusions take place and all values are returned as-is.
 
