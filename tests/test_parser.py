@@ -342,3 +342,9 @@ def test_reference_expansion():
     ps_ref = parser.Parser(TEST_PARSERS_PATH / "groupBy-defs.json")
     del ps_ref.spec["adtl"]["defs"]
     assert ps_ref.spec == ps_noref.spec
+
+
+def test_format_equivalence():
+    adtl_json = parser.Parser(TEST_PARSERS_PATH / "groupBy-defs.json")
+    adtl_toml = parser.Parser(TEST_PARSERS_PATH / "groupBy-defs.toml")
+    assert adtl_json.spec == adtl_toml.spec
