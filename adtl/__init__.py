@@ -267,10 +267,10 @@ class Parser:
                     f"Parser specification missing required '{table}' element"
                 )
             if self.tables[table].get("kind") != "oneToMany":
-                self.fieldnames[table] = list(self.spec[table].keys())
+                self.fieldnames[table] = sorted(list(self.spec[table].keys()))
             else:
-                self.fieldnames[table] = list(
-                    set(sum([list(m.keys()) for m in self.spec[table]], []))
+                self.fieldnames[table] = sorted(
+                    list(set(sum([list(m.keys()) for m in self.spec[table]], [])))
                 )
         for table in self.tables:
             aggregation = self.tables[table].get("aggregation")
