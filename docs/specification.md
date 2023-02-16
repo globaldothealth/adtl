@@ -3,7 +3,7 @@
 The specification file describes the field mappings from the source file to the
 target schema. The format is under development and expected to change.
 
-Specification files can be in the following formats: JSON, TOML
+Specification files can be in TOML or JSON, with TOML preferred due to readability.
 
 Each specification file can refer to one or more tables, which are
 created in parallel from one source file.
@@ -35,90 +35,69 @@ created in parallel from one source file.
 
 Often, a part of the schema is repeated, and it is better to
 [avoid repeated code](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself). adtl
-supports references anywhere a dictionary or object is allowed:
-
-```json
-{ "ref": "someReference" }
-```
+supports references anywhere a dictionary or object is allowed using `ref = "someReference"`.
 
 This would require a `someReference` key within the top-level definitions section:
 
-```json
-{
-  "adtl": {
-    "name": "parser",
-    "tables": {
-      "someTable": {
-        "groupBy": "subjid",
-        "aggregation": "lastNotNull"
-      }
-    }
-  },
-  "defs": {
-    "someReference": {
-      "values": {
-        "1": true,
-        "2": false,
-        "3": null
-      }
-    }
-  }
-}
+```ini
+[adtl]
+name = "parser"
+
+[adtl.tables]
+someTable = { groupBy = "subjid", aggregation = "lastNotNull" }
+
+[adtl.defs]
+someReference = { values = { 1 = true, 2 = false } }
 ```
 
 ## table mappings
 
 Each table has its associated field mappings under a key of the same
-name. Within the table dictionary, keys are **fields / attributes** in the schema. Values are **rules**
+name, so there should be a top level `[table]` section.
+Within the table dictionary, keys are **fields / attributes** in the schema. Values are **rules**
 that describe the mapping from the source data format. There are several valid
 rule patterns, listed below. Each rule will either have a `field` attribute
 that is the corresponding field in the source format, or a `combinedField`
 attribute which links multiple fields in the source format, and specifies how
 the fields should be combined. Fields can be marked as privacy sensitive using
-`sensitive: true`, which can be used by the parser to take additional steps,
+`sensitive = true`, which can be used by the parser to take additional steps,
 such as hashing the field.
 
 * **Constant**: Every value in the table is the same constant value
 
-  ```json
-  { "country_iso3": "GBR" }
+  ```ini
+  country_iso3 = "GBR"
   ```
 
 * **Single field**: Maps to a single field from the source format
 
-  ```json
-  {
-    "date_death": {
-      "field": "flw_date_death",
-      "description": "Date of death"
-     }
-  }
+  ```ini
+  [table.date_death]  # specifies that date_death is under table named 'table'
+  field = "flw_date_death"
+  description = "Date of death"
   ```
 
 * **Single field with conditional**: Maps to a single field from the source format
   only if condition(s) are met. The value is set to *null* if the condition fails.
 
-  ```json
-  {
-   "field": "foobar",
-   "if": {"foobar_type": 4}
-  }
+  ```ini
+  field = "foobar"
+  if = { foobar_type = 4 }
   ```
 
-  Operations other than equals can be specified as `{"field_name": {op: value}}`
+  Operations other than equals can be specified as `{ field_name = {op = value} }`
   where *op* is one of `< | > | <= | >= | !=`. Logical operations (and, or) are
-  supported with `"any": [ condition-list ]` (or) and `"all": [ condition-list ]` (and).
+  supported with `any = [ condition-list ]` (or) and `all = [ condition-list ]` (and).
   In the above example, if we wanted to set from field *foobar* only if
-  *foobar_type* is 4 and *bazbar* < 5:
+  *foobar_type* is 4 and *bazbar* < 5. For simplicity, the equals operation is optional,
+  and adtl allows conditions of the form `{ field_name = value }`:
 
-  ```json
-    {
-    "field": "foobar",
-    "if": {"all": [
-      {"foobar_type": 4},
-      {"bazbar": {"<": 5}}
-    ]}
-    }
+  ```ini
+  field = "foobar"
+  if.all = [  # in TOML this is a nested key, like { "if": { "all": [ ... ] } }
+    { foobar_type = 4 },
+    { bazbar = { "<" = 5 }}
+  ]
   ```
 
 * **Single field with unit**: Often values need to be normalised to a particular unit.
@@ -129,18 +108,10 @@ such as hashing the field.
   The `source_unit` field can also be a rule, but `unit` must be a string. For example,
   to set the age based on a field called `age_unit` which can be months or years:
 
-  ```json
-  {
-  "field": "age_estimate",
-  "source_unit": {
-    "field": "age_estimateunit",
-    "values": {
-       "1": "months",
-       "2": "years"
-    }
-  },
-  "unit": "years"
-  }
+  ```ini
+  field = "age_estimate"
+  source_unit = { field = "age_estimateunit", values = { 1 = "months", 2 = "years" }}
+  unit = "years"
   ```
 
 * **Single field with date**: Normalising date formats is a common transformation.
@@ -151,44 +122,28 @@ such as hashing the field.
 
   Date formats are specified in [strftime(3)](http://man.openbsd.org/strftime) format.
 
-  ```json
-  {
-    "field": "outcome_date",
-    "source_date": "%d/%m/%Y",
-    "date": "%Y-%m-%d"
-  }
+  ```ini
+  field = "outcome_date"
+  source_date = "%d/%m/%Y"
+  date = "%Y-%m-%d"
   ```
 
 * **Single field with mapping**: Same as **Single field**, but with an extra
   `values` key that describes the mapping from the values to the ones in the
   schema. This covers boolean fields, with the mappings being to `true` | `false` | `null`.
 
-  ```json
-  {
-    "sex_at_birth": {
-      "field": "sex",
-      "values": {
-        "1": "male",
-        "2": "female",
-        "3": "non_binary"
-      },
-      "description": "Sex at Birth"
-    }
-  }
+  ```ini
+  [table.sex_at_birth]
+  field = "sex"
+  values = { 1 = "male", 2 = "female", 3 = "non_binary" }
+  description = "Sex at Birth"
   ```
 
-  ```json
-  {
-    "has_dementia": {
-      "field": "dementia_mhyn",
-      "values": {
-        "1": true,
-        "2": false,
-        "3": null
-      },
-      "description": "Dementia"
-    }
-  }
+  ```ini
+  [table.has_dementia]
+  field = "dementia_mhyn"
+  values = { 1 = true, 2 = false }
+  description = "Dementia"
   ```
 
 * **Combined type**: Refers to multiple fields in the source format. Requires
@@ -205,52 +160,23 @@ such as hashing the field.
   multiple fields with a `fieldPattern` key which is a regex that is matched to the
   list of fields:
 
-  ```json
-  {
-    "liver_disease": {
-       "combinedType": "list",
-       "fields": [
-          {
-            "fieldPattern": ".*liv.*",
-            "values": {
-              "1": true,
-              "0": false,
-              "2": null
-            }
-          }
-        ]
-     }
-  }
+  ```ini
+  [table.has_liver_disease]
+  combinedType = "list"
+  fields = [
+    { fieldPattern = ".*liv.*", values = { 1 = true, 0 = false }}
+  ]
   ```
 
-  Example of a `combinedType: list` mapping:
+  Example of a `combinedType = "any"` mapping:
 
-  ```json
-  {
-    "has_liver_disease": {
-      "combinedType": "any",
-      "fields": [
-        {
-          "field": "modliv",
-          "values": {
-            "1": true,
-            "0": false,
-            "2": null
-          },
-          "description": "Moderate liver disease"
-        },
-        {
-          "field": "mildliver",
-          "values": {
-            "1": true,
-            "0": false,
-            "2": null
-          },
-          "description": "Mild liver disease"
-        }
-      ]
-    }
-  }
+  ```ini
+  [table.has_liver_disease]
+  combinedType = "any"
+  fields =  [
+    { field = "modliv", description = "Moderate liver disease", values = { 1 = true, 0 = false }},
+    { field = "mildliver", description = "Mild liver disease", values = { 1 = true, 0 = false }},
+  ]
   ```
 
   **excludeWhen**: List fields can have an optional *excludeWhen* key which can either be a list of values or `none` or `false-like`. When it is `none` we drop the null values (None in Python) or it can be `false-like` in which case false-like values (`bool(x) == False` in Python) are excluded (empty lists, boolean False, 0). Alternatively a list of values to be excluded can be provided.
@@ -262,27 +188,14 @@ such as hashing the field.
   value corresponding to the table key a list instead of an object. Additionally
   an `if` key sets the condition under which the row is emitted.
 
-  ```json
-  {
-    "table": [
-      {
-        "date": {
-          "field": "dsstdtc"
-        },
-        "name": "headache",
-        "if": {
-          "headache_symptom": 1
-        }
-      },
-      {
-        "date": {
-          "field": "dsstdtc"
-        },
-        "name": "cough",
-        "if": {
-          "cough_symptoms": 1
-        }
-      }
-    ]
-  }
+  ```ini
+  [[table]]
+  date = { field = "dsstdtc" }
+  name = "headache"
+  if = { headache_cmyn = 1 }
+
+  [[table]]
+  date = { field = "dsstdtc" }
+  name = "cough"
+  if = { cough_cmyn = 1 }
   ```
