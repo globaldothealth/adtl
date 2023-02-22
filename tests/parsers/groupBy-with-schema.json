@@ -1,0 +1,39 @@
+{
+    "adtl": {
+        "name": "groupBy-with-schema",
+        "description": "Example using groupBy with schema",
+        "tables": {
+            "subject": {
+                "kind": "groupBy",
+                "groupBy": "subject_id",
+                "aggregation": "lastNotNull",
+                "schema": "test.schema.json"
+            }
+        }
+    },
+    "subject": {
+        "sex_at_birth": {
+            "field": "sex",
+            "values": {
+                "1": "male",
+                "2": "female",
+                "3": "non_binary"
+            },
+            "description": "Sex at Birth"
+        },
+        "subject_id": {
+            "field": "subjid",
+            "description": "Subject ID"
+        },
+        "dataset_id": "dataset-2020-03-23",
+        "country_iso3": "GBR",
+        "enrolment_date": {
+            "field": "dsstdat",
+            "description": "Date of Enrolment"
+        },
+        "admission_date": {
+            "field": "hostdat",
+            "description": "Admission date at this facility"
+        }
+    }
+}
