@@ -199,3 +199,19 @@ such as hashing the field.
   name = "cough"
   if = { cough_cmyn = 1 }
   ```
+
+* **Data transformations using `apply`**: Arbitrary functions can be applied to source fields. adtl ships with a
+  library found in the `transformations.py` file, but users may add their own. Parameters other than the source field
+  which need to be parsed into the transformation function must be listed as `apply_params`, in the same order as they
+  should be passed to the transformation function.
+
+  ```ini
+  [[table]]
+    field = "icu_admitted"
+    apply = { function = "isNotNull" }
+  
+  [[table]]
+    field = "brthdtc"
+    apply = { function = "yearsElapsed", params = ["dsstdat"] }
+
+  ```
