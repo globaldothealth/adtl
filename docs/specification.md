@@ -8,7 +8,7 @@ Specification files can be in TOML or JSON, with TOML preferred due to readabili
 Each specification file can refer to one or more tables, which are
 created in parallel from one source file.
 
-## metadata
+## Metadata
 
 **Required fields**. These metadata fields are defined under a header key `adtl`.
 
@@ -28,10 +28,25 @@ created in parallel from one source file.
   * *aggregation*: Aggregation type. Currently only one
     type*lastNotNull* is supported which sets a particular
     attribute to the last non-null value in the grouped dataset.
+  * *schema* (optional): Specifies JSON schema to use for validation,
+    can be a relative path, or a URL
 
 * **defs**: Definitions that can be referred to elsewhere in the schema
 
-## references
+## Validation
+
+adtl supports validation using [JSON
+Schema](https://json-schema.org/draft-07/json-schema-core.html), upto draft-07
+of the specification. Validation is performed using
+[fastjsonschema](https://github.com/horejsek/python-fastjsonschema).
+
+adtl does not raise errors on validation issues. Instead two special columns are
+added to each table that has an associated schema:
+
+* `adtl_valid` (boolean): True if row is valid according to JSON schema, False otherwise
+* `adtl_error` (string): Validation error message returned by fastjsonschema
+
+## References
 
 Often, a part of the schema is repeated, and it is better to
 [avoid repeated code](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself). adtl
@@ -50,7 +65,7 @@ someTable = { groupBy = "subjid", aggregation = "lastNotNull" }
 someReference = { values = { 1 = true, 2 = false } }
 ```
 
-## table mappings
+## Table mappings
 
 Each table has its associated field mappings under a key of the same
 name, so there should be a top level `[table]` section.
@@ -63,155 +78,176 @@ the fields should be combined. Fields can be marked as privacy sensitive using
 `sensitive = true`, which can be used by the parser to take additional steps,
 such as hashing the field.
 
-* **Constant**: Every value in the table is the same constant value
+### Constant
 
-  ```ini
-  country_iso3 = "GBR"
-  ```
+Every value in the table is the same constant value
 
-* **Single field**: Maps to a single field from the source format
+```ini
+country_iso3 = "GBR"
+```
 
-  ```ini
-  [table.date_death]  # specifies that date_death is under table named 'table'
-  field = "flw_date_death"
-  description = "Date of death"
-  ```
+### Field
 
-* **Single field with conditional**: Maps to a single field from the source format
-  only if condition(s) are met. The value is set to *null* if the condition fails.
+Maps to a single field from the source format
 
-  ```ini
-  field = "foobar"
-  if = { foobar_type = 4 }
-  ```
+```ini
+[table.date_death]  # specifies that date_death is under table named 'table'
+field = "flw_date_death"
+description = "Date of death"
+```
 
-  Operations other than equals can be specified as `{ field_name = {op = value} }`
-  where *op* is one of `< | > | <= | >= | !=`. Logical operations (and, or) are
-  supported with `any = [ condition-list ]` (or) and `all = [ condition-list ]` (and).
-  In the above example, if we wanted to set from field *foobar* only if
-  *foobar_type* is 4 and *bazbar* < 5. For simplicity, the equals operation is optional,
-  and adtl allows conditions of the form `{ field_name = value }`:
+### Field with conditional
 
-  ```ini
-  field = "foobar"
-  if.all = [  # in TOML this is a nested key, like { "if": { "all": [ ... ] } }
-    { foobar_type = 4 },
-    { bazbar = { "<" = 5 }}
-  ]
-  ```
+Maps to a single field from the source format only if condition(s) are met. The
+value is set to *null* if the condition fails.
 
-* **Single field with unit**: Often values need to be normalised to a particular unit.
-  This can be done by setting `source_unit` and `unit` attributes on a field. The
-  [pint](https://pint.readthedocs.io) library is used, so the units should be in a format
-  that pint understands. Generally pint works well with
-  [most common units](https://github.com/hgrecco/pint/blob/master/pint/default_en.txt).
-  The `source_unit` field can also be a rule, but `unit` must be a string. For example,
-  to set the age based on a field called `age_unit` which can be months or years:
+```ini
+field = "foobar"
+if = { foobar_type = 4 }
+```
 
-  ```ini
-  field = "age_estimate"
-  source_unit = { field = "age_estimateunit", values = { 1 = "months", 2 = "years" }}
-  unit = "years"
-  ```
+Operations other than equals can be specified as `{ field_name = {op = value} }`
+where *op* is one of `< | > | <= | >= | !=`. Logical operations (and, or) are
+supported with `any = [ condition-list ]` (or) and `all = [ condition-list ]` (and).
+In the above example, if we wanted to set from field *foobar* only if
+*foobar_type* is 4 and *bazbar* < 5. For simplicity, the equals operation is optional,
+and adtl allows conditions of the form `{ field_name = value }`:
 
-* **Single field with date**: Normalising date formats is a common transformation.
-  The date format in the source file is indicated in the `source_date` key (which
-  can itself refer to a field, like `source_unit`), and the date format to be
-  transformed to is indicated in the `date` field. By default, if `date` is not
-  specified, it defaults to ISO 8601 date format `%Y-%m-%d`.
+```ini
+field = "foobar"
+if.all = [  # in TOML this is a nested key, like { "if": { "all": [ ... ] } }
+  { foobar_type = 4 },
+  { bazbar = { "<" = 5 }}
+]
+```
 
-  Date formats are specified in [strftime(3)](http://man.openbsd.org/strftime) format.
+### Field with unit
 
-  ```ini
-  field = "outcome_date"
-  source_date = "%d/%m/%Y"
-  date = "%Y-%m-%d"
-  ```
+Often values need to be normalised to a particular unit.
+This can be done by setting `source_unit` and `unit` attributes on a field. The
+[pint](https://pint.readthedocs.io) library is used, so the units should be in a format
+that pint understands. Generally pint works well with
+[most common units](https://github.com/hgrecco/pint/blob/master/pint/default_en.txt).
+The `source_unit` field can also be a rule, but `unit` must be a string. For example,
+to set the age based on a field called `age_unit` which can be months or years:
 
-* **Single field with mapping**: Same as **Single field**, but with an extra
-  `values` key that describes the mapping from the values to the ones in the
-  schema. This covers boolean fields, with the mappings being to `true` | `false` | `null`.
+```ini
+field = "age_estimate"
+source_unit = { field = "age_estimateunit", values = { 1 = "months", 2 = "years" }}
+unit = "years"
+```
 
-  ```ini
-  [table.sex_at_birth]
-  field = "sex"
-  values = { 1 = "male", 2 = "female", 3 = "non_binary" }
-  description = "Sex at Birth"
-  ```
+### Field with date
 
-  ```ini
-  [table.has_dementia]
-  field = "dementia_mhyn"
-  values = { 1 = true, 2 = false }
-  description = "Dementia"
-  ```
+Normalising date formats is a common transformation.
+The date format in the source file is indicated in the `source_date` key (which
+can itself refer to a field, like `source_unit`), and the date format to be
+transformed to is indicated in the `date` field. By default, if `date` is not
+specified, it defaults to ISO 8601 date format `%Y-%m-%d`.
 
-* **Combined type**: Refers to multiple fields in the source format. Requires
-  a `combinedType` attribute specifying the combination criteria, and
-  a `fields` attribute which a list of fields that will be combined.
-  Accepted values for `combinedType` are:
+Date formats are specified in [strftime(3)](http://man.openbsd.org/strftime) format.
 
-  * *any* - Whether any of the fields are non-null (truthy)
-  * *all* - Whether all of the fields are non-null (truthy)
-  * *firstNonNull* - First in the list of fields that has a non-null value
-  * *list* - List of various fields
+```ini
+field = "outcome_date"
+source_date = "%d/%m/%Y"
+date = "%Y-%m-%d"
+```
 
-  A combinedType can have multiple fields within a `fields` key, or can specify
-  multiple fields with a `fieldPattern` key which is a regex that is matched to the
-  list of fields:
+### Field with value mapping
 
-  ```ini
-  [table.has_liver_disease]
-  combinedType = "list"
-  fields = [
-    { fieldPattern = ".*liv.*", values = { 1 = true, 0 = false }}
-  ]
-  ```
+Same as **Single field**, but with an extra `values` key that describes the
+mapping from the values to the ones in the schema. This covers boolean fields,
+with the mappings being to `true` | `false` | `null`.
 
-  Example of a `combinedType = "any"` mapping:
+```ini
+[table.sex_at_birth]
+field = "sex"
+values = { 1 = "male", 2 = "female", 3 = "non_binary" }
+description = "Sex at Birth"
+```
 
-  ```ini
-  [table.has_liver_disease]
-  combinedType = "any"
-  fields =  [
-    { field = "modliv", description = "Moderate liver disease", values = { 1 = true, 0 = false }},
-    { field = "mildliver", description = "Mild liver disease", values = { 1 = true, 0 = false }},
-  ]
-  ```
+Example with boolean values
 
-  **excludeWhen**: List fields can have an optional *excludeWhen* key which can either be a list of values or `none` or `false-like`. When it is `none` we drop the null values (None in Python) or it can be `false-like` in which case false-like values (`bool(x) == False` in Python) are excluded (empty lists, boolean False, 0). Alternatively a list of values to be excluded can be provided.
+```ini
+[table.has_dementia]
+field = "dementia_mhyn"
+values = { 1 = true, 2 = false }
+description = "Dementia"
+```
 
-  If *excludeWhen* is not set, no exclusions take place and all values are returned as-is.
+### Combined type
 
-* **Conditional rows**: For the *oneToMany* case, each row in the source file generates
-  multiple rows for the target. This is expressed in the specification by making the
-  value corresponding to the table key a list instead of an object. Additionally
-  an `if` key sets the condition under which the row is emitted.
+Refers to multiple fields in the source format. Requires
+a `combinedType` attribute specifying the combination criteria, and
+a `fields` attribute which a list of fields that will be combined.
+Accepted values for `combinedType` are:
 
-  ```ini
-  [[table]]
-  date = { field = "dsstdtc" }
-  name = "headache"
-  if = { headache_cmyn = 1 }
+* *any* - Whether any of the fields are non-null (truthy)
+* *all* - Whether all of the fields are non-null (truthy)
+* *firstNonNull* - First in the list of fields that has a non-null value
+* *list* - List of various fields
 
-  [[table]]
-  date = { field = "dsstdtc" }
-  name = "cough"
-  if = { cough_cmyn = 1 }
-  ```
+A combinedType can have multiple fields within a `fields` key, or can specify
+multiple fields with a `fieldPattern` key which is a regex that is matched to the
+list of fields:
 
-* **Data transformations using `apply`**: Arbitrary functions can be applied to source fields. adtl ships with a
-  library found in the `transformations.py` file, but users may add their own. Parameters other than the source field
-  which need to be parsed into the transformation function must be listed as `apply_params`, in the same order as they
-  should be passed to the transformation function.
+```ini
+[table.has_liver_disease]
+combinedType = "list"
+fields = [
+  { fieldPattern = ".*liv.*", values = { 1 = true, 0 = false }}
+]
+```
 
-  ```ini
-  [[table]]
-    field = "icu_admitted"
-    apply = { function = "isNotNull" }
-  
-  [[table]]
-    field = "brthdtc"
-    apply = { function = "yearsElapsed", params = ["dsstdat"] }
+Example of a `combinedType = "any"` mapping:
 
-  ```
+```ini
+[table.has_liver_disease]
+combinedType = "any"
+fields =  [
+  { field = "modliv", description = "Moderate liver disease", values = { 1 = true, 0 = false }},
+  { field = "mildliver", description = "Mild liver disease", values = { 1 = true, 0 = false }},
+]
+```
+
+**excludeWhen**: List fields can have an optional *excludeWhen* key which can either be a list of values or `none` or `false-like`. When it is `none` we drop the null values (None in Python) or it can be `false-like` in which case false-like values (`bool(x) == False` in Python) are excluded (empty lists, boolean False, 0). Alternatively a list of values to be excluded can be provided.
+
+If *excludeWhen* is not set, no exclusions take place and all values are returned as-is.
+
+### Data transformations (apply)
+
+Arbitrary functions can be applied to source fields. adtl ships with a library
+found in the `transformations.py` file, but users may add their own. Parameters
+other than the source field which need to be parsed into the transformation
+function must be listed as `params`, in the same order as they should be
+passed to the transformation function.
+
+```ini
+[[table]]
+  field = "icu_admitted"
+  apply = { function = "isNotNull" }
+
+[[table]]
+  field = "brthdtc"
+  apply = { function = "yearsElapsed", params = ["dsstdat"] }
+
+```
+
+### Conditional rows
+
+For the *oneToMany* case, each row in the source file generates
+multiple rows for the target. This is expressed in the specification by making the
+value corresponding to the table key a list instead of an object. Additionally
+an `if` key sets the condition under which the row is emitted.
+
+```ini
+[[table]]
+date = { field = "dsstdtc" }
+name = "headache"
+if = { headache_cmyn = 1 }
+
+[[table]]
+date = { field = "dsstdtc" }
+name = "cough"
+if = { cough_cmyn = 1 }
+```
