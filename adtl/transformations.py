@@ -5,11 +5,11 @@ import pint
 
 
 def isNotNull(value):
-    True if value != None and value != "" else False
+    return value not in [None, ""]
 
 
 def yearsElapsed(birthdate, currentdate):
-    if birthdate == (None or "") or currentdate == (None or ""):
+    if birthdate in [None, ""] or currentdate in [None, ""]:
         return None
 
     bd = datetime.strptime(birthdate, "%Y-%m-%d")

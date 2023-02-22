@@ -88,14 +88,14 @@ def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
                     value = getattr(tf, transformation)(value, *params)
                 except AttributeError:
                     raise AttributeError(
-                        f"Error using a user-defined transformation: Function {transformation} has not been defined."
+                        f"Error using a data transformation: Function {transformation} has not been defined."
                     )
             else:
                 try:
                     value = getattr(tf, transformation)(value)
                 except AttributeError:
                     raise AttributeError(
-                        f"Error using a user-defined transformation: Function {transformation} has not been defined."
+                        f"Error using a data transformation: Function {transformation} has not been defined."
                     )
         return value
     elif "combinedType" in rule:
