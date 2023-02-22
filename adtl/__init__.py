@@ -255,16 +255,18 @@ def hash_sensitive(value: str) -> str:
 
 
 class Parser:
-    data: StrDict = {}
-    defs: StrDict = {}
-    validators: StrDict = {}
-    fieldnames: Dict[str, List[str]] = {}
-
     def __init__(self, spec: Union[str, Path, StrDict]):
         "Loads specification from spec in format (default json)"
+
+        self.data: StrDict = {}
+        self.defs: StrDict = {}
+        self.fieldnames: Dict[str, List[str]] = {}
+        self.specfile = None
+        self.validators: StrDict = {}
         if isinstance(spec, str):
             spec = Path(spec)
         if isinstance(spec, Path):
+            self.specfile = spec
             fmt = spec.suffix[1:]
             if fmt not in SUPPORTED_FORMATS:
                 raise ValueError(f"adtl specification format not supported: {fmt}")
@@ -292,7 +294,7 @@ class Parser:
                         continue
                     self.validators[table] = fastjsonschema.compile(res.json())
                 else:  # local file
-                    with open(schema) as fp:
+                    with (self.specfile.parent / schema).open() as fp:
                         self.validators[table] = fastjsonschema.compile(json.load(fp))
 
             if self.tables[table].get("groupBy"):
