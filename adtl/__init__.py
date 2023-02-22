@@ -78,14 +78,14 @@ def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
                 value = datetime.strptime(value, source_date).strftime(target_date)
         if "apply" in rule and value != "":
             # apply data transformations.
-            transformation = rule["apply"]["mappingType"]
-            if "apply_params" in rule["apply"]:
-                apply_params = [
-                    row[rule["apply"]["apply_params"][i]]
-                    for i in range(len(rule["apply"]["apply_params"]))
+            transformation = rule["apply"]["function"]
+            if "params" in rule["apply"]:
+                params = [
+                    row[rule["apply"]["params"][i]]
+                    for i in range(len(rule["apply"]["params"]))
                 ]
                 try:
-                    value = getattr(tf, transformation)(value, *apply_params)
+                    value = getattr(tf, transformation)(value, *params)
                 except AttributeError:
                     raise AttributeError(
                         f"Error using a user-defined transformation: Function {transformation} has not been defined."

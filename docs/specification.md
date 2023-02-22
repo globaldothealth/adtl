@@ -208,10 +208,10 @@ such as hashing the field.
   ```ini
   [[table]]
     field = "icu_admitted"
-    apply = { mappingType = "isNotNull" }
+    apply = { function = "isNotNull" }
   
   [[table]]
     field = "brthdtc"
-    apply = { mappingType = "yearsElapsed", apply_params = ["dsstdat"] }
+    apply = { function = "yearsElapsed", params = ["dsstdat"] }
 
   ```
