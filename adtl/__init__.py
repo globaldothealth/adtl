@@ -13,6 +13,8 @@ from typing import Any, Dict, Iterable, List, Optional, Union
 
 import pint
 import tomli
+import requests
+import fastjsonschema
 from tqdm import tqdm
 
 import adtl.transformations as tf
@@ -53,11 +55,13 @@ def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
         if "if" in rule and not parse_if(row, rule["if"]):
             return None
         value = row[rule["field"]]
+        if value == "":
+            return None
         if "values" in rule:
             value = rule["values"].get(value)
         # Either source_unit`` / unit OR source_date / date triggers conversion
         # do not parse units if value is empty
-        if "source_unit" in rule and "unit" in rule and value != "":
+        if "source_unit" in rule and "unit" in rule:
             assert "source_date" not in rule and "date" not in rule
             source_unit = get_value(row, rule["source_unit"])
             unit = rule["unit"]
@@ -253,6 +257,7 @@ def hash_sensitive(value: str) -> str:
 class Parser:
     data: StrDict = {}
     defs: StrDict = {}
+    validators: StrDict = {}
     fieldnames: Dict[str, List[str]] = {}
 
     def __init__(self, spec: Union[str, Path, StrDict]):
@@ -272,6 +277,24 @@ class Parser:
         self.spec = expand_refs(self.spec, self.defs)
         self.validate_spec()
         for table in self.tables:
+            if schema := self.tables[table].get("schema"):
+                if schema.startswith("http"):
+                    try:
+                        if (res := requests.get(schema)).status_code != 200:
+                            logging.warning(
+                                f"Could not fetch schema for table {table!r}, will not validate"
+                            )
+                            continue
+                    except ConnectionError:
+                        logging.warning(
+                            f"Could not fetch schema for table {table!r}, will not validate"
+                        )
+                        continue
+                    self.validators[table] = fastjsonschema.compile(res.json())
+                else:  # local file
+                    with open(schema) as fp:
+                        self.validators[table] = fastjsonschema.compile(json.load(fp))
+
             if self.tables[table].get("groupBy"):
                 self.data[table] = defaultdict(dict)
             else:
@@ -342,31 +365,33 @@ class Parser:
                 }
             )
 
-    def parse(self, file: str):
+    def parse(self, file: str, skip_validation=False):
         "Transform file according to specification"
         with open(file) as fp:
             reader = csv.DictReader(fp)
-            for row in tqdm(
-                reader,
-                desc=f"[{self.name}] parsing {Path(file).name}",
-            ):
-                for table in self.tables:
-                    self.update_table(table, row)
-        self.validate()
-        return self
+            return self.parse_rows(
+                tqdm(
+                    reader,
+                    desc=f"[{self.name}] parsing {Path(file).name}",
+                ),
+                skip_validation=skip_validation,
+            )
 
-    def parse_rows(self, rows: List[StrDict], validate: bool = False):
-        "Transform rows according to specification"
+    def parse_rows(self, rows: Iterable[StrDict], skip_validation=False):
+        "Transform rows from an iterable according to specification"
         for row in rows:
             for table in self.tables:
                 self.update_table(table, row)
-        if validate:
-            self.validate()
+        if not skip_validation:
+            for table in self.validators:
+                for row in self.read_table(table):
+                    try:
+                        self.validators[table](row)
+                        row["adtl_valid"] = True
+                    except fastjsonschema.exceptions.JsonSchemaValueException as e:
+                        row["adtl_valid"] = False
+                        row["adtl_error"] = e.message
         return self
-
-    def validate(self):
-        "Use schemas to validate data"
-        pass
 
     def clear(self):
         "Clears parser state"
@@ -391,7 +416,13 @@ class Parser:
 
         def writerows(fp, table):
             print(f"Writing {table}")
-            writer = csv.DictWriter(fp, fieldnames=self.fieldnames[table])
+            writer = csv.DictWriter(
+                fp,
+                fieldnames=(
+                    ["adtl_valid", "adtl_error"] if table in self.validators else []
+                )
+                + self.fieldnames[table],
+            )
             writer.writeheader()
             for row in self.read_table(table):
                 writer.writerow(row)
@@ -415,7 +446,7 @@ class Parser:
 def main():
     cmd = argparse.ArgumentParser(
         prog="adtl",
-        description="Transforms data into CSV given a specification",
+        description="Transforms data into CSV given a specification (+validation)",
     )
     cmd.add_argument(
         "spec",

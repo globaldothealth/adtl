@@ -80,6 +80,12 @@ SOURCE_GROUPBY = [
     {"sex": "2", "subjid": "001", "dsstdat": "2022-01-11", "hostdat": "2020-06-08"},
 ]
 
+SOURCE_GROUPBY_INVALID = [
+    {"sex": "1", "subjid": "007", "dsstdat": "2020-05-06", "hostdat": "2020-06-08"},
+    {"sex": "5", "subjid": "001", "dsstdat": "2022-01-11", "hostdat": "8/6/2022"},
+    {"sex": "1", "subjid": "009", "dsstdat": "2020-05-06", "hostdat": "8/6/2020"},
+]
+
 BUFFER_GROUPBY = """
 sex_at_birth,subject_id,dataset_id,country_iso3,enrolment_date,admission_date
 male,007,dataset-2020-03-23,GBR,2020-05-06,2020-06-08
@@ -265,6 +271,13 @@ def test_parse_write_buffer(snapshot):
     assert buf == snapshot
 
 
+def test_validation(snapshot):
+    ps = parser.Parser(TEST_PARSERS_PATH / "groupBy-with-schema.json")
+    buf = ps.parse_rows(SOURCE_GROUPBY_INVALID).write_csv("subject")
+    print(buf)
+    assert buf == snapshot
+
+
 @pytest.mark.parametrize(
     "source,error",
     [
@@ -308,10 +321,6 @@ def test_constant_table():
     assert list(ps.read_table("metadata")) == [
         {"dataset": "constant", "version": "20220505.1", "format": "csv"}
     ]
-
-
-def test_validate():
-    assert True
 
 
 @pytest.mark.parametrize(

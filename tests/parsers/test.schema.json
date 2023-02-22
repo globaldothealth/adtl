@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "$id": "https://example.com/test.schema.json",
+  "title": "test schema",
+  "required": [
+    "subject_id",
+    "country_iso3",
+    "enrolment_date",
+    "sex_at_birth"
+  ],
+  "properties": {
+    "subject_id": {
+      "type": "string",
+      "description": "Unique ID of subject",
+      "category": "metadata"
+    },
+    "dataset_id": {
+      "type": "string",
+      "description": "Dataset ID, refers to a specific version",
+      "category": "metadata"
+    },
+    "country_iso3": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "ISO 3166-1 alpha-3 country code of study site",
+      "category": "site-details"
+    },
+    "enrolment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of enrolment in the study",
+      "category": "site-details"
+    },
+    "admission_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of admission to site",
+      "category": "site-details"
+    },
+    "sex_at_birth": {
+      "enum": [
+        "male",
+        "female",
+        "non_binary"
+      ],
+      "description": "Sex at birth",
+      "category": "demographics"
+    }
+  }
+}
