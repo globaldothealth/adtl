@@ -1,0 +1,30 @@
+[adtl]
+  name = "apply"
+  description = "Example using apply"
+
+  [adtl.tables.subject]
+    kind = 'groupBy'
+    groupBy = "subject_id"
+    aggregation = "lastNotNull"
+
+[subject]
+
+  [subject.subject_id]
+    field = "subjid"
+
+  [subject.age]
+    description = "Age/Estimated age"
+    combinedType = "firstNonNull"
+
+    [[subject.age.fields]]
+      field = "brthdtc"
+      apply = { function = "yearsElapsed", params = ["dsstdat"] }
+
+    [[subject.age.fields]]
+      field = "age"
+      unit = "years"
+      source_unit = { field = "ageu", values = { 1 = "months", 2 = "years" } }
+
+[subject.icu_admitted]
+  field = "icu_hostdat"
+  apply = { function = "isNotNull" }
