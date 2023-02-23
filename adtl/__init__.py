@@ -55,6 +55,27 @@ def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
         if "if" in rule and not parse_if(row, rule["if"]):
             return None
         value = row[rule["field"]]
+        if "apply" in rule:
+            # apply data transformations.
+            transformation = rule["apply"]["function"]
+            if "params" in rule["apply"]:
+                params = [
+                    row[rule["apply"]["params"][i]]
+                    for i in range(len(rule["apply"]["params"]))
+                ]
+                try:
+                    value = getattr(tf, transformation)(value, *params)
+                except AttributeError:
+                    raise AttributeError(
+                        f"Error using a data transformation: Function {transformation} has not been defined."
+                    )
+            else:
+                try:
+                    value = getattr(tf, transformation)(value)
+                except AttributeError:
+                    raise AttributeError(
+                        f"Error using a data transformation: Function {transformation} has not been defined."
+                    )
         if value == "":
             return None
         if "values" in rule:
@@ -80,27 +101,6 @@ def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
             source_date = get_value(row, rule["source_date"])
             if source_date != target_date:
                 value = datetime.strptime(value, source_date).strftime(target_date)
-        if "apply" in rule and value != "":
-            # apply data transformations.
-            transformation = rule["apply"]["function"]
-            if "params" in rule["apply"]:
-                params = [
-                    row[rule["apply"]["params"][i]]
-                    for i in range(len(rule["apply"]["params"]))
-                ]
-                try:
-                    value = getattr(tf, transformation)(value, *params)
-                except AttributeError:
-                    raise AttributeError(
-                        f"Error using a data transformation: Function {transformation} has not been defined."
-                    )
-            else:
-                try:
-                    value = getattr(tf, transformation)(value)
-                except AttributeError:
-                    raise AttributeError(
-                        f"Error using a data transformation: Function {transformation} has not been defined."
-                    )
         return value
     elif "combinedType" in rule:
         return get_combined_type(row, rule)

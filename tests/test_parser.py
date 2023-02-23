@@ -92,6 +92,31 @@ male,007,dataset-2020-03-23,GBR,2020-05-06,2020-06-08
 female,001,dataset-2020-03-23,GBR,2022-01-11,2020-06-08
 """
 
+SOURCE_APPLY_PRESENT = [
+    {
+        "subjid": "007",
+        "brthdtc": "1996-02-24",
+        "dsstdat": "2023-02-24",
+        "age": "22",
+        "ageu": 1,
+        "icu_hostdat": 1,
+    }
+]
+APPLY_PRESENT_OUTPUT = [
+    {"subject_id": "007", "age": pytest.approx(27.0, 0.001), "icu_admitted": True}
+]
+SOURCE_APPLY_ABSENT = [
+    {
+        "subjid": "007",
+        "brthdtc": "",
+        "dsstdat": "2023-02-24",
+        "age": "22",
+        "ageu": 1,
+        "icu_hostdat": "",
+    }
+]
+APPLY_ABSENT_OUTPUT = [{"subject_id": "007", "age": 22.0, "icu_admitted": False}]
+
 
 @pytest.mark.parametrize(
     "row_rule,expected",
@@ -358,3 +383,24 @@ def test_format_equivalence():
     adtl_json = parser.Parser(TEST_PARSERS_PATH / "groupBy-defs.json")
     adtl_toml = parser.Parser(TEST_PARSERS_PATH / "groupBy-defs.toml")
     assert adtl_json.spec == adtl_toml.spec
+
+
+# write functions to check that apply is working properly
+def test_apply_when_values_are_present():
+    apply_values_present_output = list(
+        parser.Parser(TEST_PARSERS_PATH / "apply.toml")
+        .parse_rows(SOURCE_APPLY_PRESENT)
+        .read_table("subject")
+    )
+
+    assert apply_values_present_output == APPLY_PRESENT_OUTPUT
+
+
+def test_apply_when_values_not_present():
+    apply_values_absent_output = list(
+        parser.Parser(TEST_PARSERS_PATH / "apply.toml")
+        .parse_rows(SOURCE_APPLY_ABSENT)
+        .read_table("subject")
+    )
+
+    assert apply_values_absent_output == APPLY_ABSENT_OUTPUT
