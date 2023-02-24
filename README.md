@@ -1,7 +1,10 @@
-# adtl -- another data transformation language
+# adtl – another data transformation language
 
 [![](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![tests](https://github.com/globaldothealth/adtl/actions/workflows/tests.yml/badge.svg)](https://github.com/globaldothealth/adtl/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/globaldothealth/adtl/branch/main/graph/badge.svg?token=QTD7HRR3TO)](https://codecov.io/gh/globaldothealth/adtl)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 
 adtl is a data transformation language (DTL) used by some applications in
 [Global.health](https://global.health), notably for the ISARIC clinical data pipeline at
@@ -54,3 +57,7 @@ print(parser.tables) # list of tables created
 for row in parser.parse().read_table(table):
     print(row)
 ```
+
+## Development
+
+Install [pre-commit](https://pre-commit.com) and setup pre-commit hooks (`pre-commit install`) which will do linting checks before commit.
