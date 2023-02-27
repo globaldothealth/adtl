@@ -8,6 +8,9 @@ Specification files can be in TOML or JSON, with TOML preferred due to readabili
 Each specification file can refer to one or more tables, which are
 created in parallel from one source file.
 
+[JSON schema](../schemas/dev.schema.json): This is a partial JSON schema to validate
+adtl parser files.
+
 ## Metadata
 
 **Required fields**. These metadata fields are defined under a header key `adtl`.
