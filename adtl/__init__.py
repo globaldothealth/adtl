@@ -452,7 +452,7 @@ class Parser:
         if self.report_available:
             print(f"\n|table       \t|valid\t|total\t|percentage_valid|")
             print("|---------------|-------|-------|----------------|")
-            for table in self.report["total_valid"]:
+            for table in self.report["total"]:
                 print(
                     f"|{table:14s}\t|{self.report['total_valid'][table]}\t|{self.report['total'][table]}\t"
                     f"|{self.report['total_valid'][table]/self.report['total'][table]:%} |"
