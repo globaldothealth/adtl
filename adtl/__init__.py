@@ -450,17 +450,18 @@ class Parser:
 
     def show_report(self):
         if self.report_available:
-            print(f"\nTABLE       \tVALID\tTOTAL\tPERCENTAGE_VALID")
+            print(f"\n|table       \t|valid\t|total\t|percentage_valid|")
+            print("|---------------|-------|-------|----------------|")
             for table in self.report["total_valid"]:
                 print(
-                    f"{table:14s}\t{self.report['total_valid'][table]}\t{self.report['total'][table]}\t"
-                    f"{self.report['total_valid'][table]/self.report['total'][table]:%}"
+                    f"|{table:14s}\t|{self.report['total_valid'][table]}\t|{self.report['total'][table]}\t"
+                    f"|{self.report['total_valid'][table]/self.report['total'][table]:%} |"
                 )
             print()
             for table in self.report["errors"]:
-                print(f"ERRORS\t{table}")
+                print(f"## {table}\n")
                 for message, count in self.report["errors"][table].most_common():
-                    print(f"  {count}\t{message}")
+                    print(f"* {count}: {message}")
                 print()
 
     def save(self, output: Optional[str] = None):
