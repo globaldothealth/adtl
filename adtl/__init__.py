@@ -5,7 +5,7 @@ import io
 import json
 import logging
 import re
-from collections import defaultdict
+from collections import defaultdict, Counter
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -263,6 +263,12 @@ class Parser:
         self.fieldnames: Dict[str, List[str]] = {}
         self.specfile = None
         self.validators: StrDict = {}
+        self.report = {
+            "errors": defaultdict(Counter),
+            "total_valid": defaultdict(int),
+            "total": defaultdict(int),
+        }
+        self.report_available = False
         if isinstance(spec, str):
             spec = Path(spec)
         if isinstance(spec, Path):
@@ -384,15 +390,19 @@ class Parser:
         for row in rows:
             for table in self.tables:
                 self.update_table(table, row)
+        self.report_available = not skip_validation
         if not skip_validation:
             for table in self.validators:
                 for row in self.read_table(table):
+                    self.report["total"][table] += 1
                     try:
                         self.validators[table](row)
                         row["adtl_valid"] = True
+                        self.report["total_valid"][table] += 1
                     except fastjsonschema.exceptions.JsonSchemaValueException as e:
                         row["adtl_valid"] = False
                         row["adtl_error"] = e.message
+                        self.report["errors"][table].update([e.message])
         return self
 
     def clear(self):
@@ -438,11 +448,27 @@ class Parser:
             buf = io.StringIO()
             return writerows(buf, table).getvalue()
 
+    def show_report(self):
+        if self.report_available:
+            print(f"\nTABLE       \tVALID\tTOTAL\tPERCENTAGE_VALID")
+            for table in self.report["total_valid"]:
+                print(
+                    f"{table:14s}\t{self.report['total_valid'][table]}\t{self.report['total'][table]}\t"
+                    f"{self.report['total_valid'][table]/self.report['total'][table]:%}"
+                )
+            print()
+            for table in self.report["errors"]:
+                print(f"ERRORS\t{table}")
+                for message, count in self.report["errors"][table].most_common():
+                    print(f"  {count}\t{message}")
+                print()
+
     def save(self, output: Optional[str] = None):
         "Saves all tables to CSV"
 
         for table in self.tables:
             self.write_csv(table, f"{output}-{table}.csv")
+        self.show_report()
 
 
 def main():
