@@ -355,10 +355,16 @@ class Parser:
                     self.data[table][group_key][attr] = value
         elif kind == "oneToMany":
             for match in self.spec[table]:
-                rowIf = match.pop("if", None)
-                if rowIf is None or parse_if(row, rowIf):
+                if "if" not in match:
+                    raise ValueError(
+                        f"oneToMany tables must have a 'if' key setting condition for row to be emitted: {match!r}"
+                    )
+                if parse_if(row, match["if"]):
                     self.data[table].append(
-                        {attr: get_value(row, match[attr]) for attr in match}
+                        {
+                            attr: get_value(row, match[attr])
+                            for attr in set(match.keys()) - {"if"}
+                        }
                     )
         elif kind == "constant":  # only one row
             self.data[table] = [self.spec[table]]
