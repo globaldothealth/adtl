@@ -35,7 +35,16 @@ def get_value(row: StrDict, rule: Rule) -> Any:
     value = get_value_unhashed(row, rule)
     if isinstance(rule, dict) and rule.get("sensitive") and value is not None:
         return hash_sensitive(value)
-    else:
+    if not isinstance(value, str):
+        return value
+    try:
+        return int(value)
+    except ValueError:
+        try:
+            return float(value)
+        except ValueError:
+            return value
+    except TypeError:
         return value
 
 
