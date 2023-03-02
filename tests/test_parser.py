@@ -76,25 +76,25 @@ ONE_MANY_OUTPUT = [
 ]
 
 SOURCE_GROUPBY = [
-    {"sex": "1", "subjid": "007", "dsstdat": "2020-05-06", "hostdat": "2020-06-08"},
-    {"sex": "2", "subjid": "001", "dsstdat": "2022-01-11", "hostdat": "2020-06-08"},
+    {"sex": "1", "subjid": "S007", "dsstdat": "2020-05-06", "hostdat": "2020-06-08"},
+    {"sex": "2", "subjid": "S001", "dsstdat": "2022-01-11", "hostdat": "2020-06-08"},
 ]
 
 SOURCE_GROUPBY_INVALID = [
-    {"sex": "1", "subjid": "007", "dsstdat": "2020-05-06", "hostdat": "2020-06-08"},
-    {"sex": "5", "subjid": "001", "dsstdat": "2022-01-11", "hostdat": "8/6/2022"},
-    {"sex": "1", "subjid": "009", "dsstdat": "2020-05-06", "hostdat": "8/6/2020"},
+    {"sex": "1", "subjid": "S007", "dsstdat": "2020-05-06", "hostdat": "2020-06-08"},
+    {"sex": "5", "subjid": "S001", "dsstdat": "2022-01-11", "hostdat": "8/6/2022"},
+    {"sex": "1", "subjid": "S009", "dsstdat": "2020-05-06", "hostdat": "8/6/2020"},
 ]
 
 BUFFER_GROUPBY = """
 sex_at_birth,subject_id,dataset_id,country_iso3,enrolment_date,admission_date
-male,007,dataset-2020-03-23,GBR,2020-05-06,2020-06-08
-female,001,dataset-2020-03-23,GBR,2022-01-11,2020-06-08
+male,S007,dataset-2020-03-23,GBR,2020-05-06,2020-06-08
+female,S001,dataset-2020-03-23,GBR,2022-01-11,2020-06-08
 """
 
 SOURCE_APPLY_PRESENT = [
     {
-        "subjid": "007",
+        "subjid": "S007",
         "brthdtc": "1996-02-24",
         "dsstdat": "2023-02-24",
         "age": "22",
@@ -103,11 +103,11 @@ SOURCE_APPLY_PRESENT = [
     }
 ]
 APPLY_PRESENT_OUTPUT = [
-    {"subject_id": "007", "age": pytest.approx(27.0, 0.001), "icu_admitted": True}
+    {"subject_id": "S007", "age": pytest.approx(27.0, 0.001), "icu_admitted": True}
 ]
 SOURCE_APPLY_ABSENT = [
     {
-        "subjid": "007",
+        "subjid": "S007",
         "brthdtc": "",
         "dsstdat": "2023-02-24",
         "age": "22",
@@ -115,14 +115,14 @@ SOURCE_APPLY_ABSENT = [
         "icu_hostdat": "",
     }
 ]
-APPLY_ABSENT_OUTPUT = [{"subject_id": "007", "age": 22.0, "icu_admitted": False}]
+APPLY_ABSENT_OUTPUT = [{"subject_id": "S007", "age": 22.0, "icu_admitted": False}]
 
 
 @pytest.mark.parametrize(
     "row_rule,expected",
     [
         (({"diabetes_mhyn": "1"}, RULE_SINGLE_FIELD_WITH_MAPPING), True),
-        (({"diabetes_mhyn": "1"}, RULE_SINGLE_FIELD), "1"),
+        (({"diabetes_mhyn": "1"}, RULE_SINGLE_FIELD), 1),
         (({}, "CONST"), "CONST"),
         (({"modliv": "1", "mildliver": "0"}, RULE_COMBINED_TYPE_ANY), True),
         (({"modliv": "1", "mildliver": "0"}, RULE_COMBINED_TYPE_ALL), False),
@@ -142,15 +142,15 @@ APPLY_ABSENT_OUTPUT = [{"subject_id": "007", "age": 22.0, "icu_admitted": False}
             ({"modliv": "1", "mildliver": "3"}, RULE_COMBINED_TYPE_LIST_PATTERN),
             [True, None],
         ),
-        (({"id": "1"}, RULE_NON_SENSITIVE), "1"),
+        (({"id": "1"}, RULE_NON_SENSITIVE), 1),
         (
             ({"id": "1"}, RULE_SENSITIVE),
             "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
         ),
-        (({"first": "1", "second": ""}, RULE_COMBINED_FIRST_NON_NULL), "1"),
-        (({"first": "1", "second": "2"}, RULE_COMBINED_FIRST_NON_NULL), "1"),
-        (({"first": "2", "second": "1"}, RULE_COMBINED_FIRST_NON_NULL), "2"),
-        (({"first": "", "second": "3"}, RULE_COMBINED_FIRST_NON_NULL), "3"),
+        (({"first": "1", "second": ""}, RULE_COMBINED_FIRST_NON_NULL), 1),
+        (({"first": "1", "second": "2"}, RULE_COMBINED_FIRST_NON_NULL), 1),
+        (({"first": "2", "second": "1"}, RULE_COMBINED_FIRST_NON_NULL), 2),
+        (({"first": "", "second": "3"}, RULE_COMBINED_FIRST_NON_NULL), 3),
         ((ROW_CONDITIONAL, RULE_CONDITIONAL_OK), "2022-01-01"),
         ((ROW_CONDITIONAL, RULE_CONDITIONAL_FAIL), None),
         ((ROW_UNIT_MONTH, RULE_UNIT), 1.5),
