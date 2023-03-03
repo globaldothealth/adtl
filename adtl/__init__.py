@@ -334,9 +334,15 @@ class Parser:
             if self.tables[table].get("kind") != "oneToMany":
                 self.fieldnames[table] = sorted(list(self.spec[table].keys()))
             else:
-                self.fieldnames[table] = sorted(
+                self.fieldnames[table] = list(
+                    self.tables[table].get("common", {}).keys()
+                ) + sorted(
                     list(set(sum([list(m.keys()) for m in self.spec[table]], [])))
                 )
+                if commonMappings := self.tables[table].get("common", {}):
+                    for match in self.spec[table]:
+                        match.update(commonMappings)
+
         for table in self.tables:
             aggregation = self.tables[table].get("aggregation")
             group_field = self.tables[table].get("groupBy")
