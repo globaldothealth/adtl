@@ -33,6 +33,8 @@ adtl parser files.
     attribute to the last non-null value in the grouped dataset.
   * *schema* (optional): Specifies JSON schema to use for validation,
     can be a relative path, or a URL
+  * *common* (optional): Specifies common mappings that are applied to every if-block
+    in a *kind*=*oneToMany* table.
 
 * **defs**: Definitions that can be referred to elsewhere in the schema
 
