@@ -29,18 +29,6 @@ def test_yearsElasped(test_date_birth, test_date_current, expected):
 
 
 @pytest.mark.parametrize(
-    "test_date_start, test_date_current, expected",
-    [
-        ("2023-02-01", "2023-02-22", "2023-02-01/2023-02-22"),
-        ("", "2023-02-22", None),
-        (None, "2023-02-22", None),
-    ],
-)
-def test_durationPeriod(test_date_start, test_date_current, expected):
-    assert transform.durationPeriod(test_date_start, test_date_current) == expected
-
-
-@pytest.mark.parametrize(
     "test_duration_start, test_duration_current, expected",
     [
         ("2023-02-01", "2023-03-05", 32),

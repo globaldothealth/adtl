@@ -19,19 +19,6 @@ def yearsElapsed(birthdate, currentdate):
     return pint.Quantity(days.days, "days").to("years").m
 
 
-def durationPeriod(symptomstartdate, currentdate):
-    """Returns an ISO time interval (start-Date/end-Date)."""
-    if symptomstartdate in [None, ""] or currentdate in [None, ""]:
-        return None
-
-    sd = datetime.strptime(symptomstartdate, "%Y-%m-%d")
-    sd = sd.strftime("%Y-%m-%d")
-    cd = datetime.strptime(currentdate, "%Y-%m-%d")
-    cd = cd.strftime("%Y-%m-%d")
-
-    return sd + "/" + cd
-
-
 def durationDays(symptomstartdate, currentdate):
     """
     Returns the number of days between two dates.
