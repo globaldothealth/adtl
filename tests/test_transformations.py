@@ -26,3 +26,17 @@ def test_yearsElasped(test_date_birth, test_date_current, expected):
     assert transform.yearsElapsed(test_date_birth, test_date_current) == pytest.approx(
         expected, 0.001
     )
+
+
+@pytest.mark.parametrize(
+    "test_duration_start, test_duration_current, expected",
+    [
+        ("2023-02-01", "2023-03-05", 32),
+        ("", "2023-02-22", None),
+        (None, "2023-02-22", None),
+    ],
+)
+def test_durationDays(test_duration_start, test_duration_current, expected):
+    assert (
+        transform.durationDays(test_duration_start, test_duration_current) == expected
+    )
