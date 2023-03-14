@@ -171,6 +171,7 @@ APPLY_OBSERVATIONS_OUTPUT = [
         (({"diabetes_mhyn": "1"}, RULE_SINGLE_FIELD), 1),
         (({}, "CONST"), "CONST"),
         (({"modliv": "1", "mildliver": "0"}, RULE_COMBINED_TYPE_ANY), True),
+        (({"modliv": "", "mildliver": ""}, RULE_COMBINED_TYPE_ANY), False),
         (({"modliv": "1", "mildliver": "0"}, RULE_COMBINED_TYPE_ALL), False),
         (({"modliv": "1", "mildliver": "0"}, RULE_COMBINED_TYPE_LIST), [True, False]),
         (
@@ -220,6 +221,7 @@ APPLY_OBSERVATIONS_OUTPUT = [
             ),
             ["Lopinavir/Ritonvir", "Interferon alpha"],
         ),
+        (({"first": "", "second": ""}, RULE_COMBINED_FIRST_NON_NULL), None),
     ],
 )
 def test_get_value(row_rule, expected):
