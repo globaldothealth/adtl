@@ -70,6 +70,8 @@ def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
             if "params" in rule["apply"]:
                 params = [
                     row[rule["apply"]["params"][i]]
+                    if isinstance(rule["apply"]["params"][i], str)
+                    else rule["apply"]["params"][i]
                     for i in range(len(rule["apply"]["params"]))
                 ]
                 try:
