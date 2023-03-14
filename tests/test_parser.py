@@ -117,6 +117,34 @@ SOURCE_APPLY_ABSENT = [
 ]
 APPLY_ABSENT_OUTPUT = [{"subject_id": "S007", "age": 22.0, "icu_admitted": False}]
 
+APPLY_OBSERVATIONS_SOURCE = [
+    {
+        "dsstdat": "2023-02-01",
+        "flw_headache": "1",
+        "flw_cough": "1",
+        "dyspnea_cmyn": "0",
+    }
+]
+
+APPLY_OBSERVATIONS_OUTPUT = [
+    {
+        "date": "2023-02-01",
+        "start_date": "2023-01-22",
+        "phase": "followup",
+        "duration_type": "event",
+        "name": "headache",
+        "is_present": True,
+    },
+    {
+        "date": "2023-02-01",
+        "start_date": "2023-01-25",
+        "phase": "followup",
+        "duration_type": "event",
+        "name": "cough",
+        "is_present": True,
+    },
+]
+
 
 @pytest.mark.parametrize(
     "row_rule,expected",
@@ -404,3 +432,13 @@ def test_apply_when_values_not_present():
     )
 
     assert apply_values_absent_output == APPLY_ABSENT_OUTPUT
+
+
+def test_apply_in_observations_table():
+    apply_observations_output = list(
+        parser.Parser(TEST_PARSERS_PATH / "apply-observations.toml")
+        .parse_rows(APPLY_OBSERVATIONS_SOURCE)
+        .read_table("observation")
+    )
+
+    assert apply_observations_output == APPLY_OBSERVATIONS_OUTPUT

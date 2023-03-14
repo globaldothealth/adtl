@@ -1,6 +1,6 @@
 """ Functions which can be applied to source fields, allowing extensibility """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import pint
 
 
@@ -33,3 +33,17 @@ def durationDays(symptomstartdate, currentdate):
 
     days = cd - bd
     return days.days
+
+
+def startDate(enddate, duration):
+    """
+    Retuns the start date in ISO format, given the end date and the duration.
+    """
+    if enddate in [None, ""] or duration in [None, ""]:
+        return None
+
+    ed = datetime.strptime(enddate, "%Y-%m-%d")
+
+    sd = ed - timedelta(days=duration)
+
+    return sd.strftime("%Y-%m-%d")

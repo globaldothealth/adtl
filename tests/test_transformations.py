@@ -40,3 +40,17 @@ def test_durationDays(test_duration_start, test_duration_current, expected):
     assert (
         transform.durationDays(test_duration_start, test_duration_current) == expected
     )
+
+
+@pytest.mark.parametrize(
+    "test_startdate_start, test_startdate_duration, expected",
+    [
+        ("2023-02-01", 10, "2023-01-22"),
+        ("", "2023-02-22", None),
+        (None, "2023-02-22", None),
+    ],
+)
+def test_startDate(test_startdate_start, test_startdate_duration, expected):
+    assert (
+        transform.startDate(test_startdate_start, test_startdate_duration) == expected
+    )
