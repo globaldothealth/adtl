@@ -28,6 +28,18 @@ LIVER_DISEASE = [
     },
 ]
 
+ANTIVIRAL_TYPE = [
+    {"field": "antiviral_cmtrt___1", "values": {"1": "Ribavirin"}},
+    {"field": "antiviral_cmtrt___2", "values": {"1": "Lopinavir/Ritonvir"}},
+    {"field": "antiviral_cmtrt___3", "values": {"1": "Interferon alpha"}},
+    {"field": "daily_antiviral_cmtrt___1", "values": {"1": "Ribavirin"}},
+    {"field": "daily_antiviral_cmtrt___2", "values": {"1": "Lopinavir/Ritonvir"}},
+    {"field": "daily_antiviral_cmtrt___3", "values": {"1": "Interferon alpha"}},
+    {"field": "overall_antiviral_cmtrt___1", "values": {"1": "Ribavirin"}},
+    {"field": "overall_antiviral_cmtrt___2", "values": {"1": "Lopinavir/Ritonvir"}},
+    {"field": "overall_antiviral_cmtrt___3", "values": {"1": "Interferon alpha"}},
+]
+
 ROW_CONCISE = {"mildliv": 0, "modliv": 2}
 RULE_EXCLUDE = {
     "combinedType": "list",
@@ -65,6 +77,12 @@ RULE_SENSITIVE = {"field": "id", "sensitive": True}
 
 RULE_DATE_MDY = {"field": "outcome_date", "source_date": "%d/%m/%Y", "date": "%m/%d/%Y"}
 RULE_DATE_ISO = {"field": "outcome_date", "source_date": "%d/%m/%Y"}
+
+RULE_COMBINED_TYPE_SET = {
+    "combinedType": "set",
+    "excludeWhen": "none",
+    "fields": ANTIVIRAL_TYPE,
+}
 
 ONE_MANY_SOURCE = [
     {"dt": "2022-02-05", "headache_cmyn": 1, "cough_cmyn": 1, "dyspnea_cmyn": 0}
@@ -185,6 +203,23 @@ APPLY_OBSERVATIONS_OUTPUT = [
         ((ROW_UNIT_YEAR, RULE_UNIT), 18),
         (({"outcome_date": "02/05/2022"}, RULE_DATE_MDY), "05/02/2022"),
         (({"outcome_date": "02/05/2022"}, RULE_DATE_ISO), "2022-05-02"),
+        (
+            (
+                {
+                    "antiviral_cmtrt___1": "0",
+                    "antiviral_cmtrt___2": "1",
+                    "antiviral_cmtrt___3": "0",
+                    "daily_antiviral_cmtrt___1": "0",
+                    "daily_antiviral_cmtrt___2": "1",
+                    "daily_antiviral_cmtrt___3": "1",
+                    "overall_antiviral_cmtrt___1": "0",
+                    "overall_antiviral_cmtrt___2": "0",
+                    "overall_antiviral_cmtrt___3": "1",
+                },
+                RULE_COMBINED_TYPE_SET,
+            ),
+            ["Lopinavir/Ritonvir", "Interferon alpha"],
+        ),
     ],
 )
 def test_get_value(row_rule, expected):
