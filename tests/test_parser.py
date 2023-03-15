@@ -2,6 +2,7 @@ import sys
 import json
 from pathlib import Path
 import pytest
+from pytest_unordered import unordered
 
 import adtl as parser
 
@@ -219,7 +220,7 @@ APPLY_OBSERVATIONS_OUTPUT = [
                 },
                 RULE_COMBINED_TYPE_SET,
             ),
-            ["Lopinavir/Ritonvir", "Interferon alpha"],
+            unordered(["Lopinavir/Ritonvir", "Interferon alpha"]),
         ),
         (({"first": "", "second": ""}, RULE_COMBINED_FIRST_NON_NULL), None),
     ],
