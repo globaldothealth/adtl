@@ -2,6 +2,7 @@ import sys
 import json
 from pathlib import Path
 import pytest
+from pytest_unordered import unordered
 
 import adtl as parser
 
@@ -26,6 +27,18 @@ LIVER_DISEASE = [
         "values": {"1": True, "0": False, "2": None},
         "description": "Mild liver disease",
     },
+]
+
+ANTIVIRAL_TYPE = [
+    {"field": "antiviral_cmtrt___1", "values": {"1": "Ribavirin"}},
+    {"field": "antiviral_cmtrt___2", "values": {"1": "Lopinavir/Ritonvir"}},
+    {"field": "antiviral_cmtrt___3", "values": {"1": "Interferon alpha"}},
+    {"field": "daily_antiviral_cmtrt___1", "values": {"1": "Ribavirin"}},
+    {"field": "daily_antiviral_cmtrt___2", "values": {"1": "Lopinavir/Ritonvir"}},
+    {"field": "daily_antiviral_cmtrt___3", "values": {"1": "Interferon alpha"}},
+    {"field": "overall_antiviral_cmtrt___1", "values": {"1": "Ribavirin"}},
+    {"field": "overall_antiviral_cmtrt___2", "values": {"1": "Lopinavir/Ritonvir"}},
+    {"field": "overall_antiviral_cmtrt___3", "values": {"1": "Interferon alpha"}},
 ]
 
 ROW_CONCISE = {"mildliv": 0, "modliv": 2}
@@ -65,6 +78,12 @@ RULE_SENSITIVE = {"field": "id", "sensitive": True}
 
 RULE_DATE_MDY = {"field": "outcome_date", "source_date": "%d/%m/%Y", "date": "%m/%d/%Y"}
 RULE_DATE_ISO = {"field": "outcome_date", "source_date": "%d/%m/%Y"}
+
+RULE_COMBINED_TYPE_SET = {
+    "combinedType": "set",
+    "excludeWhen": "none",
+    "fields": ANTIVIRAL_TYPE,
+}
 
 ONE_MANY_SOURCE = [
     {"dt": "2022-02-05", "headache_cmyn": 1, "cough_cmyn": 1, "dyspnea_cmyn": 0}
@@ -153,6 +172,7 @@ APPLY_OBSERVATIONS_OUTPUT = [
         (({"diabetes_mhyn": "1"}, RULE_SINGLE_FIELD), 1),
         (({}, "CONST"), "CONST"),
         (({"modliv": "1", "mildliver": "0"}, RULE_COMBINED_TYPE_ANY), True),
+        (({"modliv": "", "mildliver": ""}, RULE_COMBINED_TYPE_ANY), False),
         (({"modliv": "1", "mildliver": "0"}, RULE_COMBINED_TYPE_ALL), False),
         (({"modliv": "1", "mildliver": "0"}, RULE_COMBINED_TYPE_LIST), [True, False]),
         (
@@ -185,6 +205,24 @@ APPLY_OBSERVATIONS_OUTPUT = [
         ((ROW_UNIT_YEAR, RULE_UNIT), 18),
         (({"outcome_date": "02/05/2022"}, RULE_DATE_MDY), "05/02/2022"),
         (({"outcome_date": "02/05/2022"}, RULE_DATE_ISO), "2022-05-02"),
+        (
+            (
+                {
+                    "antiviral_cmtrt___1": "0",
+                    "antiviral_cmtrt___2": "1",
+                    "antiviral_cmtrt___3": "0",
+                    "daily_antiviral_cmtrt___1": "0",
+                    "daily_antiviral_cmtrt___2": "1",
+                    "daily_antiviral_cmtrt___3": "1",
+                    "overall_antiviral_cmtrt___1": "0",
+                    "overall_antiviral_cmtrt___2": "0",
+                    "overall_antiviral_cmtrt___3": "1",
+                },
+                RULE_COMBINED_TYPE_SET,
+            ),
+            unordered(["Lopinavir/Ritonvir", "Interferon alpha"]),
+        ),
+        (({"first": "", "second": ""}, RULE_COMBINED_FIRST_NON_NULL), None),
     ],
 )
 def test_get_value(row_rule, expected):

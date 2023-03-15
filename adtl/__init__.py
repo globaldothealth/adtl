@@ -219,7 +219,7 @@ def get_combined_type(row: StrDict, rule: StrDict):
             return next(filter(None, [get_value(row, r) for r in rules]))
         except StopIteration:
             return None
-    elif combined_type == "list":
+    elif combined_type == "list" or combined_type == "set":
         excludeWhen = rule.get("excludeWhen")
         if excludeWhen not in [None, "false-like", "none"] and not isinstance(
             excludeWhen, list
@@ -229,6 +229,8 @@ def get_combined_type(row: StrDict, rule: StrDict):
             )
 
         values = [get_value(row, r) for r in rules]
+        if combined_type == "set":
+            values = [*set(values)]
         if excludeWhen is None:
             return values
         if excludeWhen == "none":

@@ -26,7 +26,8 @@ dependencies = [
 test = [
   "pytest",
   "pytest-cov",
-  "syrupy==4.*"
+  "syrupy==4.*",
+  "pytest-unordered"
 ]
 
 [project.urls]
