@@ -281,6 +281,7 @@ class Parser:
         self.fieldnames: Dict[str, List[str]] = {}
         self.specfile = None
         self.validators: StrDict = {}
+        self.schemas: StrDict = {}
         self.report = {
             "errors": defaultdict(Counter),
             "total_valid": defaultdict(int),
@@ -316,15 +317,18 @@ class Parser:
                             f"Could not fetch schema for table {table!r}, will not validate"
                         )
                         continue
-                    self.validators[table] = fastjsonschema.compile(res.json())
+                    self.schemas[table] = res.json()
                 else:  # local file
                     with (self.specfile.parent / schema).open() as fp:
-                        self.validators[table] = fastjsonschema.compile(json.load(fp))
+                        self.schemas[table] = json.load(fp)
+                self.validators[table] = fastjsonschema.compile(self.schemas[table])
 
             if self.tables[table].get("groupBy"):
                 self.data[table] = defaultdict(dict)
             else:
                 self.data[table] = []
+
+        self._set_field_names()
 
     def validate_spec(self):
         "Raises exceptions if specification is invalid"
@@ -335,22 +339,6 @@ class Parser:
         self.tables = self.header["tables"]
         self.name = self.header["name"]
         self.description = self.header["description"]
-        for table in self.tables:
-            if table not in self.spec:
-                raise ValueError(
-                    f"Parser specification missing required '{table}' element"
-                )
-            if self.tables[table].get("kind") != "oneToMany":
-                self.fieldnames[table] = sorted(list(self.spec[table].keys()))
-            else:
-                self.fieldnames[table] = list(
-                    self.tables[table].get("common", {}).keys()
-                ) + sorted(
-                    list(set(sum([list(m.keys()) for m in self.spec[table]], [])))
-                )
-                if commonMappings := self.tables[table].get("common", {}):
-                    for match in self.spec[table]:
-                        match.update(commonMappings)
 
         for table in self.tables:
             aggregation = self.tables[table].get("aggregation")
@@ -364,6 +352,27 @@ class Parser:
                 raise ValueError(
                     f"groupBy needs aggregation=lastNotNull to be set for table: {table}"
                 )
+
+    def _set_field_names(self):
+        for table in self.tables:
+            if table not in self.spec:
+                raise ValueError(
+                    f"Parser specification missing required '{table}' element"
+                )
+            if self.tables[table].get("kind") != "oneToMany":
+                self.fieldnames[table] = sorted(list(self.spec[table].keys()))
+            else:
+                if table not in self.schemas:
+                    self.fieldnames[table] = list(
+                        self.tables[table].get("common", {}).keys()
+                    ) + sorted(
+                        list(set(sum([list(m.keys()) for m in self.spec[table]], [])))
+                    )
+                else:
+                    self.fieldnames[table] = sorted(self.schemas[table]["properties"])
+                if commonMappings := self.tables[table].get("common", {}):
+                    for match in self.spec[table]:
+                        match.update(commonMappings)
 
     def update_table(self, table: str, row: StrDict):
         # Currently only aggregations are supported
