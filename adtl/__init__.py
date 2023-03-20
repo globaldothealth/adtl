@@ -267,6 +267,11 @@ def hash_sensitive(value: str) -> str:
     return hashlib.sha256(str(value).encode("utf-8")).hexdigest()
 
 
+def remove_null_keys(d: Dict[str, Any]) -> Dict[str, Any]:
+    "Removes keys which map to null"
+    return {k: v for k, v in d.items() if v is not None}
+
+
 class Parser:
     def __init__(self, spec: Union[str, Path, StrDict]):
         "Loads specification from spec in format (default json)"
@@ -380,10 +385,12 @@ class Parser:
                     )
                 if parse_if(row, match["if"]):
                     self.data[table].append(
-                        {
-                            attr: get_value(row, match[attr])
-                            for attr in set(match.keys()) - {"if"}
-                        }
+                        remove_null_keys(
+                            {
+                                attr: get_value(row, match[attr])
+                                for attr in set(match.keys()) - {"if"}
+                            }
+                        )
                     )
         elif kind == "constant":  # only one row
             self.data[table] = [self.spec[table]]
@@ -392,10 +399,12 @@ class Parser:
             if table not in self.data:
                 self.data[table] = []
             self.data[table].append(
-                {
-                    attr: get_value(row, self.spec[table][attr])
-                    for attr in self.spec[table]
-                }
+                remove_null_keys(
+                    {
+                        attr: get_value(row, self.spec[table][attr])
+                        for attr in self.spec[table]
+                    }
+                )
             )
 
     def parse(self, file: str, skip_validation=False):
@@ -414,7 +423,19 @@ class Parser:
         "Transform rows from an iterable according to specification"
         for row in rows:
             for table in self.tables:
-                self.update_table(table, row)
+                try:
+                    self.update_table(table, row)
+                except ValueError:
+                    print(
+                        "\n".join(
+                            [
+                                f"{key} = {value}"
+                                for key, value in row.items()
+                                if value not in ["", None]
+                            ]
+                        )
+                    )
+                    raise
         self.report_available = not skip_validation
         if not skip_validation:
             for table in self.validators:
