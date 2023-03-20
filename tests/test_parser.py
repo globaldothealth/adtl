@@ -195,6 +195,10 @@ APPLY_OBSERVATIONS_OUTPUT = [
             ({"id": "1"}, RULE_SENSITIVE),
             "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
         ),
+        (
+            ({"id": 1}, RULE_SENSITIVE),
+            "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+        ),
         (({"first": "1", "second": ""}, RULE_COMBINED_FIRST_NON_NULL), 1),
         (({"first": "1", "second": "2"}, RULE_COMBINED_FIRST_NON_NULL), 1),
         (({"first": "2", "second": "1"}, RULE_COMBINED_FIRST_NON_NULL), 2),

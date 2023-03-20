@@ -264,7 +264,7 @@ def hash_sensitive(value: str) -> str:
     """Hashes sensitive values. This is not generally sufficient for
     anonymisation, as the value still serves as a unique identifier,
     but is better than storing the value unprocessed."""
-    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+    return hashlib.sha256(str(value).encode("utf-8")).hexdigest()
 
 
 class Parser:
