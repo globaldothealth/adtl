@@ -368,7 +368,7 @@ class Parser:
         if group_field:
             if table not in self.data:
                 self.data[table] = defaultdict(dict)
-            group_key = row[self.spec[table][group_field]["field"]]
+            group_key = get_value(row, self.spec[table][group_field])
             for attr in self.spec[table]:
                 if (value := get_value(row, self.spec[table][attr])) is not None:
                     self.data[table][group_key][attr] = value

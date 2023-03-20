@@ -1,4 +1,12 @@
 # serializer version: 1
+# name: test_multi_id_groupby
+  '''
+  admission_date,country_iso3,dataset_id,enrolment_date,sex_at_birth,subject_id
+  2020-06-08,GBR,dataset-2020-03-23,2020-05-06,male,P007
+  2020-06-08,GBR,dataset-2020-03-23,2022-01-11,female,S001
+  
+  '''
+# ---
 # name: test_parse_write_buffer
   '''
   admission_date,country_iso3,dataset_id,enrolment_date,sex_at_birth,subject_id

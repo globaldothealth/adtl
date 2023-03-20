@@ -98,6 +98,23 @@ SOURCE_GROUPBY = [
     {"sex": "1", "subjid": "S007", "dsstdat": "2020-05-06", "hostdat": "2020-06-08"},
     {"sex": "2", "subjid": "S001", "dsstdat": "2022-01-11", "hostdat": "2020-06-08"},
 ]
+# Checks ID mapping from multiple fields
+SOURCE_GROUPBY_MULTI_ID = [
+    {
+        "sex": "1",
+        "subjid": "",
+        "othid": "P007",
+        "dsstdat": "2020-05-06",
+        "hostdat": "2020-06-08",
+    },
+    {
+        "sex": "2",
+        "subjid": "S001",
+        "othid": "P008",
+        "dsstdat": "2022-01-11",
+        "hostdat": "2020-06-08",
+    },
+]
 
 SOURCE_GROUPBY_INVALID = [
     {"sex": "1", "subjid": "S007", "dsstdat": "2020-05-06", "hostdat": "2020-06-08"},
@@ -369,6 +386,13 @@ def test_parse_write_buffer(snapshot):
 def test_validation(snapshot):
     ps = parser.Parser(TEST_PARSERS_PATH / "groupBy-with-schema.json")
     buf = ps.parse_rows(SOURCE_GROUPBY_INVALID).write_csv("subject")
+    print(buf)
+    assert buf == snapshot
+
+
+def test_multi_id_groupby(snapshot):
+    ps = parser.Parser(TEST_PARSERS_PATH / "groupBy-multi-id.json")
+    buf = ps.parse_rows(SOURCE_GROUPBY_MULTI_ID).write_csv("subject")
     print(buf)
     assert buf == snapshot
 
