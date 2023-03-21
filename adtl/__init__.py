@@ -541,7 +541,8 @@ def main():
         "-o", "--output", help="Output file, if blank, writes to standard output"
     )
     args = cmd.parse_args()
-    if output := Parser(args.spec).parse(args.file).save(args.output):
+    spec = Parser(args.spec)
+    if output := spec.parse(args.file).save(args.output or spec.name):
         print(output)
 
 
