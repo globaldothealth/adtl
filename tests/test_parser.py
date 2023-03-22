@@ -255,6 +255,7 @@ def test_get_value(row_rule, expected):
     "row_rule,expected",
     [
         ((ROW_CONDITIONAL, {"outcome_type": 4}), True),
+        ((ROW_CONDITIONAL, {"not": {"outcome_type": 4}}), False),
         ((ROW_CONDITIONAL, {"outcome_type": {"==": 4}}), True),
         ((ROW_CONDITIONAL, {"outcome_type": 3}), False),
         ((ROW_CONDITIONAL, {"outcome_type": {">": 2}}), True),

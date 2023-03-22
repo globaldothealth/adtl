@@ -112,8 +112,9 @@ if = { foobar_type = 4 }
 ```
 
 Operations other than equals can be specified as `{ field_name = {op = value} }`
-where *op* is one of `< | > | <= | >= | !=`. Logical operations (and, or) are
-supported with `any = [ condition-list ]` (or) and `all = [ condition-list ]` (and).
+where *op* is one of `< | > | <= | >= | !=`. Logical operations (and, or, not) are
+supported with `any = [ condition-list ]` (or), `all = [ condition-list ]` (and),
+`not = { condition }` (not).
 In the above example, if we wanted to set from field *foobar* only if
 *foobar_type* is 4 and *bazbar* < 5. For simplicity, the equals operation is optional,
 and adtl allows conditions of the form `{ field_name = value }`:
