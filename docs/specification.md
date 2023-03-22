@@ -257,3 +257,31 @@ date = { field = "dsstdtc" }
 name = "cough"
 if = { cough_cmyn = 1 }
 ```
+
+### Repeated rows
+
+Often, oneToMany tables (such as ISARIC observation table) have repeated blocks,
+with only the field name and condition changing. Add a `for` keyword that will
+add looping through variable(s). In the case of multiple variables being
+provided, the cartesian product of the variables will be used to repeat the
+block.
+
+Field names within the block use the Python f-string syntax to represent the
+variable, which is expanded out by using Python's `str.format`.
+
+Example from an ISARIC dataset that contains five followup surveys that ask
+about observed symptoms after discharge:
+
+```toml
+[[observation]]
+  name = "history_of_fever"
+  phase = "followup"
+  date = { field = "flw2_survey_date_{n}" }
+  is_present = { field = "flw2_fever_{n}", values = { 0 = false, 1 = true } }
+  if.not."flw2_fever_{n}" = 2
+  for.n.range = [1, 5]  # n goes from 1--5 inclusive
+  # for.n = [1, 3, 5]  # can also specify a list
+```
+
+Note that **unlike** Python ranges, adtl ranges include both start and end of
+the range.
