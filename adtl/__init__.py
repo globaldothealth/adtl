@@ -131,7 +131,9 @@ def parse_if(row: StrDict, rule: StrDict) -> bool:
     n_keys = len(rule.keys())
     assert n_keys == 1
     key = next(iter(rule.keys()))
-    if key == "any" and isinstance(rule[key], list):
+    if key == "not" and isinstance(rule[key], dict):
+        return not parse_if(row, rule[key])
+    elif key == "any" and isinstance(rule[key], list):
         return any(parse_if(row, r) for r in rule[key])
     elif key == "all" and isinstance(rule[key], list):
         return all(parse_if(row, r) for r in rule[key])
