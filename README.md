@@ -21,8 +21,17 @@ package dependencies in a virtual environment. On the other hand, `pip` installs
 packages to the global environment which is generally not recommended as it
 can interfere with other packages on your system.
 
-* Installation via `pipx`: `pipx install git+https://github.com/globaldothealth/adtl`
-* Installation via `pip`: `python3 -m pip install git+https://github.com/globaldothealth/adtl`
+* Installation via `pipx`:
+
+  ```shell
+  pipx install git+https://github.com/globaldothealth/adtl
+  ```
+
+* Installation via `pip`:
+
+  ```shell
+  python3 -m pip install git+https://github.com/globaldothealth/adtl
+  ```
 
 If you are writing code which depends on adtl (instead of using
 the command-line program), then it is best to add a dependency on
