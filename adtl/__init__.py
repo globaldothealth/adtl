@@ -4,6 +4,7 @@ import hashlib
 import io
 import json
 import logging
+import itertools
 import re
 from collections import defaultdict, Counter
 from datetime import datetime
@@ -262,6 +263,65 @@ def expand_refs(spec_fragment: StrDict, defs: StrDict) -> Union[StrDict, List[St
         return spec_fragment
 
 
+def expand_for(spec: List[StrDict]) -> List[StrDict]:
+    "Expands for expressions in oneToMany table blocks"
+
+    out = []
+
+    def replace_val(item: Dict[str, Any], replace: Dict[str, Any]) -> Dict[str, Any]:
+        block = {}
+        for k, v in item.items():
+            if not isinstance(k, str):
+                block[k] = v
+            rk = k.format(**replace)
+            if isinstance(v, dict):
+                block[rk] = replace_val(v, replace)
+            elif isinstance(v, str):
+                block[rk] = v.format(**replace)
+            elif isinstance(v, list):
+                block[rk] = [replace_val(it, replace) for it in v]
+            else:
+                block[rk] = v
+        return block
+
+    for match in spec:
+        if "for" not in match:
+            out.append(match)
+            continue
+        for_expr = match.pop("for")
+        if not isinstance(for_expr, dict):
+            raise ValueError(
+                f"for expression {for_expr!r} is not a dictionary of variables to list of values or a range"
+            )
+
+        # Expand ranges when available
+        for var in for_expr:
+            if (
+                "range" in for_expr[var]
+                and isinstance(for_expr[var]["range"], list)
+                and len(for_expr[var]["range"]) == 2
+                and isinstance(for_expr[var]["range"][0], int)
+                and isinstance(for_expr[var]["range"][1], int)
+                and for_expr[var]["range"][1] > for_expr[var]["range"][0]
+            ):
+                start, end = for_expr[var]["range"]
+                for_expr[var] = range(start, end + 1)  # add one to include end in list
+            elif isinstance(for_expr[var], list):
+                pass
+            else:
+                raise ValueError(
+                    f"for expression {for_expr!r} can only have lists or ranges for variables"
+                )
+        loop_vars = sorted(for_expr.keys())
+        loop_assignments = [
+            dict(zip(loop_vars, vals))
+            for vals in itertools.product(*(for_expr[var] for var in loop_vars))
+        ]
+        for replacement in loop_assignments:
+            out.append(replace_val(match, replacement))
+    return out
+
+
 def hash_sensitive(value: str) -> str:
     """Hashes sensitive values. This is not generally sufficient for
     anonymisation, as the value still serves as a unique identifier,
@@ -304,7 +364,10 @@ class Parser:
         self.header = self.spec.get("adtl", {})
         self.defs = self.header.get("defs", {})
         self.spec = expand_refs(self.spec, self.defs)
+
         self.validate_spec()
+        for table in (t for t in self.tables if self.tables[t]["kind"] == "oneToMany"):
+            self.spec[table] = expand_for(self.spec[table])
         for table in self.tables:
             if schema := self.tables[table].get("schema"):
                 if schema.startswith("http"):

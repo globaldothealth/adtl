@@ -480,6 +480,110 @@ def test_format_equivalence():
     assert adtl_json.spec == adtl_toml.spec
 
 
+FOR_PATTERN = [
+    {
+        "name": "history_of_fever",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_{n}"},
+        "is_present": {"field": "flw2_fever_{n}", "values": {"0": False, "1": True}},
+        "if": {"not": {"flw2_fever_{n}": 2}},
+        "for": {"n": {"range": [1, 3]}},
+    }
+]
+
+
+EXPANDED_FOR_PATTERN = [
+    {
+        "name": "history_of_fever",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_1"},
+        "is_present": {"field": "flw2_fever_1", "values": {"0": False, "1": True}},
+        "if": {"not": {"flw2_fever_1": 2}},
+    },
+    {
+        "name": "history_of_fever",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_2"},
+        "is_present": {"field": "flw2_fever_2", "values": {"0": False, "1": True}},
+        "if": {"not": {"flw2_fever_2": 2}},
+    },
+    {
+        "name": "history_of_fever",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_3"},
+        "is_present": {"field": "flw2_fever_3", "values": {"0": False, "1": True}},
+        "if": {"not": {"flw2_fever_3": 2}},
+    },
+]
+
+FOR_PATTERN_ANY = [
+    {
+        "name": "history_of_fever",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_{n}"},
+        "is_present": {"field": "flw2_fever_{n}", "values": {"0": False, "1": True}},
+        "if": {"any": [{"flw2_fever_{n}": 0}, {"flw2_fever_{n}": 1}]},
+        "for": {"n": {"range": [1, 2]}},
+    }
+]
+
+EXPANDED_FOR_PATTERN_ANY = [
+    {
+        "name": "history_of_fever",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_1"},
+        "is_present": {"field": "flw2_fever_1", "values": {"0": False, "1": True}},
+        "if": {"any": [{"flw2_fever_1": 0}, {"flw2_fever_1": 1}]},
+    },
+    {
+        "name": "history_of_fever",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_2"},
+        "is_present": {"field": "flw2_fever_2", "values": {"0": False, "1": True}},
+        "if": {"any": [{"flw2_fever_2": 0}, {"flw2_fever_2": 1}]},
+    },
+]
+
+FOR_PATTERN_MULTI_VAR = [
+    {
+        "field": "field_{x}_{y}",
+        "if": {"field_{x}_{y}": 1},
+        "for": {"x": [1, 2], "y": [3, 4]},
+    }
+]
+
+EXPANDED_FOR_PATTERN_MULTI_VAR = [
+    {
+        "field": "field_1_3",
+        "if": {"field_1_3": 1},
+    },
+    {
+        "field": "field_1_4",
+        "if": {"field_1_4": 1},
+    },
+    {
+        "field": "field_2_3",
+        "if": {"field_2_3": 1},
+    },
+    {
+        "field": "field_2_4",
+        "if": {"field_2_4": 1},
+    },
+]
+
+
+@pytest.mark.parametrize(
+    "source,expected",
+    [
+        (FOR_PATTERN, EXPANDED_FOR_PATTERN),
+        (FOR_PATTERN_ANY, EXPANDED_FOR_PATTERN_ANY),
+        (FOR_PATTERN_MULTI_VAR, EXPANDED_FOR_PATTERN_MULTI_VAR),
+    ],
+)
+def test_expand_for(source, expected):
+    assert parser.expand_for(source) == expected
+
+
 # write functions to check that apply is working properly
 def test_apply_when_values_are_present():
     apply_values_present_output = list(

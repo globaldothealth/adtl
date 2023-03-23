@@ -258,3 +258,83 @@ date = { field = "dsstdtc" }
 name = "cough"
 if = { cough_cmyn = 1 }
 ```
+
+### Repeated rows
+
+Often, oneToMany tables (such as ISARIC observation table) have repeated blocks,
+with only the field name and condition changing. Add a `for` keyword that will
+add looping through variable(s). In the case of multiple variables being
+provided, the cartesian product of the variables will be used to repeat the
+block.
+
+Field names within the block use the Python f-string syntax to represent the
+variable, which is expanded out by using Python's `str.format`.
+
+Example from an ISARIC dataset that contains five followup surveys that ask
+about observed symptoms after discharge:
+
+```toml
+[[observation]]
+  name = "history_of_fever"
+  phase = "followup"
+  date = { field = "flw2_survey_date_{n}" }
+  is_present = { field = "flw2_fever_{n}", values = { 0 = false, 1 = true } }
+  if.not."flw2_fever_{n}" = 2
+  for.n.range = [1, 5]  # n goes from 1--5 inclusive
+  # for.n = [1, 3, 5]  # can also specify a list
+```
+
+Note that **unlike** Python ranges, adtl ranges include both start and end of
+the range.
+
+Variable interpolations in braces can be anywhere in the block. So a `if.any`
+condition could look like
+
+```toml
+[[observation]]
+  name = "history_of_fever"
+  phase = "followup"
+  date = { field = "flw2_survey_date_{n}" }
+  is_present = { field = "flw2_fever_{n}", values = { 0 = false, 1 = true } }
+  if.any = [ { "flw2_fever_{n}" = 1 }, { "flw2_fever_{n}" = 0 } ]
+  for.n.range = [1, 5]  # n goes from 1--5 inclusive
+```
+
+Multiple variables are supported in the for loop. If multiple variables are
+specified, then the block is repeated for as many instances as the [Cartesian
+product](https://en.wikipedia.org/wiki/Cartesian_product) of the values the
+variables correspond to. As an example the for expression
+
+```toml
+for = { x = [1, 2], y = [3, 4] }
+```
+
+will loop over the values `x, y = [(1, 3), (1, 4), (1, 3), (1, 4)]`, and a block
+with such a loop referring to both variables will get repeated four times:
+
+```toml
+[[observation]]
+  field = "field_{x}_{y}"
+  if."field_{x}_{y}" = 1
+  for = { x = [1, 2], y = [3, 4] }
+```
+
+will get expanded as
+
+```toml
+[[observation]]
+  field = "field_1_3"
+  if."field_1_3" = 1
+
+[[observation]]
+  field = "field_1_4"
+  if."field_1_4" = 1
+
+[[observation]]
+  field = "field_2_3"
+  if."field_2_3" = 1
+
+[[observation]]
+  field = "field_2_4"
+  if."field_2_4" = 1
+```
