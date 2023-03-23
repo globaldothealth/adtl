@@ -428,6 +428,9 @@ class Parser:
                 self.fieldnames[table] = sorted(list(self.spec[table].keys()))
             else:
                 if table not in self.schemas:
+                    print(
+                        f"Warning: no schema found for {table!r}, field names may be incomplete!"
+                    )
                     self.fieldnames[table] = list(
                         self.tables[table].get("common", {}).keys()
                     ) + sorted(
