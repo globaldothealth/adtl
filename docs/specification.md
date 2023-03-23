@@ -285,3 +285,55 @@ about observed symptoms after discharge:
 
 Note that **unlike** Python ranges, adtl ranges include both start and end of
 the range.
+
+Variable interpolations in braces can be anywhere in the block. So a `if.any`
+condition could look like
+
+```toml
+[[observation]]
+  name = "history_of_fever"
+  phase = "followup"
+  date = { field = "flw2_survey_date_{n}" }
+  is_present = { field = "flw2_fever_{n}", values = { 0 = false, 1 = true } }
+  if.any = [ { "flw2_fever_{n}" = 1 }, { "flw2_fever_{n}" = 0 } ]
+  for.n.range = [1, 5]  # n goes from 1--5 inclusive
+```
+
+Multiple variables are supported in the for loop. If multiple variables are
+specified, then the block is repeated for as many instances as the [Cartesian
+product](https://en.wikipedia.org/wiki/Cartesian_product) of the values the
+variables correspond to. As an example the for expression
+
+```toml
+for = { x = [1, 2], y = [3, 4] }
+```
+
+will loop over the values `x, y = [(1, 3), (1, 4), (1, 3), (1, 4)]`, and a block
+with such a loop referring to both variables will get repeated four times:
+
+```toml
+[[observation]]
+  field = "field_{x}_{y}"
+  if."field_{x}_{y}" = 1
+  for = { x = [1, 2], y = [3, 4] }
+```
+
+will get expanded as
+
+```toml
+[[observation]]
+  field = "field_1_3"
+  if."field_1_3" = 1
+
+[[observation]]
+  field = "field_1_4"
+  if."field_1_4" = 1
+
+[[observation]]
+  field = "field_2_3"
+  if."field_2_3" = 1
+
+[[observation]]
+  field = "field_2_4"
+  if."field_2_4" = 1
+```
