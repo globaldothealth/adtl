@@ -112,7 +112,11 @@ def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
             target_date = rule.get("date", "%Y-%m-%d")
             source_date = get_value(row, rule["source_date"])
             if source_date != target_date:
-                value = datetime.strptime(value, source_date).strftime(target_date)
+                try:
+                    value = datetime.strptime(value, source_date).strftime(target_date)
+                except ValueError:
+                    logging.info(f"Could not parse date: {value}")
+                    return None
         return value
     elif "combinedType" in rule:
         return get_combined_type(row, rule)
