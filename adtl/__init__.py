@@ -488,9 +488,9 @@ class Parser:
                 )
             )
 
-    def parse(self, file: str, skip_validation=False):
+    def parse(self, file: str, encoding: str = "utf-8", skip_validation=False):
         "Transform file according to specification"
-        with open(file) as fp:
+        with open(file, encoding=encoding) as fp:
             reader = csv.DictReader(fp)
             return self.parse_rows(
                 tqdm(
@@ -612,9 +612,14 @@ def main():
     cmd.add_argument(
         "-o", "--output", help="Output file, if blank, writes to standard output"
     )
+    cmd.add_argument(
+        "--encoding", help="Encoding input file is in", default="utf-8-sig"
+    )
     args = cmd.parse_args()
     spec = Parser(args.spec)
-    if output := spec.parse(args.file).save(args.output or spec.name):
+    if output := spec.parse(args.file, encoding=args.encoding).save(
+        args.output or spec.name
+    ):
         print(output)
 
 
