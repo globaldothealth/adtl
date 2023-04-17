@@ -484,6 +484,18 @@ def test_default_date_format(snapshot):
     assert transformed_csv_data == snapshot
 
 
+def test_make_fields_optional():
+    with (TEST_SCHEMAS_PATH / "epoch-data.schema.json").open() as fp:
+        schema = json.load(fp)
+    assert schema["required"] == ["epoch", "id", "text"]
+    assert parser.make_fields_optional(schema, ["text"])["required"] == ["epoch", "id"]
+    assert parser.make_fields_optional(schema, ["field_not_present"])["required"] == [
+        "epoch",
+        "id",
+        "text",
+    ]
+
+
 def test_reference_expansion():
     ps_noref = parser.Parser(TEST_PARSERS_PATH / "groupBy.json")
     ps_ref = parser.Parser(TEST_PARSERS_PATH / "groupBy-defs.json")
