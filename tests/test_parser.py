@@ -1,5 +1,3 @@
-import sys
-import json
 from pathlib import Path
 import pytest
 from pytest_unordered import unordered
@@ -363,7 +361,7 @@ def test_invalid_combined_type():
 
 def test_validate_spec():
     with pytest.raises(ValueError, match="Specification header requires key"):
-        ps = parser.Parser(dict())
+        _ = parser.Parser(dict())
 
 
 @pytest.mark.parametrize(
@@ -417,7 +415,7 @@ def test_multi_id_groupby(snapshot):
 )
 def test_invalid_spec_raises_error(source, error):
     with pytest.raises(ValueError, match=error):
-        ps = parser.Parser(source)
+        _ = parser.Parser(source)
 
 
 def test_parser_clear():
