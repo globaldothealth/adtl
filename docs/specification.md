@@ -13,7 +13,9 @@ adtl parser files.
 
 ## Metadata
 
-**Required fields**. These metadata fields are defined under a header key `adtl`.
+These metadata fields are defined under a header key `adtl`.
+
+### Required fields
 
 * **name**: Name of the specification, usually the source data name in
   lowercase and hyphenated. By convention, this is the same name as the
@@ -36,7 +38,12 @@ adtl parser files.
   * *common* (optional): Specifies common mappings that are applied to every if-block
     in a *kind*=*oneToMany* table.
 
+### Optional fields
+
 * **defs**: Definitions that can be referred to elsewhere in the schema
+* **defaultDateFormat**: Default source date format, applied to all fields
+  with either "date_" / "_date" in the field name or that have format date
+  set in the JSON schema
 
 ## Validation
 

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "https://raw.githubusercontent.com/globaldothealth/adtl/main/schemas/test-parser.schema.json",
+  "title": "adtl",
+  "description": "Another Data Transformation Language (adtl) parser file",
+  "required": [
+    "epoch",
+    "id",
+    "text"
+  ],
+  "properties": {
+    "epoch": {
+      "description": "Epoch of dataset",
+      "format": "date"
+    },
+    "id": {
+      "type": "integer"
+    },
+    "some_date": {
+      "description": "Some date, but without format=date"
+    },
+    "text": {
+      "description": "Text field"
+    }
+  }
+}

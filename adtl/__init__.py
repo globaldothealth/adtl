@@ -8,8 +8,8 @@ import itertools
 import re
 from collections import defaultdict, Counter
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
+from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional, Union
 
 import pint
@@ -21,19 +21,21 @@ from tqdm import tqdm
 import adtl.transformations as tf
 
 SUPPORTED_FORMATS = {"json": json.load, "toml": tomli.load}
+DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
 StrDict = Dict[str, Any]
 Rule = Union[str, StrDict]
+Context = Optional[Dict[str, Union[bool, int, str, List[str]]]]
 
 
-def get_value(row: StrDict, rule: Rule) -> Any:
+def get_value(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
     """Gets value from row using rule
 
     Same as get_value_unhashed(), except it hashes if sensitive = True in rule.
     This function should be used instead of get_value_unhashed() for
     application code.
     """
-    value = get_value_unhashed(row, rule)
+    value = get_value_unhashed(row, rule, ctx)
     if isinstance(rule, dict) and rule.get("sensitive") and value is not None:
         return hash_sensitive(value)
     if not isinstance(value, str):
@@ -49,7 +51,7 @@ def get_value(row: StrDict, rule: Rule) -> Any:
         return value
 
 
-def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
+def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
     """Gets value from row using rule (unhashed)
 
     Unlike get_value() this function does NOT hash sensitive data
@@ -92,7 +94,7 @@ def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
             return None
         if "values" in rule:
             value = rule["values"].get(value)
-        # Either source_unit`` / unit OR source_date / date triggers conversion
+        # Either source_unit / unit OR source_date / date triggers conversion
         # do not parse units if value is empty
         if "source_unit" in rule and "unit" in rule:
             assert "source_date" not in rule and "date" not in rule
@@ -100,17 +102,22 @@ def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
             unit = rule["unit"]
             if type(source_unit) != str:
                 logging.debug(
-                    f"Error converting source_unit {source_unit} to {unit!r} with rule: {rule}, defaulting to assume source_unit is {unit}"
+                    f"Error converting source_unit {source_unit} to {unit!r} with rule: {rule}, "
+                    "defaulting to assume source_unit is {unit}"
                 )
                 return float(value)
             try:
                 value = pint.Quantity(float(value), source_unit).to(unit).m
             except ValueError:
                 raise ValueError(f"Could not convert {value} to a floating point")
-        if "source_date" in rule:
+        if "source_date" in rule or (ctx and ctx.get("is_date")):
             assert "source_unit" not in rule and "unit" not in rule
             target_date = rule.get("date", "%Y-%m-%d")
-            source_date = get_value(row, rule["source_date"])
+            source_date = (
+                get_value(row, rule["source_date"])
+                if "source_date" in rule
+                else ctx["defaultDateFormat"]
+            )
             if source_date != target_date:
                 try:
                     value = datetime.strptime(value, source_date).strftime(target_date)
@@ -119,7 +126,7 @@ def get_value_unhashed(row: StrDict, rule: Rule) -> Any:
                     return None
         return value
     elif "combinedType" in rule:
-        return get_combined_type(row, rule)
+        return get_combined_type(row, rule, ctx)
     else:
         raise ValueError(f"Could not return value for {rule}")
 
@@ -183,8 +190,8 @@ def parse_if(row: StrDict, rule: StrDict) -> bool:
         return cast_value == value
 
 
-def get_combined_type(row: StrDict, rule: StrDict):
-    """Gets value from row for a combinedType rule.
+def get_combined_type(row: StrDict, rule: StrDict, ctx: Context = None):
+    """Gets value from row for a combinedType rule
 
     A rule with the combinedType key combines multiple fields in the row
     to get the value. Thus this rule assumes that the combinedType fields
@@ -218,12 +225,12 @@ def get_combined_type(row: StrDict, rule: StrDict):
         else:
             rules.append(r)
     if combined_type == "all":
-        return all(get_value(row, r) for r in rules)
+        return all(get_value(row, r, ctx) for r in rules)
     elif combined_type == "any":
-        return any(get_value(row, r) for r in rules)
+        return any(get_value(row, r, ctx) for r in rules)
     elif combined_type == "firstNonNull":
         try:
-            return next(filter(None, [get_value(row, r) for r in rules]))
+            return next(filter(None, [get_value(row, r, ctx) for r in rules]))
         except StopIteration:
             return None
     elif combined_type == "list" or combined_type == "set":
@@ -235,7 +242,7 @@ def get_combined_type(row: StrDict, rule: StrDict):
                 "excludeWhen rule should be 'none', 'false-like', or a list of values"
             )
 
-        values = [get_value(row, r) for r in rules]
+        values = [get_value(row, r, ctx) for r in rules]
         if combined_type == "set":
             values = [*set(values)]
         if excludeWhen is None:
@@ -338,6 +345,21 @@ def remove_null_keys(d: Dict[str, Any]) -> Dict[str, Any]:
     return {k: v for k, v in d.items() if v is not None}
 
 
+def get_date_fields(schema: Dict[str, Any]) -> List[str]:
+    "Returns list of date fields from schema"
+    fields = [
+        field
+        for field in schema["properties"]
+        if field == "date" or "date_" in field or "_date" in field
+    ]
+    format_date_fields = [
+        field
+        for field in schema["properties"]
+        if schema["properties"][field].get("format") == "date"
+    ]
+    return sorted(set(fields + format_date_fields))
+
+
 class Parser:
     def __init__(self, spec: Union[str, Path, StrDict]):
         "Loads specification from spec in format (default json)"
@@ -348,6 +370,7 @@ class Parser:
         self.specfile = None
         self.validators: StrDict = {}
         self.schemas: StrDict = {}
+        self.date_fields = []
         self.report = {
             "errors": defaultdict(Counter),
             "total_valid": defaultdict(int),
@@ -390,6 +413,7 @@ class Parser:
                 else:  # local file
                     with (self.specfile.parent / schema).open() as fp:
                         self.schemas[table] = json.load(fp)
+                self.date_fields.extend(get_date_fields(self.schemas[table]))
                 self.validators[table] = fastjsonschema.compile(self.schemas[table])
 
             if self.tables[table].get("groupBy"):
@@ -397,11 +421,20 @@ class Parser:
             else:
                 self.data[table] = []
 
+        print(self.date_fields)
         self._set_field_names()
+
+    @lru_cache
+    def ctx(self, attribute: str):
+        return {
+            "is_date": attribute in self.date_fields,
+            "defaultDateFormat": self.header.get(
+                "defaultDateFormat", DEFAULT_DATE_FORMAT
+            ),
+        }
 
     def validate_spec(self):
         "Raises exceptions if specification is invalid"
-        errors = []
         for required in ["tables", "name", "description"]:
             if required not in self.header:
                 raise ValueError(f"Specification header requires key: {required}")
@@ -456,7 +489,9 @@ class Parser:
                 self.data[table] = defaultdict(dict)
             group_key = get_value(row, self.spec[table][group_field])
             for attr in self.spec[table]:
-                if (value := get_value(row, self.spec[table][attr])) is not None:
+                if (
+                    value := get_value(row, self.spec[table][attr], self.ctx(attr))
+                ) is not None:
                     self.data[table][group_key][attr] = value
         elif kind == "oneToMany":
             for match in self.spec[table]:
@@ -468,7 +503,7 @@ class Parser:
                     self.data[table].append(
                         remove_null_keys(
                             {
-                                attr: get_value(row, match[attr])
+                                attr: get_value(row, match[attr], self.ctx(attr))
                                 for attr in set(match.keys()) - {"if"}
                             }
                         )
@@ -482,7 +517,7 @@ class Parser:
             self.data[table].append(
                 remove_null_keys(
                     {
-                        attr: get_value(row, self.spec[table][attr])
+                        attr: get_value(row, self.spec[table][attr], self.ctx(attr))
                         for attr in self.spec[table]
                     }
                 )
@@ -577,7 +612,7 @@ class Parser:
 
     def show_report(self):
         if self.report_available:
-            print(f"\n|table       \t|valid\t|total\t|percentage_valid|")
+            print("\n|table       \t|valid\t|total\t|percentage_valid|")
             print("|---------------|-------|-------|----------------|")
             for table in self.report["total"]:
                 print(
