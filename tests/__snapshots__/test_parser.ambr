@@ -1,4 +1,12 @@
 # serializer version: 1
+# name: test_default_date_format
+  '''
+  adtl_valid,adtl_error,epoch,id,some_date,text
+  True,,1999-01-11,1,1999-01-24,Lorem ipsum
+  True,,2022-12-19,2,2023-01-27,example
+  
+  '''
+# ---
 # name: test_multi_id_groupby
   '''
   admission_date,country_iso3,dataset_id,enrolment_date,sex_at_birth,subject_id

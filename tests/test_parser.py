@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import pytest
 from pytest_unordered import unordered
@@ -12,6 +13,7 @@ RULE_SINGLE_FIELD_WITH_MAPPING = {
 
 TEST_PARSERS_PATH = Path(__file__).parent / "parsers"
 TEST_SOURCES_PATH = Path(__file__).parent / "sources"
+TEST_SCHEMAS_PATH = Path(__file__).parent / "schemas"
 
 
 LIVER_DISEASE = [
@@ -463,6 +465,23 @@ def test_constant_table():
 )
 def test_expand_refs(source, expected):
     assert parser.expand_refs(*source) == expected
+
+
+def test_get_date_fields():
+    with (Path(__file__).parent / "parsers" / "test.schema.json").open() as fp:
+        schema = json.load(fp)
+        assert parser.get_date_fields(schema) == unordered(
+            ["enrolment_date", "admission_date"]
+        )
+
+
+def test_default_date_format(snapshot):
+    transformed_csv_data = (
+        parser.Parser(TEST_PARSERS_PATH / "epoch.json")
+        .parse(TEST_SOURCES_PATH / "epoch.csv")
+        .write_csv("table")
+    )
+    assert transformed_csv_data == snapshot
 
 
 def test_reference_expansion():
