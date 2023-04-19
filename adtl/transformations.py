@@ -8,6 +8,19 @@ def isNotNull(value):
     return value not in [None, ""]
 
 
+def getFloat(value):
+    if not value:
+        return None
+
+    if '"' in value or " " in value:
+        value = value.strip('"').replace(" ", "")
+
+    try:
+        return float(value)
+    except ValueError:
+        return value
+
+
 def yearsElapsed(birthdate, currentdate):
     if birthdate in [None, ""] or currentdate in [None, ""]:
         return None
