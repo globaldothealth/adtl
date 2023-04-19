@@ -54,3 +54,11 @@ def test_startDate(test_startdate_start, test_startdate_duration, expected):
     assert (
         transform.startDate(test_startdate_start, test_startdate_duration) == expected
     )
+
+
+@pytest.mark.parametrize(
+    "badfloat, expected",
+    [('" - 11 ', -11.0), ('"3"', 3.0), ("3,4", "3,4")],
+)
+def test_getFloat(badfloat, expected):
+    assert transform.getFloat(badfloat) == expected
