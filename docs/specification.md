@@ -42,6 +42,8 @@ These metadata fields are defined under a header key `adtl`.
 
 ### Optional fields
 
+### Optional fields
+
 * **defs**: Definitions that can be referred to elsewhere in the schema
 * **defaultDateFormat**: Default source date format, applied to all fields
   with either "date_" / "_date" in the field name or that have format date
