@@ -5,6 +5,7 @@ import io
 import json
 import logging
 import itertools
+import copy
 import re
 from collections import defaultdict, Counter
 from datetime import datetime
@@ -360,6 +361,17 @@ def get_date_fields(schema: Dict[str, Any]) -> List[str]:
     return sorted(set(fields + format_date_fields))
 
 
+def make_fields_optional(
+    schema: Dict[str, Any], optional_fields: List[str]
+) -> Dict[str, Any]:
+    "Returns JSON schema with required fields modified to drop optional fields"
+    if optional_fields is None:
+        return schema
+    _schema = copy.deepcopy(schema)
+    _schema["required"] = sorted(set(schema["required"]) - set(optional_fields))
+    return _schema
+    
+    
 class Parser:
     def __init__(self, spec: Union[str, Path, StrDict]):
         "Loads specification from spec in format (default json)"
@@ -397,6 +409,7 @@ class Parser:
             self.spec[table] = expand_for(self.spec[table])
         for table in self.tables:
             if schema := self.tables[table].get("schema"):
+                optional_fields = self.tables[table].get("optional-fields")
                 if schema.startswith("http"):
                     try:
                         if (res := requests.get(schema)).status_code != 200:
@@ -409,10 +422,14 @@ class Parser:
                             f"Could not fetch schema for table {table!r}, will not validate"
                         )
                         continue
-                    self.schemas[table] = res.json()
+                    self.schemas[table] = make_fields_optional(
+                        res.json(), optional_fields
+                    )
                 else:  # local file
                     with (self.specfile.parent / schema).open() as fp:
-                        self.schemas[table] = json.load(fp)
+                        self.schemas[table] = make_fields_optional(
+                            json.load(fp), optional_fields
+                        )
                 self.date_fields.extend(get_date_fields(self.schemas[table]))
                 self.validators[table] = fastjsonschema.compile(self.schemas[table])
 
@@ -523,9 +540,9 @@ class Parser:
                 )
             )
 
-    def parse(self, file: str, skip_validation=False):
+    def parse(self, file: str, encoding: str = "utf-8", skip_validation=False):
         "Transform file according to specification"
-        with open(file) as fp:
+        with open(file, encoding=encoding) as fp:
             reader = csv.DictReader(fp)
             return self.parse_rows(
                 tqdm(
@@ -647,9 +664,14 @@ def main():
     cmd.add_argument(
         "-o", "--output", help="Output file, if blank, writes to standard output"
     )
+    cmd.add_argument(
+        "--encoding", help="Encoding input file is in", default="utf-8-sig"
+    )
     args = cmd.parse_args()
     spec = Parser(args.spec)
-    if output := spec.parse(args.file).save(args.output or spec.name):
+    if output := spec.parse(args.file, encoding=args.encoding).save(
+        args.output or spec.name
+    ):
         print(output)
 
 

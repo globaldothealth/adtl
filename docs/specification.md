@@ -37,6 +37,10 @@ These metadata fields are defined under a header key `adtl`.
     can be a relative path, or a URL
   * *common* (optional): Specifies common mappings that are applied to every if-block
     in a *kind*=*oneToMany* table.
+  * *optional-fields* (optional): Specifies list of fields that are ordinarily required
+    under the schema, but are considered optional for this parser.
+
+### Optional fields
 
 ### Optional fields
 
