@@ -370,8 +370,8 @@ def make_fields_optional(
     _schema = copy.deepcopy(schema)
     _schema["required"] = sorted(set(schema["required"]) - set(optional_fields))
     return _schema
-    
-    
+
+
 class Parser:
     def __init__(self, spec: Union[str, Path, StrDict]):
         "Loads specification from spec in format (default json)"

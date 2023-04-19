@@ -7,7 +7,7 @@ packages = ["adtl"]
 
 [project]
 name = "adtl"
-version = "0.2.0"
+version = "0.3.0"
 description = "Another data transformation language"
 authors = [{name = "Abhishek Dasgupta", email = "abhishek.dasgupta@dtc.ox.ac.uk"}]
 license = {file = "LICENSE"}
