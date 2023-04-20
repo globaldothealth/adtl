@@ -1,9 +1,5 @@
-import sys
-import json
-from pathlib import Path
 import pytest
 
-import adtl as parser
 import adtl.transformations as transform
 
 
@@ -54,6 +50,18 @@ def test_startDate(test_startdate_start, test_startdate_duration, expected):
     assert (
         transform.startDate(test_startdate_start, test_startdate_duration) == expected
     )
+
+
+@pytest.mark.parametrize(
+    "test_enddate_start, test_enddate_duration, expected",
+    [
+        ("2023-01-24", 10, "2023-02-03"),
+        ("", "2023-02-22", None),
+        (None, "2023-02-22", None),
+    ],
+)
+def test_endDate(test_enddate_start, test_enddate_duration, expected):
+    assert transform.endDate(test_enddate_start, test_enddate_duration) == expected
 
 
 @pytest.mark.parametrize(

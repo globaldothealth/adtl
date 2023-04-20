@@ -60,3 +60,17 @@ def startDate(enddate, duration):
     sd = ed - timedelta(days=duration)
 
     return sd.strftime("%Y-%m-%d")
+
+
+def endDate(startdate, duration):
+    """
+    Retuns the end date in ISO format, given the start date and the duration.
+    """
+    if startdate in [None, ""] or duration in [None, ""]:
+        return None
+
+    sd = datetime.strptime(startdate, "%Y-%m-%d")
+
+    ed = sd + timedelta(days=duration)
+
+    return ed.strftime("%Y-%m-%d")
