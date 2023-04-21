@@ -1,0 +1,73 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com/globaldothealth/isaric/main/schemas/dev/observation.schema.json",
+    "title": "Study observation",
+    "description": "Observations relating to a visit, including vital signs and symptoms",
+    "required": [
+        "phase",
+        "date",
+        "name"
+    ],
+    "oneOf": [
+        {
+            "required": [
+                "text"
+            ]
+        },
+        {
+            "required": [
+                "value"
+            ]
+        },
+        {
+            "required": [
+                "is_present"
+            ]
+        }
+    ],
+    "properties": {
+        "phase": {
+            "enum": [
+                "pre-admission",
+                "admission",
+                "study",
+                "followup"
+            ],
+            "description": "Phase of study"
+        },
+        "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date of observation, or end date of observation period"
+        },
+        "value": {
+            "type": "number",
+            "description": "Value of the observation"
+        },
+        "text": {
+            "type": "string",
+            "description": "Value of the observation (text)"
+        },
+        "is_present": {
+            "type": "boolean",
+            "description": "Whether the observation denotes presence (*true*) or absence (*false*)"
+        },
+        "name": {
+            "enum": [
+                "cough",
+                "headache",
+                "oxygen_saturation",
+                "pao2_sample_type",
+                "history_of_fever"
+            ],
+            "description": "Observation name"
+        }
+    },
+    "dependencies": {
+        "start_date": {
+            "required": [
+                "duration_type"
+            ]
+        }
+    }
+}

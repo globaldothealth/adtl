@@ -501,27 +501,23 @@ class Parser:
                     for match in self.spec[table]:
                         match.update(commonMappings)
 
-    def default_if(self, rule: StrDict):
+    def default_if(self, table: str, rule: StrDict):
         """
         Default behaviour for oneToMany table, row not displayed if there's an empty
         string or values not mapped in the rule.
         """
 
-        if "is_present" in rule:
-            field = rule["is_present"]["field"]
-            if_rule = {"any": [{field: v} for v in rule["is_present"]["values"]]}
-        elif "value" in rule:
-            field = rule["value"]["field"]
-            if "values" in rule["value"]:
-                if_rule = {"any": [{field: v} for v in rule["value"]["values"]]}
-            else:
-                if_rule = {field: {"!=": ""}}
-        elif "text" in rule:
-            field = rule["text"]["field"]
-            if "values" in rule["text"]:
-                if_rule = {"any": [{field: v} for v in rule["text"]["values"]]}
-            else:
-                if_rule = {field: {"!=": ""}}
+        data_options = [
+            option["required"][0] for option in self.schemas[table]["oneOf"]
+        ]
+
+        option = set(data_options).intersection(rule.keys()).pop()
+
+        field = rule[option]["field"]
+        if "values" in rule[option]:
+            if_rule = {"any": [{field: v} for v in rule[option]["values"]]}
+        else:
+            if_rule = {field: {"!=": ""}}
 
         rule["if"] = if_rule
         return rule
@@ -543,7 +539,7 @@ class Parser:
         elif kind == "oneToMany":
             for match in self.spec[table]:
                 if "if" not in match:
-                    match = self.default_if(match)
+                    match = self.default_if(table, match)
                 if parse_if(row, match["if"]):
                     self.data[table].append(
                         remove_null_keys(
