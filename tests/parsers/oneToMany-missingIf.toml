@@ -1,0 +1,41 @@
+[adtl]
+  name = "sampleOneToMany - missingIf"
+  description = "One to Many example where if statements are removed"
+
+  [adtl.tables.observation]
+    kind = "oneToMany"
+
+[adtl.defs]
+  "Y/N/NK" = { values = { 1 = true, 2 = false } }
+
+[[observation]]
+  name = "headache"
+  phase = "admission"
+  date = { field = "dt" }
+  is_present = { field = "headache_v2", ref = "Y/N/NK" }
+
+[[observation]]
+  name = "oxygen_saturation"
+  phase = "admission"
+  date = { field = "dt" }
+  value = { field = "oxy_vsorres", description = "Oxygen saturation" }
+
+[[observation]]
+  name = "cough"
+  date = { field = "dt" }
+  phase = "admission"
+  is_present = { field = "cough_ceoccur_v2", ref = "Y/N/NK" }
+
+[[observation]]
+  name = "pao2_sample_type"
+  phase = "study"
+  date = { field = "dt" }
+  text = { field = "pao2_lbspec", values = { 1 = "Arterial", 3 = "Capillary" } }
+
+[[observation]]
+  name = "history_of_fever"
+  phase = "followup"
+  date = { field = "dt_{n}" }
+  is_present = { field = "flw2_fever_{n}", values = { 0 = false, 1 = true } }
+  # if.any = [ { "flw2_fever_{n}" = 1 }, { "flw2_fever_{n}" = 0 } ]
+  for.n.range = [1, 2]
