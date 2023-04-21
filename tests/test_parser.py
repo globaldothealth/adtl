@@ -100,36 +100,42 @@ ONE_MANY_IF_OUTPUT = [
         "name": "headache",
         "phase": "admission",
         "is_present": False,
+        "adtl_valid": True,
     },
     {
         "date": "2022-02-05",
         "name": "oxygen_saturation",
         "phase": "admission",
         "value": 87.0,
+        "adtl_valid": True,
     },
     {
         "date": "2022-02-05",
         "name": "cough",
         "phase": "admission",
         "is_present": True,
+        "adtl_valid": True,
     },
     {
         "date": "2022-02-05",
         "name": "pao2_sample_type",
         "phase": "study",
         "text": "Capillary",
+        "adtl_valid": True,
     },
     {
         "date": "2022-02-06",
         "name": "history_of_fever",
         "phase": "followup",
         "is_present": True,
+        "adtl_valid": True,
     },
     {
         "date": "2022-02-07",
         "name": "history_of_fever",
         "phase": "followup",
         "is_present": False,
+        "adtl_valid": True,
     },
 ]
 
@@ -139,12 +145,14 @@ ONE_MANY_IF_MISSINGDATA_OUTPUT = [
         "name": "cough",
         "phase": "admission",
         "is_present": True,
+        "adtl_valid": True,
     },
     {
         "date": "2022-02-07",
         "name": "history_of_fever",
         "phase": "followup",
         "is_present": False,
+        "adtl_valid": True,
     },
 ]
 
@@ -355,6 +363,7 @@ def test_one_to_many():
     assert actual_one_many_output_csv == ONE_MANY_OUTPUT
 
 
+# HERE
 def test_one_to_many_correct_if_behaviour():
     actual_row = list(
         parser.Parser(TEST_PARSERS_PATH / "oneToMany-missingIf.toml")

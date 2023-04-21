@@ -4,6 +4,7 @@
 
   [adtl.tables.observation]
     kind = "oneToMany"
+    schema = "../schemas/observation_defaultif.schema.json"
 
 [adtl.defs]
   "Y/N/NK" = { values = { 1 = true, 2 = false } }
