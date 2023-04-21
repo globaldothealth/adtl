@@ -138,6 +138,31 @@ if.all = [  # in TOML this is a nested key, like { "if": { "all": [ ... ] } }
 ]
 ```
 
+The **oneToMany** table has default conditional behaviour so that rows are only shown
+if the row is not empty, and contains values which can be mapped correctly if maps are
+provided. For example, an observation recording the presence/absence of vomiting should only
+be shown if values map to True/False:
+
+```ini
+[[table]]
+  name = "vomiting_nausea"
+  is_present = { field = "Admission Symptoms.Vomiting", values = {1 = True, 0 = False} } # values = ['0', 'Unknown', '1', 'UNKNOWN', '']
+  # if.any = [{ "Admission Symptoms.Vomiting" = '1'}, { "Admission Symptoms.Vomiting" = '0'}] <- rule assumed by adtl
+```
+If a different/more specific conditional statement is required, e.g. if a row should only be displayed
+based on the condition of a different field, this behaviour can be overridden by writing an
+if condition into the parser; note that this will *stop any automated generation*, you should
+specify all conditions under which the row should be displayed, for example:
+
+```ini
+[[observation]]
+  name = "transfer_from_other_facility"
+  phase = "study"
+  date = { field = "rpt_date" }
+  if = { rpt_date = { "!=" = "" } } # This is dependent on a date rather than an is_present field, so requires specifying.
+  is_present = true
+```
+
 ### Field with unit
 
 Often values need to be normalised to a particular unit.

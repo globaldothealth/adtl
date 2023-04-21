@@ -94,6 +94,60 @@ ONE_MANY_OUTPUT = [
     {"date": "2022-02-05", "name": "cough", "is_present": True},
 ]
 
+ONE_MANY_IF_OUTPUT = [
+    {
+        "date": "2022-02-05",
+        "name": "headache",
+        "phase": "admission",
+        "is_present": False,
+    },
+    {
+        "date": "2022-02-05",
+        "name": "oxygen_saturation",
+        "phase": "admission",
+        "value": 87.0,
+    },
+    {
+        "date": "2022-02-05",
+        "name": "cough",
+        "phase": "admission",
+        "is_present": True,
+    },
+    {
+        "date": "2022-02-05",
+        "name": "pao2_sample_type",
+        "phase": "study",
+        "text": "Capillary",
+    },
+    {
+        "date": "2022-02-06",
+        "name": "history_of_fever",
+        "phase": "followup",
+        "is_present": True,
+    },
+    {
+        "date": "2022-02-07",
+        "name": "history_of_fever",
+        "phase": "followup",
+        "is_present": False,
+    },
+]
+
+ONE_MANY_IF_MISSINGDATA_OUTPUT = [
+    {
+        "date": "2022-02-05",
+        "name": "cough",
+        "phase": "admission",
+        "is_present": True,
+    },
+    {
+        "date": "2022-02-07",
+        "name": "history_of_fever",
+        "phase": "followup",
+        "is_present": False,
+    },
+]
+
 SOURCE_GROUPBY = [
     {"sex": "1", "subjid": "S007", "dsstdat": "2020-05-06", "hostdat": "2020-06-08"},
     {"sex": "2", "subjid": "S001", "dsstdat": "2022-01-11", "hostdat": "2020-06-08"},
@@ -220,6 +274,8 @@ APPLY_OBSERVATIONS_OUTPUT = [
         (({"first": "1", "second": "2"}, RULE_COMBINED_FIRST_NON_NULL), 1),
         (({"first": "2", "second": "1"}, RULE_COMBINED_FIRST_NON_NULL), 2),
         (({"first": "", "second": "3"}, RULE_COMBINED_FIRST_NON_NULL), 3),
+        (({"first": False, "second": True}, RULE_COMBINED_FIRST_NON_NULL), False),
+        (({"first": "", "second": False}, RULE_COMBINED_FIRST_NON_NULL), False),
         ((ROW_CONDITIONAL, RULE_CONDITIONAL_OK), "2022-01-01"),
         ((ROW_CONDITIONAL, RULE_CONDITIONAL_FAIL), None),
         ((ROW_UNIT_MONTH, RULE_UNIT), 1.5),
@@ -297,6 +353,22 @@ def test_one_to_many():
     )
     assert actual_one_many_output_rows == ONE_MANY_OUTPUT
     assert actual_one_many_output_csv == ONE_MANY_OUTPUT
+
+
+def test_one_to_many_correct_if_behaviour():
+    actual_row = list(
+        parser.Parser(TEST_PARSERS_PATH / "oneToMany-missingIf.toml")
+        .parse(TEST_SOURCES_PATH / "oneToManyIf.csv")
+        .read_table("observation")
+    )
+    actual_row_missing = list(
+        parser.Parser(TEST_PARSERS_PATH / "oneToMany-missingIf.toml")
+        .parse(TEST_SOURCES_PATH / "oneToManyIf-missing.csv")
+        .read_table("observation")
+    )
+
+    assert actual_row == ONE_MANY_IF_OUTPUT
+    assert actual_row_missing == ONE_MANY_IF_MISSINGDATA_OUTPUT
 
 
 # test exceptions

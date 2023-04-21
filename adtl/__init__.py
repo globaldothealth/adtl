@@ -231,7 +231,12 @@ def get_combined_type(row: StrDict, rule: StrDict, ctx: Context = None):
         return any(get_value(row, r, ctx) for r in rules)
     elif combined_type == "firstNonNull":
         try:
-            return next(filter(None, [get_value(row, r, ctx) for r in rules]))
+            return next(
+                filter(
+                    lambda item: item is not None,
+                    [get_value(row, r, ctx) for r in rules],
+                )
+            )
         except StopIteration:
             return None
     elif combined_type == "list" or combined_type == "set":
@@ -342,7 +347,7 @@ def hash_sensitive(value: str) -> str:
 
 
 def remove_null_keys(d: Dict[str, Any]) -> Dict[str, Any]:
-    "Removes keys which map to null"
+    "Removes keys which map to null - but not empty strings or 'unknown' etc types"
     return {k: v for k, v in d.items() if v is not None}
 
 
@@ -496,6 +501,31 @@ class Parser:
                     for match in self.spec[table]:
                         match.update(commonMappings)
 
+    def default_if(self, rule: StrDict):
+        """
+        Default behaviour for oneToMany table, row not displayed if there's an empty
+        string or values not mapped in the rule.
+        """
+
+        if "is_present" in rule:
+            field = rule["is_present"]["field"]
+            if_rule = {"any": [{field: v} for v in rule["is_present"]["values"]]}
+        elif "value" in rule:
+            field = rule["value"]["field"]
+            if "values" in rule["value"]:
+                if_rule = {"any": [{field: v} for v in rule["value"]["values"]]}
+            else:
+                if_rule = {field: {"!=": ""}}
+        elif "text" in rule:
+            field = rule["text"]["field"]
+            if "values" in rule["text"]:
+                if_rule = {"any": [{field: v} for v in rule["text"]["values"]]}
+            else:
+                if_rule = {field: {"!=": ""}}
+
+        rule["if"] = if_rule
+        return rule
+
     def update_table(self, table: str, row: StrDict):
         # Currently only aggregations are supported
 
@@ -513,9 +543,7 @@ class Parser:
         elif kind == "oneToMany":
             for match in self.spec[table]:
                 if "if" not in match:
-                    raise ValueError(
-                        f"oneToMany tables must have a 'if' key setting condition for row to be emitted: {match!r}"
-                    )
+                    match = self.default_if(match)
                 if parse_if(row, match["if"]):
                     self.data[table].append(
                         remove_null_keys(
