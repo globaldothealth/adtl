@@ -532,9 +532,9 @@ class Parser:
                 self.data[table] = defaultdict(dict)
             group_key = get_value(row, self.spec[table][group_field])
             for attr in self.spec[table]:
-                if (
-                    value := get_value(row, self.spec[table][attr], self.ctx(attr))
-                ) is not None:
+                value = get_value(row, self.spec[table][attr], self.ctx(attr))
+                # Check against all null elements, for combinedType=set/list, null is []
+                if value is not None and value != []:
                     self.data[table][group_key][attr] = value
         elif kind == "oneToMany":
             for match in self.spec[table]:

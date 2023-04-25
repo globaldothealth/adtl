@@ -25,6 +25,25 @@
             "field": "subjid",
             "description": "Subject ID"
         },
+        "ethnicity": {
+            "combinedType": "set",
+            "excludeWhen": "none",
+            "fields": [
+                {
+                    "field": "ethnic",
+                    "values": {
+                        "1": "Arabic",
+                        "2": "Black",
+                        "3": "South_Asian",
+                        "4": "East_Asian",
+                        "5": "West_Asian",
+                        "6": "Latin_American",
+                        "7": "White",
+                        "8": "Aboriginal_First_Nations"
+                    }
+                }
+            ]
+        },
         "dataset_id": "dataset-2020-03-23",
         "country_iso3": "GBR",
         "enrolment_date": {
