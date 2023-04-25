@@ -25,10 +25,10 @@
 # ---
 # name: test_validation
   '''
-  adtl_valid,adtl_error,admission_date,country_iso3,dataset_id,enrolment_date,sex_at_birth,subject_id
-  True,,2020-06-08,GBR,dataset-2020-03-23,2020-05-06,male,S007
-  False,"data must contain ['subject_id', 'country_iso3', 'enrolment_date', 'sex_at_birth'] properties",8/6/2022,GBR,dataset-2020-03-23,2022-01-11,,S001
-  False,data.admission_date must be date,8/6/2020,GBR,dataset-2020-03-23,2020-05-06,male,S009
+  adtl_valid,adtl_error,admission_date,country_iso3,dataset_id,enrolment_date,ethnicity,sex_at_birth,subject_id
+  True,,2020-06-08,GBR,dataset-2020-03-23,2020-05-06,['Arabic'],male,S007
+  False,"data must contain ['subject_id', 'country_iso3', 'enrolment_date', 'sex_at_birth'] properties",8/6/2022,GBR,dataset-2020-03-23,2022-01-11,['Black'],,S001
+  False,data.admission_date must be date,8/6/2020,GBR,dataset-2020-03-23,2020-05-06,['South_Asian'],male,S009
   
   '''
 # ---

@@ -117,9 +117,34 @@ SOURCE_GROUPBY_MULTI_ID = [
 ]
 
 SOURCE_GROUPBY_INVALID = [
-    {"sex": "1", "subjid": "S007", "dsstdat": "2020-05-06", "hostdat": "2020-06-08"},
-    {"sex": "5", "subjid": "S001", "dsstdat": "2022-01-11", "hostdat": "8/6/2022"},
-    {"sex": "1", "subjid": "S009", "dsstdat": "2020-05-06", "hostdat": "8/6/2020"},
+    {
+        "sex": "1",
+        "subjid": "S007",
+        "dsstdat": "2020-05-06",
+        "hostdat": "2020-06-08",
+        "ethnic": "1",
+    },
+    {
+        "sex": "",
+        "subjid": "S007",
+        "dsstdat": "",
+        "hostdat": "",
+        "ethnic": "",
+    },
+    {
+        "sex": "5",
+        "subjid": "S001",
+        "dsstdat": "2022-01-11",
+        "hostdat": "8/6/2022",
+        "ethnic": "2",
+    },
+    {
+        "sex": "1",
+        "subjid": "S009",
+        "dsstdat": "2020-05-06",
+        "hostdat": "8/6/2020",
+        "ethnic": "3",
+    },
 ]
 
 BUFFER_GROUPBY = """
