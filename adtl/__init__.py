@@ -443,7 +443,6 @@ class Parser:
             else:
                 self.data[table] = []
 
-        print(self.date_fields)
         self._set_field_names()
 
     @lru_cache
