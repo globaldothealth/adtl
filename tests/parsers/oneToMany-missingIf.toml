@@ -25,7 +25,14 @@
   name = "cough"
   date = { field = "dt" }
   phase = "admission"
-  is_present = { field = "cough_ceoccur_v2", ref = "Y/N/NK" }
+
+  [observation.is_present]
+    combinedType = "any"
+    fields = [
+      { field = "cough_ceoccur_v2", ref = "Y/N/NK" },
+      { field = "dry_cough_ceoccur_v2", ref = "Y/N/NK" },
+      { field = "wet_cough_ceoccur_v2", ref = "Y/N/NK" },
+    ]
 
 [[observation]]
   name = "pao2_sample_type"

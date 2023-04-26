@@ -512,11 +512,24 @@ class Parser:
 
         option = set(data_options).intersection(rule.keys()).pop()
 
-        field = rule[option]["field"]
-        if "values" in rule[option]:
-            if_rule = {"any": [{field: v} for v in rule[option]["values"]]}
+        if "combinedType" not in rule[option]:
+            field = rule[option]["field"]
+            if "values" in rule[option]:
+                if_rule = {"any": [{field: v} for v in rule[option]["values"]]}
+            else:
+                if_rule = {field: {"!=": ""}}
         else:
-            if_rule = {field: {"!=": ""}}
+            assert rule[option]["combinedType"] in [
+                "any",
+                "all",
+            ], "default if rules are only supported for combinedType=any/all"
+            rules = rule[option]["fields"]
+            condition = (
+                lambda rule: [{rule["field"]: v} for v in rule["values"]]
+                if "values" in rule
+                else [{rule["field"]: {"!=": ""}}]
+            )
+            if_rule = {"any": sum(map(condition, rules), [])}
 
         rule["if"] = if_rule
         return rule
