@@ -71,6 +71,8 @@ def endDate(startdate, duration):
 
     sd = datetime.strptime(startdate, "%Y-%m-%d")
 
+    duration = float(duration)
+
     ed = sd + timedelta(days=duration)
 
     return ed.strftime("%Y-%m-%d")
