@@ -70,3 +70,17 @@ def test_endDate(test_enddate_start, test_enddate_duration, expected):
 )
 def test_getFloat(badfloat, expected):
     assert transform.getFloat(badfloat) == expected
+
+
+@pytest.mark.parametrize(
+    "year,month,day,expected",
+    [
+        ("", "", "", None),
+        ("2020", "", "", None),
+        ("", "13", "", None),
+        ("2020", "05", "04", "2020-05-04"),
+        ("1999", "12", "44", None),
+    ],
+)
+def test_makeDate(year, month, day, expected):
+    assert transform.makeDate(year, month, day) == expected
