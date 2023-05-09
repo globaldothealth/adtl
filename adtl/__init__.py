@@ -522,7 +522,10 @@ class Parser:
             assert rule[option]["combinedType"] in [
                 "any",
                 "all",
-            ], "default if rules are only supported for combinedType=any/all"
+                "firstNonNull",
+                "set",
+                "list",
+            ], f"Invalid combinedType: {rule[option]['combinedType']}"
             rules = rule[option]["fields"]
             condition = (
                 lambda rule: [{rule["field"]: v} for v in rule["values"]]
