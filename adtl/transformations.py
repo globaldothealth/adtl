@@ -1,6 +1,7 @@
 """ Functions which can be applied to source fields, allowing extensibility """
 
-from datetime import datetime, timedelta
+import logging
+from datetime import datetime, timedelta, date
 import pint
 
 
@@ -76,3 +77,22 @@ def endDate(startdate, duration):
     ed = sd + timedelta(days=duration)
 
     return ed.strftime("%Y-%m-%d")
+
+
+def makeDate(year, month, day):
+    if year in [None, ""] or month in [None, ""] or day in [None, ""]:
+        return None
+    try:
+        year, month, day = int(year), int(month), int(day)
+    except ValueError:
+        logging.error(
+            f"Error in casting to integer: year={year}, month={month}, day={day}"
+        )
+        return None
+    try:
+        return date(year, month, day).isoformat()
+    except ValueError:
+        logging.error(
+            f"Could not construct date from: year={year}, month={month}, day={day}"
+        )
+        return None
