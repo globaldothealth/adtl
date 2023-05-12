@@ -149,6 +149,7 @@ be shown if values map to True/False:
   is_present = { field = "Admission Symptoms.Vomiting", values = {1 = True, 0 = False} } # values = ['0', 'Unknown', '1', 'UNKNOWN', '']
   # if.any = [{ "Admission Symptoms.Vomiting" = '1'}, { "Admission Symptoms.Vomiting" = '0'}] <- rule assumed by adtl
 ```
+
 If a different/more specific conditional statement is required, e.g. if a row should only be displayed
 based on the condition of a different field, this behaviour can be overridden by writing an
 if condition into the parser; note that this will *stop any automated generation*, you should
@@ -265,6 +266,9 @@ other than the source field which need to be parsed into the transformation
 function must be listed as `params`, in the same order as they should be
 passed to the transformation function.
 
+If the parameter is a field attribute value from the source data, the field name
+should be prefixed with a `$` to distinguish it from constant strings.
+
 ```ini
 [[table]]
   field = "icu_admitted"
@@ -272,7 +276,7 @@ passed to the transformation function.
 
 [[table]]
   field = "brthdtc"
-  apply = { function = "yearsElapsed", params = ["dsstdat"] }
+  apply = { function = "yearsElapsed", params = ["$dsstdat"] }
 
 ```
 
