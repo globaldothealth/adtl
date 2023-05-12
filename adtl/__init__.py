@@ -122,7 +122,7 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
             if source_date != target_date:
                 try:
                     value = datetime.strptime(value, source_date).strftime(target_date)
-                except ValueError:
+                except (TypeError, ValueError):
                     logging.info(f"Could not parse date: {value}")
                     return None
         return value
