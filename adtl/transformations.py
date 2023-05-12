@@ -2,6 +2,12 @@
 
 import logging
 from datetime import datetime, timedelta, date
+
+try:
+    import zoneinfo
+except ImportError:
+    from backports import zoneinfo  # noqa
+
 import pint
 
 
@@ -96,3 +102,23 @@ def makeDate(year, month, day):
             f"Could not construct date from: year={year}, month={month}, day={day}"
         )
         return None
+
+
+def makeDateTimeFromSeconds(date, time_seconds, date_format, tzname):
+    if date == "":
+        return None
+    try:
+        t = datetime.strptime(date, date_format).replace(
+            tzinfo=zoneinfo.ZoneInfo(tzname)
+        )
+    except ValueError:
+        logging.error(
+            f"Could not convert date {date!r} from date format {date_format!r}"
+        )
+        return None
+    if time_seconds == "":
+        return t.date().isoformat()  # return date only
+    time_seconds = int(time_seconds)
+    hour = time_seconds // 3600
+    minute = (time_seconds % 3600) // 60
+    return t.replace(hour=hour, minute=minute).isoformat()

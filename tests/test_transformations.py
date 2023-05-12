@@ -84,3 +84,20 @@ def test_getFloat(badfloat, expected):
 )
 def test_makeDate(year, month, day, expected):
     assert transform.makeDate(year, month, day) == expected
+
+
+@pytest.mark.parametrize(
+    "date,time_seconds,date_format,tzname,expected",
+    [
+        ("04/05/2020", "41400", "%d/%m/%Y", "UTC", "2020-05-04T11:30:00+00:00"),
+        ("04/05/2020", "", "%d/%m/%Y", "UTC", "2020-05-04"),
+        ("04/05/2020", "", "%m/%d/%Y", "UTC", "2020-04-05"),
+        ("05/06/2020", "86399", "%d/%m/%Y", "UTC", "2020-06-05T23:59:00+00:00"),
+        ("05/06/2020", "86399", "%d/%m/%Y", "Asia/Tokyo", "2020-06-05T23:59:00+09:00"),
+    ],
+)
+def test_makeDateTimeFromSeconds(date, time_seconds, date_format, tzname, expected):
+    assert (
+        transform.makeDateTimeFromSeconds(date, time_seconds, date_format, tzname)
+        == expected
+    )

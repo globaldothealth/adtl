@@ -15,6 +15,7 @@ requires-python = ">=3.8"
 readme = "README.md"
 classifiers = ["License :: OSI Approved :: MIT License"]
 dependencies = [
+  "backports.zoneinfo;python_version<'3.9'",
   "tomli>=2.0.0",
   "pint>=0.20",
   "requests>=2.0.0",
