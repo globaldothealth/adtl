@@ -108,3 +108,16 @@ def test_makeDateTimeFromSeconds(date, time_seconds, date_format, tzname, expect
         transform.makeDateTimeFromSeconds(date, time_seconds, date_format, tzname)
         == expected
     )
+
+
+@pytest.mark.parametrize(
+    "field, return_text, expected",
+    [
+        ("2023-01-24", "Ribavarin", "Ribavarin"),
+        (True, "Dexamethasone", "Dexamethasone"),
+        ("", "Prednisolone", None),
+        (None, "Chloroquine", None),
+    ],
+)
+def test_textIfNotNull(field, return_text, expected):
+    assert transform.textIfNotNull(field, return_text) == expected
