@@ -2,7 +2,12 @@
 
 import logging
 from datetime import datetime, timedelta, date
-from zoneinfo import ZoneInfo
+
+try:
+    import zoneinfo
+except ImportError:
+    from backports import zoneinfo  # noqa
+
 import pint
 
 
@@ -103,7 +108,9 @@ def makeDateTimeFromSeconds(date, time_seconds, date_format, tzname):
     if date == "":
         return None
     try:
-        t = datetime.strptime(date, date_format).replace(tzinfo=ZoneInfo(tzname))
+        t = datetime.strptime(date, date_format).replace(
+            tzinfo=zoneinfo.ZoneInfo(tzname)
+        )
     except ValueError:
         logging.error(
             f"Could not convert date {date!r} from date format {date_format!r}"
