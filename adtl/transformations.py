@@ -15,6 +15,10 @@ def isNotNull(value):
     return value not in [None, ""]
 
 
+def textIfNotNull(field, return_val):
+    return return_val if field not in [None, ""] else None
+
+
 def getFloat(value):
     if not value:
         return None
