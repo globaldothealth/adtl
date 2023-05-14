@@ -229,9 +229,17 @@ def get_combined_type(row: StrDict, rule: StrDict, ctx: Context = None):
         else:
             rules.append(r)
     if combined_type == "all":
-        return all(get_value(row, r, ctx) for r in rules)
+        values = [get_value(row, r, ctx) for r in rules]
+        if all(v is None for v in values):
+            return None
+        else:
+            return all(values)
     elif combined_type == "any":
-        return any(get_value(row, r, ctx) for r in rules)
+        values = [get_value(row, r, ctx) for r in rules]
+        if all(v is None for v in values):
+            return None
+        else:
+            return any(values)
     elif combined_type == "firstNonNull":
         try:
             return next(

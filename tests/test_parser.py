@@ -276,7 +276,7 @@ APPLY_OBSERVATIONS_OUTPUT = [
         (({"diabetes_mhyn": "1"}, RULE_SINGLE_FIELD), 1),
         (({}, "CONST"), "CONST"),
         (({"modliv": "1", "mildliver": "0"}, RULE_COMBINED_TYPE_ANY), True),
-        (({"modliv": "", "mildliver": ""}, RULE_COMBINED_TYPE_ANY), False),
+        (({"modliv": "", "mildliver": ""}, RULE_COMBINED_TYPE_ANY), None),
         (({"modliv": "1", "mildliver": "0"}, RULE_COMBINED_TYPE_ALL), False),
         (({"modliv": "1", "mildliver": "0"}, RULE_COMBINED_TYPE_LIST), [True, False]),
         (
