@@ -42,9 +42,9 @@ These metadata fields are defined under a header key `adtl`.
 
 ### Optional fields
 
-### Optional fields
-
 * **defs**: Definitions that can be referred to elsewhere in the schema
+* **include-def** (list): List of additional TOML or JSON files to import as
+  definitions
 * **defaultDateFormat**: Default source date format, applied to all fields
   with either "date_" / "_date" in the field name or that have format date
   set in the JSON schema
@@ -79,6 +79,43 @@ someTable = { groupBy = "subjid", aggregation = "lastNotNull" }
 
 [adtl.defs]
 someReference = { values = { 1 = true, 2 = false } }
+```
+
+Often some definitions are repeated across files. adtl supports including
+definitions from external files using the *include-def* keyword under the
+`[adtl]` section. As an example, a mapping of country codes to country names
+could be stored in `countries.toml`:
+
+```toml
+[countryMap.values]
+1 = "ALB"
+2 = "ZZZ"
+# and so on
+```
+
+This could be included in adtl, and used as a reference just as if it was
+included in the TOML file directly:
+
+```toml
+[adtl]
+include-def = ["countries.toml"]
+
+# ...
+
+[cases.country_iso3]
+field = "country"
+ref = "countryMap"
+```
+
+Definition files can also be included from the command line by passing the
+`--include-def` flag to adtl. This is useful when the included file can change
+from one run to another, or in cases where the definitions/mappings are located
+externally. The following would produce an equivalent result to the
+`include-def` assignment in the above example, assuming `data.csv` is the source
+data file:
+
+```shell
+adtl parser.toml data.csv --include-def countries.toml
 ```
 
 ## Table mappings
