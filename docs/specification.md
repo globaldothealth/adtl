@@ -227,6 +227,8 @@ Accepted values for `combinedType` are:
 
 * *any* - Whether any of the fields are non-null (truthy)
 * *all* - Whether all of the fields are non-null (truthy)
+* *min* - Minimum of non-null fields
+* *max* - Minimum of non-null fields
 * *firstNonNull* - First in the list of fields that has a non-null value
 * *list* - List of various fields
 * *set* - List of various fields, with duplicates removed

@@ -59,6 +59,17 @@ RULE_UNIT = {
     "source_unit": {"field": "age_unit", "values": {"1": "months", "2": "years"}},
 }
 
+ROW_DATE_BOTH_PRESENT = {"admission_date": "2020-05-05", "enrolment_date": "2020-05-19"}
+ROW_DATE_ONLY_ONE = {"admission_date": "2020-05-05", "enrolment_date": ""}
+RULE_COMBINED_TYPE_MIN = {  # earliest date
+    "combinedType": "min",
+    "fields": [{"field": "admission_date"}, {"field": "enrolment_date"}],
+}
+RULE_COMBINED_TYPE_MAX = {  # latest date
+    "combinedType": "max",
+    "fields": [{"field": "admission_date"}, {"field": "enrolment_date"}],
+}
+
 RULE_COMBINED_TYPE_ANY = {"combinedType": "any", "fields": LIVER_DISEASE}
 RULE_COMBINED_TYPE_ALL = {"combinedType": "all", "fields": LIVER_DISEASE}
 RULE_COMBINED_FIRST_NON_NULL = {
@@ -313,6 +324,12 @@ APPLY_OBSERVATIONS_OUTPUT = [
         ((ROW_CONDITIONAL, RULE_CONDITIONAL_FAIL), None),
         ((ROW_UNIT_MONTH, RULE_UNIT), 1.5),
         ((ROW_UNIT_YEAR, RULE_UNIT), 18),
+        ((ROW_DATE_BOTH_PRESENT, RULE_COMBINED_TYPE_MIN), "2020-05-05"),
+        ((ROW_DATE_BOTH_PRESENT, RULE_COMBINED_TYPE_MAX), "2020-05-19"),
+        ((ROW_DATE_ONLY_ONE, RULE_COMBINED_TYPE_MIN), "2020-05-05"),
+        ((ROW_DATE_ONLY_ONE, RULE_COMBINED_TYPE_MAX), "2020-05-05"),
+        (({"admission_date": "", "enrolment_date": ""}, RULE_COMBINED_TYPE_MIN), None),
+        (({"admission_date": "", "enrolment_date": ""}, RULE_COMBINED_TYPE_MAX), None),
         (({"outcome_date": "02/05/2022"}, RULE_DATE_MDY), "05/02/2022"),
         (({"outcome_date": "02/05/2022"}, RULE_DATE_ISO), "2022-05-02"),
         (
