@@ -385,14 +385,31 @@ def make_fields_optional(
     return _schema
 
 
+def relative_path(source_file, target_file):
+    return Path(source_file).parent / target_file
+
+
+def read_definition(file: Path) -> Dict[str, Any]:
+    "Reads definition from file into a dictionary"
+    if file.suffix == ".json":
+        with file.open() as fp:
+            return json.load(fp)
+    elif file.suffix == ".toml":
+        with file.open("rb") as fp:
+            return tomli.load(fp)
+    else:
+        raise ValueError(f"Unsupported file format: {file}")
+
+
 class Parser:
-    def __init__(self, spec: Union[str, Path, StrDict]):
+    def __init__(self, spec: Union[str, Path, StrDict], include_defs: List[str] = []):
         "Loads specification from spec in format (default json)"
 
         self.data: StrDict = {}
         self.defs: StrDict = {}
         self.fieldnames: Dict[str, List[str]] = {}
         self.specfile = None
+        self.include_defs = include_defs
         self.validators: StrDict = {}
         self.schemas: StrDict = {}
         self.date_fields = []
@@ -414,7 +431,15 @@ class Parser:
         else:
             self.spec = spec
         self.header = self.spec.get("adtl", {})
+        if self.specfile:
+            self.include_defs = [
+                relative_path(self.specfile, definition_file)
+                for definition_file in self.header.get("include-def", [])
+            ] + self.include_defs
         self.defs = self.header.get("defs", {})
+        if self.include_defs:
+            for definition_file in self.include_defs:
+                self.defs.update(read_definition(definition_file))
         self.spec = expand_refs(self.spec, self.defs)
 
         self.validate_spec()
@@ -714,8 +739,14 @@ def main():
     cmd.add_argument(
         "--encoding", help="Encoding input file is in", default="utf-8-sig"
     )
+    cmd.add_argument(
+        "--include-def",
+        action="append",
+        help="Include external definition (TOML or JSON)",
+    )
     args = cmd.parse_args()
-    spec = Parser(args.spec)
+    include_defs = args.include_def or []
+    spec = Parser(args.spec, include_defs=include_defs)
     if output := spec.parse(args.file, encoding=args.encoding).save(
         args.output or spec.name
     ):

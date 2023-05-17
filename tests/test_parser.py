@@ -626,10 +626,26 @@ def test_reference_expansion():
     assert ps_ref.spec == ps_noref.spec
 
 
-def test_format_equivalence():
-    adtl_json = parser.Parser(TEST_PARSERS_PATH / "groupBy-defs.json")
-    adtl_toml = parser.Parser(TEST_PARSERS_PATH / "groupBy-defs.toml")
-    assert adtl_json.spec == adtl_toml.spec
+def test_reference_expansion_with_include():
+    ps_noinclude = parser.Parser(TEST_PARSERS_PATH / "groupBy-defs.toml")
+    ps_include = parser.Parser(TEST_PARSERS_PATH / "groupBy-defs-include.toml")
+    del ps_noinclude.spec["adtl"]["defs"]
+    del ps_include.spec["adtl"]["include-def"]
+    assert ps_noinclude.spec == ps_include.spec
+
+
+def test_external_definitions():
+    with pytest.raises(KeyError):
+        parser.Parser(TEST_PARSERS_PATH / "groupBy-external-defs.toml")
+    ps = parser.Parser(
+        TEST_PARSERS_PATH / "groupBy-external-defs.toml",
+        include_defs=[TEST_PARSERS_PATH / "include-def.toml"],
+    )
+    assert ps.defs["sexMapping"]["values"] == {
+        "1": "male",
+        "2": "female",
+        "3": "non_binary",
+    }
 
 
 FOR_PATTERN = [

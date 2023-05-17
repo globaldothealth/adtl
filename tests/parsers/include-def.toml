@@ -1,0 +1,4 @@
+[sexMapping.values]
+  1 = "male"
+  2 = "female"
+  3 = "non_binary"
