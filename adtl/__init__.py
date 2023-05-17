@@ -63,7 +63,19 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
         rule, list
     ):  # not a container, is constant
         return rule
+    # Check whether field is present if it's allowed to be passed over
+    if "fieldOption" in rule:
+        try:
+            row[rule["fieldOption"]]
+            row["field"] = row.pop("fieldOption")
+        except KeyError:
+            return None
     if "field" in rule:
+        if ctx and ctx.get("skip_pattern").match(rule["field"]):
+            try:
+                row[rule["field"]]
+            except KeyError:
+                return None
         # do not parse field if condition is not met
         if "if" in rule and not parse_if(row, rule["if"]):
             return None
@@ -485,6 +497,9 @@ class Parser:
             "defaultDateFormat": self.header.get(
                 "defaultDateFormat", DEFAULT_DATE_FORMAT
             ),
+            "skip_pattern": re.compile(self.header.get("skipFieldPattern"))
+            if self.header.get("skipFieldPattern")
+            else False,
         }
 
     def validate_spec(self):

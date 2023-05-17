@@ -27,6 +27,10 @@
               "type": "string",
               "description": "This is only used with combinedType, specifies a regular expression matching multiple fields"
             },
+            "fieldOption": {
+              "type": "string",
+              "description": "Corresponding field name in source file, can be skipped if not present in data"
+            },
             "sensitive": {
               "type": "boolean",
               "description": "Indicates to the parser whether the field is sensitive. Usually a sensitive field is hashed or encrypted before storing in the database.",
