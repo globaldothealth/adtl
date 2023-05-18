@@ -279,6 +279,23 @@ APPLY_OBSERVATIONS_OUTPUT = [
     },
 ]
 
+RULE_FIELD_OPTION = {
+    "field": "aidshiv_mhyn",
+    "values": {"1": True, "0": False},
+    "can_skip": True,
+}
+
+# OBSERVATION_RULE_FIELD_OPTION = {
+#     "name": "bleeding",
+#     "phase": "admission",
+#     "date": "2023-05-18",
+#     "is_present": {
+#         "field": "bleed_ceterm_v2",
+#         "values": {"1": True, "0": False},
+#         "can_skip": True,
+#     },
+# }
+
 
 @pytest.mark.parametrize(
     "row_rule,expected",
@@ -350,6 +367,9 @@ APPLY_OBSERVATIONS_OUTPUT = [
             unordered(["Lopinavir/Ritonvir", "Interferon alpha"]),
         ),
         (({"first": "", "second": ""}, RULE_COMBINED_FIRST_NON_NULL), None),
+        (({"aidshiv": "1"}, RULE_FIELD_OPTION), None),
+        (({"aidshiv_mhyn": "1"}, RULE_FIELD_OPTION), True),
+        (({"aidshiv_mhyn": "2"}, RULE_FIELD_OPTION), None),
     ],
 )
 def test_get_value(row_rule, expected):
@@ -405,7 +425,6 @@ def test_one_to_many():
     assert actual_one_many_output_csv == ONE_MANY_OUTPUT
 
 
-# HERE
 def test_one_to_many_correct_if_behaviour():
     actual_row = list(
         parser.Parser(TEST_PARSERS_PATH / "oneToMany-missingIf.toml")
@@ -781,3 +800,21 @@ def test_apply_in_observations_table():
     )
 
     assert apply_observations_output == APPLY_OBSERVATIONS_OUTPUT
+
+
+def test_skip_field_pattern_present(snapshot):
+    transformed_csv_data = (
+        parser.Parser(TEST_PARSERS_PATH / "skip_field.json")
+        .parse(TEST_SOURCES_PATH / "skip_field_present.csv")
+        .write_csv("table")
+    )
+    assert transformed_csv_data == snapshot
+
+
+def test_skip_field_pattern_absent(snapshot):
+    transformed_csv_data = (
+        parser.Parser(TEST_PARSERS_PATH / "skip_field.json")
+        .parse(TEST_SOURCES_PATH / "skip_field_absent.csv")
+        .write_csv("table")
+    )
+    assert transformed_csv_data == snapshot

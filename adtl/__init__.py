@@ -11,7 +11,7 @@ from collections import defaultdict, Counter
 from datetime import datetime
 from pathlib import Path
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union, Callable
 
 import pint
 import tomli
@@ -64,18 +64,10 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
     ):  # not a container, is constant
         return rule
     # Check whether field is present if it's allowed to be passed over
-    if "fieldOption" in rule:
-        try:
-            row[rule["fieldOption"]]
-            row["field"] = row.pop("fieldOption")
-        except KeyError:
-            return None
     if "field" in rule:
-        if ctx and ctx.get("skip_pattern").match(rule["field"]):
-            try:
-                row[rule["field"]]
-            except KeyError:
-                return None
+        # do not check for condition if field is missing
+        if skip_field(row, rule, ctx):
+            return None
         # do not parse field if condition is not met
         if "if" in rule and not parse_if(row, rule["if"]):
             return None
@@ -153,19 +145,33 @@ def matching_fields(fields: List[str], pattern: str) -> List[str]:
     return [f for f in fields if compiled_pattern.match(f)]
 
 
-def parse_if(row: StrDict, rule: StrDict) -> bool:
+def parse_if(row: StrDict, rule: StrDict, ctx: Callable = None, can_skip=False) -> bool:
     "Parse conditional statements and return a boolean"
 
     n_keys = len(rule.keys())
-    assert n_keys == 1
+    # assert n_keys == 1
+    assert n_keys == 1 or n_keys == 2
+    if n_keys == 2:
+        assert "can_skip" in rule
+        can_skip = True
     key = next(iter(rule.keys()))
     if key == "not" and isinstance(rule[key], dict):
-        return not parse_if(row, rule[key])
+        return not parse_if(row, rule[key], ctx, can_skip)
     elif key == "any" and isinstance(rule[key], list):
-        return any(parse_if(row, r) for r in rule[key])
+        return any(parse_if(row, r, ctx, can_skip) for r in rule[key])
     elif key == "all" and isinstance(rule[key], list):
-        return all(parse_if(row, r) for r in rule[key])
-    attr_value = row[key]
+        return all(parse_if(row, r, ctx, can_skip) for r in rule[key])
+    try:
+        attr_value = row[key]
+    except KeyError as e:
+        if can_skip == True:
+            return False
+        elif ctx:
+            if skip_field(row, {"field": key}, ctx(key)):
+                return False
+        else:
+            raise e
+
     if isinstance(rule[key], dict):
         cmp = next(iter(rule[key]))
         value = rule[key][cmp]
@@ -562,8 +568,16 @@ class Parser:
 
         if "combinedType" not in rule[option]:
             field = rule[option]["field"]
-            if "values" in rule[option]:
+            if "values" in rule[option] and "can_skip" in rule[option]:
+                if_rule = {
+                    "any": [
+                        {field: v, "can_skip": True} for v in rule[option]["values"]
+                    ]
+                }
+            elif "values" in rule[option]:
                 if_rule = {"any": [{field: v} for v in rule[option]["values"]]}
+            elif "can_skip" in rule[option]:
+                if_rule = {field: {"!=": ""}, "can_skip": True}
             else:
                 if_rule = {field: {"!=": ""}}
         else:
@@ -581,6 +595,11 @@ class Parser:
                 else [{rule["field"]: {"!=": ""}}]
             )
             if_rule = {"any": sum(map(condition, rules), [])}
+
+            for ir in if_rule["any"]:
+                for r in rules:
+                    if str(list(ir.keys())[0]) in r.values() and "can_skip" in r.keys():
+                        ir["can_skip"] = True
 
         rule["if"] = if_rule
         return rule
@@ -603,7 +622,7 @@ class Parser:
             for match in self.spec[table]:
                 if "if" not in match:
                     match = self.default_if(table, match)
-                if parse_if(row, match["if"]):
+                if parse_if(row, match["if"], self.ctx):
                     self.data[table].append(
                         remove_null_keys(
                             {

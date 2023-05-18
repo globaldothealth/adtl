@@ -21,6 +21,12 @@
     },
     "text": {
       "description": "Text field"
+    },
+    "cough": {
+      "description": "Standard cough field"
+    },
+    "followup_cough": {
+      "description": "Follow-up cough field"
     }
   }
 }
