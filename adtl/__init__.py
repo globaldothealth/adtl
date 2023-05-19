@@ -419,6 +419,24 @@ def read_definition(file: Path) -> Dict[str, Any]:
         raise ValueError(f"Unsupported file format: {file}")
 
 
+def skip_field(row, rule, ctx: Context = None):
+    "Returns True if the field is missing and allowed to be skipped"
+    # made no difference
+    if "can_skip" in rule:
+        if rule["can_skip"]:
+            if rule["field"] not in row:
+                return True
+            else:
+                return False
+    if ctx and ctx.get("skip_pattern"):
+        if ctx.get("skip_pattern").match(rule["field"]):
+            if rule["field"] not in row:
+                return True
+            else:
+                return False
+    return False
+
+
 class Parser:
     def __init__(self, spec: Union[str, Path, StrDict], include_defs: List[str] = []):
         "Loads specification from spec in format (default json)"
@@ -568,14 +586,12 @@ class Parser:
 
         if "combinedType" not in rule[option]:
             field = rule[option]["field"]
-            if "values" in rule[option] and "can_skip" in rule[option]:
-                if_rule = {
-                    "any": [
-                        {field: v, "can_skip": True} for v in rule[option]["values"]
-                    ]
-                }
-            elif "values" in rule[option]:
-                if_rule = {"any": [{field: v} for v in rule[option]["values"]]}
+            if "values" in rule[option]:
+                values = rule[option]["values"]
+                if "can_skip" in rule[option]:
+                    if_rule = {"any": [{field: v, "can_skip": True} for v in values]}
+                else:
+                    if_rule = {"any": [{field: v} for v in values]}
             elif "can_skip" in rule[option]:
                 if_rule = {field: {"!=": ""}, "can_skip": True}
             else:
@@ -589,17 +605,27 @@ class Parser:
                 "list",
             ], f"Invalid combinedType: {rule[option]['combinedType']}"
             rules = rule[option]["fields"]
-            condition = (
-                lambda rule: [{rule["field"]: v} for v in rule["values"]]
-                if "values" in rule
-                else [{rule["field"]: {"!=": ""}}]
-            )
-            if_rule = {"any": sum(map(condition, rules), [])}
 
-            for ir in if_rule["any"]:
-                for r in rules:
-                    if str(list(ir.keys())[0]) in r.values() and "can_skip" in r.keys():
-                        ir["can_skip"] = True
+            def create_if_rule(rule):  # better, but not faster
+                field = rule["field"]
+                values = rule.get("values", [])
+                can_skip = rule.get("can_skip", False)
+
+                if_condition = {}
+
+                if values and can_skip:
+                    if_condition = [{field: v, "can_skip": True} for v in values]
+                elif values:
+                    if_condition = [{field: v} for v in values]
+                elif can_skip:
+                    if_condition[field] = {"!=": ""}
+                    if_condition["can_skip"] = True
+                else:
+                    if_condition[field] = {"!=": ""}
+
+                return if_condition
+
+            if_rule = {"any": sum(map(create_if_rule, rules), [])}
 
         rule["if"] = if_rule
         return rule
