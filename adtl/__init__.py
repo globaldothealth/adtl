@@ -145,7 +145,9 @@ def matching_fields(fields: List[str], pattern: str) -> List[str]:
     return [f for f in fields if compiled_pattern.match(f)]
 
 
-def parse_if(row: StrDict, rule: StrDict, ctx: Callable = None, can_skip=False) -> bool:
+def parse_if(
+    row: StrDict, rule: StrDict, ctx: Callable[[str], dict] = None, can_skip=False
+) -> bool:
     "Parse conditional statements and return a boolean"
 
     n_keys = len(rule.keys())
@@ -419,9 +421,8 @@ def read_definition(file: Path) -> Dict[str, Any]:
         raise ValueError(f"Unsupported file format: {file}")
 
 
-def skip_field(row, rule, ctx: Context = None):
+def skip_field(row: StrDict, rule: StrDict, ctx: Context = None):
     "Returns True if the field is missing and allowed to be skipped"
-    # made no difference
     if rule.get("can_skip"):
         return rule["field"] not in row
     if ctx and ctx.get("skip_pattern") and ctx.get("skip_pattern").match(rule["field"]):
