@@ -422,18 +422,10 @@ def read_definition(file: Path) -> Dict[str, Any]:
 def skip_field(row, rule, ctx: Context = None):
     "Returns True if the field is missing and allowed to be skipped"
     # made no difference
-    if "can_skip" in rule:
-        if rule["can_skip"]:
-            if rule["field"] not in row:
-                return True
-            else:
-                return False
-    if ctx and ctx.get("skip_pattern"):
-        if ctx.get("skip_pattern").match(rule["field"]):
-            if rule["field"] not in row:
-                return True
-            else:
-                return False
+    if rule.get("can_skip"):
+        return rule["field"] not in row
+    if ctx and ctx.get("skip_pattern") and ctx.get("skip_pattern").match(rule["field"]):
+        return rule["field"] not in row
     return False
 
 
