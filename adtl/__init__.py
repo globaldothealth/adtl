@@ -151,7 +151,6 @@ def parse_if(
     "Parse conditional statements and return a boolean"
 
     n_keys = len(rule.keys())
-    # assert n_keys == 1
     assert n_keys == 1 or n_keys == 2
     if n_keys == 2:
         assert "can_skip" in rule
@@ -166,7 +165,7 @@ def parse_if(
     try:
         attr_value = row[key]
     except KeyError as e:
-        if can_skip == True:
+        if can_skip is True:
             return False
         elif ctx:
             if skip_field(row, {"field": key}, ctx(key)):
@@ -599,7 +598,7 @@ class Parser:
             ], f"Invalid combinedType: {rule[option]['combinedType']}"
             rules = rule[option]["fields"]
 
-            def create_if_rule(rule):  # better, but not faster
+            def create_if_rule(rule):
                 field = rule["field"]
                 values = rule.get("values", [])
                 can_skip = rule.get("can_skip", False)

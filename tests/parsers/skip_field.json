@@ -25,6 +25,10 @@
     },
     "followup_cough": {
       "field": "flw_cough"
+    },
+    "headache": {
+      "field": "headache",
+      "can_skip": true
     }
   }
 }
