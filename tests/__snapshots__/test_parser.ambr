@@ -23,6 +23,22 @@
   
   '''
 # ---
+# name: test_skip_field_pattern_absent
+  '''
+  adtl_valid,adtl_error,cough,epoch,followup_cough,headache,id,text
+  False,data.epoch must be date,1,11/01/1999,,,1,Lorem ipsum
+  False,data.epoch must be date,0,19/12/2022,,,2,example
+  
+  '''
+# ---
+# name: test_skip_field_pattern_present
+  '''
+  adtl_valid,adtl_error,cough,epoch,followup_cough,headache,id,text
+  False,data.epoch must be date,1,11/01/1999,0,3,1,Lorem ipsum
+  False,data.epoch must be date,0,19/12/2022,1,0,2,example
+  
+  '''
+# ---
 # name: test_validation
   '''
   adtl_valid,adtl_error,admission_date,country_iso3,dataset_id,enrolment_date,ethnicity,sex_at_birth,subject_id

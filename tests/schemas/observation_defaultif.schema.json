@@ -58,7 +58,9 @@
                 "headache",
                 "oxygen_saturation",
                 "pao2_sample_type",
-                "history_of_fever"
+                "history_of_fever",
+                "fatigue_malaise",
+                "severe_dehydration"
             ],
             "description": "Observation name"
         }

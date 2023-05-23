@@ -148,6 +148,20 @@ ONE_MANY_IF_OUTPUT = [
         "is_present": False,
         "adtl_valid": True,
     },
+    {
+        "date": "2022-02-05",
+        "name": "fatigue_malaise",
+        "phase": "followup",
+        "is_present": True,
+        "adtl_valid": True,
+    },
+    {
+        "date": "2022-02-05",
+        "name": "severe_dehydration",
+        "phase": "admission",
+        "is_present": False,
+        "adtl_valid": True,
+    },
 ]
 
 ONE_MANY_IF_MISSINGDATA_OUTPUT = [
@@ -279,6 +293,55 @@ APPLY_OBSERVATIONS_OUTPUT = [
     },
 ]
 
+RULE_FIELD_OPTION_SKIP = {
+    "field": "aidshiv_mhyn",
+    "values": {"1": True, "0": False},
+    "can_skip": True,
+}
+
+OBSERVATION_RULE_FIELD_OPTION_SKIP = {
+    "name": "bleeding",
+    "phase": "admission",
+    "date": "2023-05-18",
+    "is_present": {
+        "field": "bleed_ceterm_v2",
+        "values": {"1": True, "0": False},
+        "can_skip": True,
+    },
+}
+OBSERVATION_RULE_FIELD_OPTION_VALUE = {
+    "name": "temperature_celsius",
+    "phase": "admission",
+    "date": "2023-05-22",
+    "value": {
+        "field": "temp_vsorres",
+        "source_unit": {"field": "temp_vsorresu", "values": {"1": "°C", "2": "°F"}},
+    },
+}
+
+OBSERVATION_RULE_FIELD_OPTION_COMB = {
+    "name": "cough",
+    "phase": "admission",
+    "date": "2023-05-22",
+    "is_present": {
+        "combinedType": "any",
+        "excludeWhen": "none",
+        "fields": [
+            {"field": "cough_ceoccur_v2", "values": {"1": "true", "0": "false"}},
+            {
+                "field": "coughsput_ceoccur_v2",
+                "values": {"1": "true", "0": "false"},
+                "can_skip": "true",
+            },
+            {
+                "field": "coughhb_ceoccur_v2",
+                "values": {"1": "true", "0": "false"},
+                "can_skip": "true",
+            },
+        ],
+    },
+}
+
 
 @pytest.mark.parametrize(
     "row_rule,expected",
@@ -350,6 +413,9 @@ APPLY_OBSERVATIONS_OUTPUT = [
             unordered(["Lopinavir/Ritonvir", "Interferon alpha"]),
         ),
         (({"first": "", "second": ""}, RULE_COMBINED_FIRST_NON_NULL), None),
+        (({"aidshiv": "1"}, RULE_FIELD_OPTION_SKIP), None),
+        (({"aidshiv_mhyn": "1"}, RULE_FIELD_OPTION_SKIP), True),
+        (({"aidshiv_mhyn": "2"}, RULE_FIELD_OPTION_SKIP), None),
     ],
 )
 def test_get_value(row_rule, expected):
@@ -405,7 +471,39 @@ def test_one_to_many():
     assert actual_one_many_output_csv == ONE_MANY_OUTPUT
 
 
-# HERE
+@pytest.mark.parametrize(
+    "rule,expected",
+    [
+        (
+            OBSERVATION_RULE_FIELD_OPTION_SKIP,
+            {
+                "any": [
+                    {"bleed_ceterm_v2": "1", "can_skip": True},
+                    {"bleed_ceterm_v2": "0", "can_skip": True},
+                ]
+            },
+        ),
+        (OBSERVATION_RULE_FIELD_OPTION_VALUE, {"temp_vsorres": {"!=": ""}}),
+        (
+            OBSERVATION_RULE_FIELD_OPTION_COMB,
+            {
+                "any": [
+                    {"cough_ceoccur_v2": "1"},
+                    {"cough_ceoccur_v2": "0"},
+                    {"coughsput_ceoccur_v2": "1", "can_skip": True},
+                    {"coughsput_ceoccur_v2": "0", "can_skip": True},
+                    {"coughhb_ceoccur_v2": "1", "can_skip": True},
+                    {"coughhb_ceoccur_v2": "0", "can_skip": True},
+                ]
+            },
+        ),
+    ],
+)
+def test_default_if_rule_is_correct(rule, expected):
+    psr = parser.Parser(TEST_PARSERS_PATH / "oneToMany-missingIf.toml")
+    assert psr.default_if("observation", rule)["if"] == expected
+
+
 def test_one_to_many_correct_if_behaviour():
     actual_row = list(
         parser.Parser(TEST_PARSERS_PATH / "oneToMany-missingIf.toml")
@@ -781,3 +879,21 @@ def test_apply_in_observations_table():
     )
 
     assert apply_observations_output == APPLY_OBSERVATIONS_OUTPUT
+
+
+def test_skip_field_pattern_present(snapshot):
+    transformed_csv_data = (
+        parser.Parser(TEST_PARSERS_PATH / "skip_field.json")
+        .parse(TEST_SOURCES_PATH / "skip_field_present.csv")
+        .write_csv("table")
+    )
+    assert transformed_csv_data == snapshot
+
+
+def test_skip_field_pattern_absent(snapshot):
+    transformed_csv_data = (
+        parser.Parser(TEST_PARSERS_PATH / "skip_field.json")
+        .parse(TEST_SOURCES_PATH / "skip_field_absent.csv")
+        .write_csv("table")
+    )
+    assert transformed_csv_data == snapshot

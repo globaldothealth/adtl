@@ -11,7 +11,7 @@ from collections import defaultdict, Counter
 from datetime import datetime
 from pathlib import Path
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union, Callable
 
 import pint
 import tomli
@@ -63,7 +63,11 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
         rule, list
     ):  # not a container, is constant
         return rule
+    # Check whether field is present if it's allowed to be passed over
     if "field" in rule:
+        # do not check for condition if field is missing
+        if skip_field(row, rule, ctx):
+            return None
         # do not parse field if condition is not met
         if "if" in rule and not parse_if(row, rule["if"]):
             return None
@@ -141,19 +145,34 @@ def matching_fields(fields: List[str], pattern: str) -> List[str]:
     return [f for f in fields if compiled_pattern.match(f)]
 
 
-def parse_if(row: StrDict, rule: StrDict) -> bool:
+def parse_if(
+    row: StrDict, rule: StrDict, ctx: Callable[[str], dict] = None, can_skip=False
+) -> bool:
     "Parse conditional statements and return a boolean"
 
     n_keys = len(rule.keys())
-    assert n_keys == 1
+    assert n_keys == 1 or n_keys == 2
+    if n_keys == 2:
+        assert "can_skip" in rule
+        can_skip = True
     key = next(iter(rule.keys()))
     if key == "not" and isinstance(rule[key], dict):
-        return not parse_if(row, rule[key])
+        return not parse_if(row, rule[key], ctx, can_skip)
     elif key == "any" and isinstance(rule[key], list):
-        return any(parse_if(row, r) for r in rule[key])
+        return any(parse_if(row, r, ctx, can_skip) for r in rule[key])
     elif key == "all" and isinstance(rule[key], list):
-        return all(parse_if(row, r) for r in rule[key])
-    attr_value = row[key]
+        return all(parse_if(row, r, ctx, can_skip) for r in rule[key])
+    try:
+        attr_value = row[key]
+    except KeyError as e:
+        if can_skip is True:
+            return False
+        elif ctx:
+            if skip_field(row, {"field": key}, ctx(key)):
+                return False
+        else:
+            raise e
+
     if isinstance(rule[key], dict):
         cmp = next(iter(rule[key]))
         value = rule[key][cmp]
@@ -401,6 +420,15 @@ def read_definition(file: Path) -> Dict[str, Any]:
         raise ValueError(f"Unsupported file format: {file}")
 
 
+def skip_field(row: StrDict, rule: StrDict, ctx: Context = None):
+    "Returns True if the field is missing and allowed to be skipped"
+    if rule.get("can_skip"):
+        return rule["field"] not in row
+    if ctx and ctx.get("skip_pattern") and ctx.get("skip_pattern").match(rule["field"]):
+        return rule["field"] not in row
+    return False
+
+
 class Parser:
     def __init__(self, spec: Union[str, Path, StrDict], include_defs: List[str] = []):
         "Loads specification from spec in format (default json)"
@@ -485,6 +513,9 @@ class Parser:
             "defaultDateFormat": self.header.get(
                 "defaultDateFormat", DEFAULT_DATE_FORMAT
             ),
+            "skip_pattern": re.compile(self.header.get("skipFieldPattern"))
+            if self.header.get("skipFieldPattern")
+            else False,
         }
 
     def validate_spec(self):
@@ -548,7 +579,13 @@ class Parser:
         if "combinedType" not in rule[option]:
             field = rule[option]["field"]
             if "values" in rule[option]:
-                if_rule = {"any": [{field: v} for v in rule[option]["values"]]}
+                values = rule[option]["values"]
+                if "can_skip" in rule[option]:
+                    if_rule = {"any": [{field: v, "can_skip": True} for v in values]}
+                else:
+                    if_rule = {"any": [{field: v} for v in values]}
+            elif "can_skip" in rule[option]:
+                if_rule = {field: {"!=": ""}, "can_skip": True}
             else:
                 if_rule = {field: {"!=": ""}}
         else:
@@ -560,12 +597,27 @@ class Parser:
                 "list",
             ], f"Invalid combinedType: {rule[option]['combinedType']}"
             rules = rule[option]["fields"]
-            condition = (
-                lambda rule: [{rule["field"]: v} for v in rule["values"]]
-                if "values" in rule
-                else [{rule["field"]: {"!=": ""}}]
-            )
-            if_rule = {"any": sum(map(condition, rules), [])}
+
+            def create_if_rule(rule):
+                field = rule["field"]
+                values = rule.get("values", [])
+                can_skip = rule.get("can_skip", False)
+
+                if_condition = {}
+
+                if values and can_skip:
+                    if_condition = [{field: v, "can_skip": True} for v in values]
+                elif values:
+                    if_condition = [{field: v} for v in values]
+                elif can_skip:
+                    if_condition[field] = {"!=": ""}
+                    if_condition["can_skip"] = True
+                else:
+                    if_condition[field] = {"!=": ""}
+
+                return if_condition
+
+            if_rule = {"any": sum(map(create_if_rule, rules), [])}
 
         rule["if"] = if_rule
         return rule
@@ -588,7 +640,7 @@ class Parser:
             for match in self.spec[table]:
                 if "if" not in match:
                     match = self.default_if(table, match)
-                if parse_if(row, match["if"]):
+                if parse_if(row, match["if"], self.ctx):
                     self.data[table].append(
                         remove_null_keys(
                             {

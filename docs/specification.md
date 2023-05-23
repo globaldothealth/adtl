@@ -45,6 +45,8 @@ These metadata fields are defined under a header key `adtl`.
 * **defs**: Definitions that can be referred to elsewhere in the schema
 * **include-def** (list): List of additional TOML or JSON files to import as
   definitions
+* **skipFieldPattern** : Regex string matching field names which may be skipped
+if not present in a datafile, following the same syntax as `fieldPattern` key.
 * **defaultDateFormat**: Default source date format, applied to all fields
   with either "date_" / "_date" in the field name or that have format date
   set in the JSON schema
@@ -296,6 +298,48 @@ fields =  [
 **excludeWhen**: List and Set fields can have an optional *excludeWhen* key which can either be a list of values or `none` or `false-like`. When it is `none` we drop the null values (None in Python) or it can be `false-like` in which case false-like values (`bool(x) == False` in Python) are excluded (empty lists, boolean False, 0). Alternatively a list of values to be excluded can be provided.
 
 If *excludeWhen* is not set, no exclusions take place and all values are returned as-is.
+
+### Skippable fields
+
+In some cases, a study will be assocaited with multiple data files, all of which have been
+filled in to varying degrees. For example, one study site may not provide any follow-up data.
+
+Rather than writing a new parser for every data file with minor differences, parsers can be made
+robust to a certain amount of missing data by tagging applicable fields with `can_skip = True`,
+for example:
+
+```ini
+[[observation]]
+  name = "cough"
+  phase = "admission"
+  date = { field = "admit_date" }
+  is_present = { field = "cough_ceoccur_v2", description = "Cough", ref = "Y/N/NK", "can_skip" = true }
+```
+
+In this case, if adtl does not find `cough_ceoccur_v2` in the data it will skip over the field
+and continue, rather than throwing an error.
+
+If there are lots of fields missing all with similar field names, for example if followup data
+has been omitted and all the followup fields are labelled with a `flw` prefix e.g., `flw_cough`,
+`flw2_fatigue`, this can be specified at the top of the file:
+
+```ini
+[adtl]
+  name = "isaric-core"
+  description = "isaric-core"
+  skipFieldPattern = "flw.*"
+
+[table.sex_at_birth]
+  combinedType = "firstNonNull"
+  excludeWhen = "none"
+  fields = [
+    { field = "sex", values = { 1 = "male", 2 = "female" } },
+    { field = "flw_sex_at_birth", values = { 1 = "male", 2 = "female", 3 = "non_binary" } },
+    { field = "flw2_sex_at_birth", values = { 1 = "male", 2 = "female", 3 = "non_binary" } },
+  ]
+```
+
+Notice that in this case `can_skip` does not need to be added to the fields with a `flw` prefix.
 
 ### Data transformations (apply)
 
