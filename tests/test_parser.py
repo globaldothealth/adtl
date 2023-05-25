@@ -46,6 +46,11 @@ RULE_EXCLUDE = {
     "combinedType": "list",
     "fields": [{"field": "mildliv"}, {"field": "modliv"}],
 }
+RULE_IGNOREMISSINGKEY = {
+    "field": "diabetes_mhyn",
+    "values": {"type 1": "E10", "type 2": "E11"},  # ICD-10 codes
+    "ignoreMissingKey": True,
+}
 
 ROW_CONDITIONAL = {"outcome_date": "2022-01-01", "outcome_type": 4}
 RULE_CONDITIONAL_OK = {"field": "outcome_date", "if": {"outcome_type": 4}}
@@ -383,6 +388,8 @@ OBSERVATION_RULE_FIELD_OPTION_COMB = {
         (({"first": "", "second": "3"}, RULE_COMBINED_FIRST_NON_NULL), 3),
         (({"first": False, "second": True}, RULE_COMBINED_FIRST_NON_NULL), False),
         (({"first": "", "second": False}, RULE_COMBINED_FIRST_NON_NULL), False),
+        (({"diabetes_mhyn": "type 1"}, RULE_IGNOREMISSINGKEY), "E10"),
+        (({"diabetes_mhyn": "gestational"}, RULE_IGNOREMISSINGKEY), "gestational"),
         ((ROW_CONDITIONAL, RULE_CONDITIONAL_OK), "2022-01-01"),
         ((ROW_CONDITIONAL, RULE_CONDITIONAL_FAIL), None),
         ((ROW_UNIT_MONTH, RULE_UNIT), 1.5),

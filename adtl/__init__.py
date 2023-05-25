@@ -101,7 +101,10 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
         if value == "":
             return None
         if "values" in rule:
-            value = rule["values"].get(value)
+            if rule.get("ignoreMissingKey"):
+                value = rule["values"].get(value, value)
+            else:
+                value = rule["values"].get(value)
         # Either source_unit / unit OR source_date / date triggers conversion
         # do not parse units if value is empty
         if "source_unit" in rule and "unit" in rule:
@@ -410,6 +413,8 @@ def relative_path(source_file, target_file):
 
 def read_definition(file: Path) -> Dict[str, Any]:
     "Reads definition from file into a dictionary"
+    if isinstance(file, str):
+        file = Path(file)
     if file.suffix == ".json":
         with file.open() as fp:
             return json.load(fp)
