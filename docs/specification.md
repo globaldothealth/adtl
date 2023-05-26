@@ -260,6 +260,12 @@ values = { homme = "male", femme = "female" }
 ignoreMissingKey = true
 ```
 
+When the parser encounters a field where `sex` is one of `homme` or `femme` it
+matches them to `male` and `female` respectively. When it encounters any other
+string, such as `non binaire`, it will return `non binaire`. Contrast this to
+the case when we do not specify `ignoreMissingKey = true`, in which case, the
+parser would return `null` when it does not find a match.
+
 Example with boolean values
 
 ```ini
