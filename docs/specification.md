@@ -248,6 +248,24 @@ values = { 1 = "male", 2 = "female", 3 = "non_binary" }
 description = "Sex at Birth"
 ```
 
+Sometimes, you may want to keep the value as-is if no match was found; this
+could be useful when mapping to controlled terminologies, where you want to map
+the value to a known set if found, but keep the value as free text if not. This
+can be done by adding `ignoreMissingKey = true` to the rule:
+
+```ini
+[table.sex_at_birth]
+field = "sex"
+values = { homme = "male", femme = "female" }
+ignoreMissingKey = true
+```
+
+When the parser encounters a field where `sex` is one of `homme` or `femme` it
+matches them to `male` and `female` respectively. When it encounters any other
+string, such as `non binaire`, it will return `non binaire`. Contrast this to
+the case when we do not specify `ignoreMissingKey = true`, in which case, the
+parser would return `null` when it does not find a match.
+
 Example with boolean values
 
 ```ini
