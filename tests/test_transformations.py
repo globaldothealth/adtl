@@ -67,16 +67,19 @@ def test_endDate(test_enddate_start, test_enddate_duration, expected):
 @pytest.mark.parametrize(
     "badfloat, expected",
     [
-        ('" - 11 ', -11.0),
-        ('"3"', 3.0),
-        ("3,4", 3.4),
-        ("1,234.5", 1234.5),
-        ("1.234,5", 1234.5),
-        ("1.567.923,66", 1567923.66),
+        (('" - 11 ', None, None), -11.0),
+        (('"3"', None, None), 3.0),
+        (("-3.", None, None), -3),
+        (('" 3.4 "', None, None), 3.4),
+        (("3,4", ",", None), 3.4),
+        (("1,234.5", None, ","), 1234.5),
+        (("1.234,5", ",", "."), 1234.5),
+        (("1.567.923,66", ",", "."), 1567923.66),
     ],
 )
 def test_getFloat(badfloat, expected):
-    assert transform.getFloat(badfloat) == expected
+    badfloat, dec, sep = badfloat
+    assert transform.getFloat(badfloat, set_decimal=dec, separator=sep) == expected
 
 
 @pytest.mark.parametrize(
