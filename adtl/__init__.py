@@ -599,6 +599,8 @@ class Parser:
                 "firstNonNull",
                 "set",
                 "list",
+                "min",
+                "max",
             ], f"Invalid combinedType: {rule[option]['combinedType']}"
             rules = rule[option]["fields"]
 
@@ -616,8 +618,10 @@ class Parser:
                 elif can_skip:
                     if_condition[field] = {"!=": ""}
                     if_condition["can_skip"] = True
+                    if_condition = [if_condition]
                 else:
                     if_condition[field] = {"!=": ""}
+                    if_condition = [if_condition]
 
                 return if_condition
 

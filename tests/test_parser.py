@@ -314,6 +314,15 @@ OBSERVATION_RULE_FIELD_OPTION_SKIP = {
         "can_skip": True,
     },
 }
+OBSERVATION_RULE_TEXT_SKIP = {
+    "name": "temperature_celsius",
+    "phase": "admission",
+    "date": "2023-05-18",
+    "value": {
+        "field": "temperature_adm",
+        "can_skip": True,
+    },
+}
 OBSERVATION_RULE_FIELD_OPTION_VALUE = {
     "name": "temperature_celsius",
     "phase": "admission",
@@ -330,7 +339,6 @@ OBSERVATION_RULE_FIELD_OPTION_COMB = {
     "date": "2023-05-22",
     "is_present": {
         "combinedType": "any",
-        "excludeWhen": "none",
         "fields": [
             {"field": "cough_ceoccur_v2", "values": {"1": "true", "0": "false"}},
             {
@@ -341,6 +349,24 @@ OBSERVATION_RULE_FIELD_OPTION_COMB = {
             {
                 "field": "coughhb_ceoccur_v2",
                 "values": {"1": "true", "0": "false"},
+                "can_skip": "true",
+            },
+        ],
+    },
+}
+
+OBSERVATION_RULE_FIELD_OPTION_VALUE_COMB = {
+    "name": "temperature_celsius",
+    "phase": "study",
+    "date": "2023-05-27",
+    "value": {
+        "combinedType": "max",
+        "fields": [
+            {
+                "field": "temp_v1",
+            },
+            {
+                "field": "temp_v2",
                 "can_skip": "true",
             },
         ],
@@ -402,6 +428,7 @@ OBSERVATION_RULE_FIELD_OPTION_COMB = {
         (({"admission_date": "", "enrolment_date": ""}, RULE_COMBINED_TYPE_MAX), None),
         (({"outcome_date": "02/05/2022"}, RULE_DATE_MDY), "05/02/2022"),
         (({"outcome_date": "02/05/2022"}, RULE_DATE_ISO), "2022-05-02"),
+        (({"outcome_date": "2022-05-02"}, RULE_DATE_ISO), None),
         (
             (
                 {
@@ -490,6 +517,7 @@ def test_one_to_many():
                 ]
             },
         ),
+        (OBSERVATION_RULE_TEXT_SKIP, {"temperature_adm": {"!=": ""}, "can_skip": True}),
         (OBSERVATION_RULE_FIELD_OPTION_VALUE, {"temp_vsorres": {"!=": ""}}),
         (
             OBSERVATION_RULE_FIELD_OPTION_COMB,
@@ -501,6 +529,15 @@ def test_one_to_many():
                     {"coughsput_ceoccur_v2": "0", "can_skip": True},
                     {"coughhb_ceoccur_v2": "1", "can_skip": True},
                     {"coughhb_ceoccur_v2": "0", "can_skip": True},
+                ]
+            },
+        ),
+        (
+            OBSERVATION_RULE_FIELD_OPTION_VALUE_COMB,
+            {
+                "any": [
+                    {"temp_v1": {"!=": ""}},
+                    {"temp_v2": {"!=": ""}, "can_skip": True},
                 ]
             },
         ),
@@ -553,6 +590,23 @@ def test_invalid_operand_parse_if():
         parser.parse_if(
             {"outcome_type": 1, "outcome_date": "2022-06-04"},
             {"outcome_type": {"<>", 5}},
+        )
+
+
+def test_missing_apply_function():
+    with pytest.raises(AttributeError, match="Error using a data transformation"):
+        parser.get_value_unhashed(
+            {"brthdtc": "2020-02-04", "dsstdat": "2023-04-06"},
+            {
+                "field": "brthdtc",
+                "apply": {"function": "undefinedFunction", "params": ["$dsstdat"]},
+            },
+        )
+
+    with pytest.raises(AttributeError, match="Error using a data transformation"):
+        parser.get_value_unhashed(
+            {"brthdtc": "2020-02-04", "dsstdat": "2023-04-06"},
+            {"field": "brthdtc", "apply": {"function": "undefinedFunction"}},
         )
 
 
@@ -771,6 +825,26 @@ FOR_PATTERN = [
     }
 ]
 
+FOR_PATTERN_NOT_DICT = [
+    {
+        "name": "history_of_fever",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_{n}"},
+        "is_present": {"field": "flw2_fever_{n}", "values": {"0": False, "1": True}},
+        "for": [1, 3],
+    }
+]
+
+FOR_PATTERN_BAD_RULE = [
+    {
+        "name": "history_of_fever",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_{n}"},
+        "is_present": {"field": "flw2_fever_{n}", "values": {"0": False, "1": True}},
+        "for": {"n": {"includes": [1, 3]}},
+    }
+]
+
 
 EXPANDED_FOR_PATTERN = [
     {
@@ -862,6 +936,14 @@ EXPANDED_FOR_PATTERN_MULTI_VAR = [
 )
 def test_expand_for(source, expected):
     assert parser.expand_for(source) == expected
+
+
+def test_expand_for_exceptions():
+    with pytest.raises(ValueError, match="is not a dictionary of variables"):
+        parser.expand_for(FOR_PATTERN_NOT_DICT)
+
+    with pytest.raises(ValueError, match="can only have lists or ranges"):
+        parser.expand_for(FOR_PATTERN_BAD_RULE)
 
 
 # write functions to check that apply is working properly
