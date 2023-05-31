@@ -556,6 +556,13 @@ def test_invalid_operand_parse_if():
         )
 
 
+def test_missing_key_parse_if():
+    with pytest.raises(KeyError, match="headache_v2"):
+        parser.Parser(TEST_PARSERS_PATH / "oneToMany-missingIf.toml").parse(
+            TEST_SOURCES_PATH / "oneToManyIf-missingError.csv"
+        )
+
+
 @pytest.mark.parametrize(
     "rowrule,expected",
     [
