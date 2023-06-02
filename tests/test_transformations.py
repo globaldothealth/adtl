@@ -67,16 +67,22 @@ def test_endDate(test_enddate_start, test_enddate_duration, expected):
 @pytest.mark.parametrize(
     "badfloat, expected",
     [
-        ('" - 11 ', -11.0),
-        ('"3"', 3.0),
-        ("3,4", 3.4),
-        ("1,234.5", 1234.5),
-        ("1.234,5", 1234.5),
-        ("1.567.923,66", 1567923.66),
+        ((None, None, None), None),
+        ((False, None, None), None),
+        (('" - 11 ', None, None), -11.0),
+        (('"3"', None, None), 3.0),
+        (("-3.", None, None), -3),
+        (('" 3.4 "', None, None), 3.4),
+        (("3,4", ",", None), 3.4),
+        (("1,234.5", None, ","), 1234.5),
+        (("1.234,5", ",", "."), 1234.5),
+        (("1.567.923,66", ",", "."), 1567923.66),
+        (('" -1+1"', None, None), "-1+1"),
     ],
 )
 def test_getFloat(badfloat, expected):
-    assert transform.getFloat(badfloat) == expected
+    badfloat, dec, sep = badfloat
+    assert transform.getFloat(badfloat, set_decimal=dec, separator=sep) == expected
 
 
 @pytest.mark.parametrize(
@@ -87,6 +93,7 @@ def test_getFloat(badfloat, expected):
         ("", "13", "", None),
         ("2020", "05", "04", "2020-05-04"),
         ("1999", "12", "44", None),
+        ("2020", "May", "04", None),
     ],
 )
 def test_makeDate(year, month, day, expected):
@@ -96,9 +103,11 @@ def test_makeDate(year, month, day, expected):
 @pytest.mark.parametrize(
     "date,time_seconds,date_format,tzname,expected",
     [
+        ("", "41400", "%d/%m/%Y", "UTC", None),
         ("04/05/2020", "41400", "%d/%m/%Y", "UTC", "2020-05-04T11:30:00+00:00"),
         ("04/05/2020", "", "%d/%m/%Y", "UTC", "2020-05-04"),
         ("04/05/2020", "", "%m/%d/%Y", "UTC", "2020-04-05"),
+        ("04/05/2020", "", "%Y-%m-%d", "UTC", None),
         ("05/06/2020", "86399", "%d/%m/%Y", "UTC", "2020-06-05T23:59:00+00:00"),
         ("05/06/2020", "86399", "%d/%m/%Y", "Asia/Tokyo", "2020-06-05T23:59:00+09:00"),
     ],

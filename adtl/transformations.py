@@ -19,21 +19,31 @@ def textIfNotNull(field, return_val):
     return return_val if field not in [None, ""] else None
 
 
-def getFloat(value):
+def getFloat(value, set_decimal=None, separator=None):
+    """
+    In cases where the decimal seperators is not a . you can
+    use set_decimal. Similarly, if thousand seperators are
+    used they can be specified.
+    """
+
     if not value:
         return None
 
     if '"' in value or " " in value:
         value = value.strip('"').replace(" ", "")
 
-    # handle comma decimal separator
-    value_int, _, fraction = value.partition(",")
-    if "." in fraction:  # comma was being used as a thousands separator
-        value = value_int + fraction
-    else:
-        # replace full stops as they may be used for thousands separator, first
-        # then use full stop as decimal separator
-        value = value.replace(".", "").replace(",", ".")
+    if set_decimal:
+        # handle comma decimal separator
+        # partition always splits on last instance so copes if decimal == separator
+        value_int, _, fraction = value.partition(set_decimal)
+        value = value_int + "." + fraction
+
+    if separator:
+        if separator in value and separator != ".":
+            value = value.replace(separator, "")
+        elif separator in value_int:
+            value = value_int.replace(separator, "") + "." + fraction
+
     try:
         return float(value)
     except ValueError:

@@ -167,14 +167,13 @@ def parse_if(
         return all(parse_if(row, r, ctx, can_skip) for r in rule[key])
     try:
         attr_value = row[key]
-    except KeyError as e:
+    except KeyError:
         if can_skip is True:
             return False
         elif ctx:
             if skip_field(row, {"field": key}, ctx(key)):
                 return False
-        else:
-            raise e
+        raise
 
     if isinstance(rule[key], dict):
         cmp = next(iter(rule[key]))
@@ -600,6 +599,8 @@ class Parser:
                 "firstNonNull",
                 "set",
                 "list",
+                "min",
+                "max",
             ], f"Invalid combinedType: {rule[option]['combinedType']}"
             rules = rule[option]["fields"]
 
@@ -617,8 +618,10 @@ class Parser:
                 elif can_skip:
                     if_condition[field] = {"!=": ""}
                     if_condition["can_skip"] = True
+                    if_condition = [if_condition]
                 else:
                     if_condition[field] = {"!=": ""}
+                    if_condition = [if_condition]
 
                 return if_condition
 
