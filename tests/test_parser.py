@@ -925,6 +925,67 @@ EXPANDED_FOR_PATTERN_MULTI_VAR = [
     },
 ]
 
+FOR_PATTERN_APPLY = [
+    {
+        "name": "cough",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_{n}"},
+        "start_date": {
+            "field": "flw2_survey_date_{n}",
+            "apply": {
+                "function": "startDate",
+                "params": [
+                    7,
+                ],
+            },
+        },
+        "for": {"n": {"range": [1, 2]}},
+        "is_present": {
+            "field": "flw2_pers_cough_dry_{n}",
+            "values": {"0": False, "1": True},
+        },
+    }
+]
+
+EXPANDED_FOR_PATTERN_APPLY = [
+    {
+        "name": "cough",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_1"},
+        "start_date": {
+            "field": "flw2_survey_date_1",
+            "apply": {
+                "function": "startDate",
+                "params": [
+                    7,
+                ],
+            },
+        },
+        "is_present": {
+            "field": "flw2_pers_cough_dry_1",
+            "values": {"0": False, "1": True},
+        },
+    },
+    {
+        "name": "cough",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_2"},
+        "start_date": {
+            "field": "flw2_survey_date_2",
+            "apply": {
+                "function": "startDate",
+                "params": [
+                    7,
+                ],
+            },
+        },
+        "is_present": {
+            "field": "flw2_pers_cough_dry_2",
+            "values": {"0": False, "1": True},
+        },
+    },
+]
+
 
 @pytest.mark.parametrize(
     "source,expected",
@@ -932,6 +993,7 @@ EXPANDED_FOR_PATTERN_MULTI_VAR = [
         (FOR_PATTERN, EXPANDED_FOR_PATTERN),
         (FOR_PATTERN_ANY, EXPANDED_FOR_PATTERN_ANY),
         (FOR_PATTERN_MULTI_VAR, EXPANDED_FOR_PATTERN_MULTI_VAR),
+        (FOR_PATTERN_APPLY, EXPANDED_FOR_PATTERN_APPLY),
     ],
 )
 def test_expand_for(source, expected):

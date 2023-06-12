@@ -311,11 +311,13 @@ def expand_for(spec: List[StrDict]) -> List[StrDict]:
     out = []
 
     def replace_val(
-        item: Union[str, Dict[str, Any]], replace: Dict[str, Any]
+        item: Union[str, float, Dict[str, Any]], replace: Dict[str, Any]
     ) -> Dict[str, Any]:
         block = {}
         if isinstance(item, str):
             return item.format(**replace)
+        elif isinstance(item, (float, int)):
+            return item
         for k, v in item.items():
             if not isinstance(k, str):
                 block[k] = v
