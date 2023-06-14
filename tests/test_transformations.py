@@ -78,6 +78,7 @@ def test_endDate(test_enddate_start, test_enddate_duration, expected):
         (("1.234,5", ",", "."), 1234.5),
         (("1.567.923,66", ",", "."), 1567923.66),
         (('" -1+1"', None, None), "-1+1"),
+        ((" -3 - Moderate Sedation", None, None), -3),
     ],
 )
 def test_getFloat(badfloat, expected):

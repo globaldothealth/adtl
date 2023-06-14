@@ -9,6 +9,7 @@ except ImportError:
     from backports import zoneinfo  # noqa
 
 import pint
+import re
 
 
 def isNotNull(value):
@@ -43,6 +44,9 @@ def getFloat(value, set_decimal=None, separator=None):
             value = value.replace(separator, "")
         elif separator in value_int:
             value = value_int.replace(separator, "") + "." + fraction
+
+    values = [float(d) for d in re.findall(r"[-+]?\d*\.?\d+", value)]
+    value = values[0] if len(values) == 1 else value
 
     try:
         return float(value)
