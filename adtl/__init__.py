@@ -411,7 +411,7 @@ def make_fields_optional(
                 set(_schema["oneOf"][x]["required"]) - set(optional_fields or [])
             )
         if all(
-            all(bool(v) == False for v in _schema["oneOf"][x].values())
+            all(bool(v) is False for v in _schema["oneOf"][x].values())
             for x in range(len(_schema["oneOf"]))
         ):
             _schema.pop("oneOf")

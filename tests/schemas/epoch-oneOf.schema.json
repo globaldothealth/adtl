@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "https://raw.githubusercontent.com/globaldothealth/adtl/main/schemas/test-parser.schema.json",
+  "title": "adtl",
+  "description": "Another Data Transformation Language (adtl) parser file",
+  "required": [
+    "epoch",
+    "id",
+    "text"
+  ],
+  "oneOf": [
+    {
+      "required": [
+        "sex"
+      ]
+    },
+    {
+      "required": [
+        "sex_at_birth"
+      ]
+    }
+  ],
+  "properties": {
+    "epoch": {
+      "description": "Epoch of dataset",
+      "format": "date"
+    },
+    "id": {
+      "type": "integer"
+    },
+    "some_date": {
+      "description": "Some date, but without format=date"
+    },
+    "text": {
+      "description": "Text field"
+    },
+    "cough": {
+      "description": "Standard cough field"
+    },
+    "followup_cough": {
+      "description": "Follow-up cough field"
+    },
+    "sex_at_birth": {
+      "description": "sex"
+    }
+  }
+}

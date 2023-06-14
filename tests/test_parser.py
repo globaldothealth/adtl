@@ -774,7 +774,7 @@ def test_default_date_format(snapshot):
 
 
 def test_make_fields_optional():
-    with (TEST_SCHEMAS_PATH / "epoch-data.schema.json").open() as fp:
+    with (TEST_SCHEMAS_PATH / "epoch-oneOf.schema.json").open() as fp:
         schema = json.load(fp)
     assert schema["required"] == ["epoch", "id", "text"]
     assert parser.make_fields_optional(schema, ["text"])["required"] == ["epoch", "id"]
@@ -783,6 +783,11 @@ def test_make_fields_optional():
         "id",
         "text",
     ]
+    assert parser.make_fields_optional(schema, ["sex"])["oneOf"] == [
+        {"required": []},
+        {"required": ["sex_at_birth"]},
+    ]
+    assert "oneOf" not in parser.make_fields_optional(schema, ["sex", "sex_at_birth"])
 
 
 def test_reference_expansion():
