@@ -406,15 +406,16 @@ def make_fields_optional(
     _schema = copy.deepcopy(schema)
     _schema["required"] = sorted(set(schema["required"]) - set(optional_fields))
     if "oneOf" in _schema:
-        for x in range(len(_schema["oneOf"])):
-            _schema["oneOf"][x]["required"] = list(
-                set(_schema["oneOf"][x]["required"]) - set(optional_fields or [])
-            )
-        if all(
-            all(bool(v) is False for v in _schema["oneOf"][x].values())
-            for x in range(len(_schema["oneOf"]))
-        ):
-            _schema.pop("oneOf")
+        if any("required" in _schema["oneOf"][x] for x in range(len(_schema["oneOf"]))):
+            for x in range(len(_schema["oneOf"])):
+                _schema["oneOf"][x]["required"] = list(
+                    set(_schema["oneOf"][x]["required"]) - set(optional_fields or [])
+                )
+            if all(
+                all(bool(v) is False for v in _schema["oneOf"][x].values())
+                for x in range(len(_schema["oneOf"]))
+            ):
+                _schema.pop("oneOf")
     return _schema
 
 
