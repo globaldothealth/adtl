@@ -25,6 +25,20 @@ def test_yearsElasped(test_date_birth, test_date_current, expected):
 
 
 @pytest.mark.parametrize(
+    "test_date_birth, test_date_current, bd_format, cd_format, expected",
+    [
+        ("1950", "2023-01-01 00:00", "%Y", "%Y-%m-%d %H:%M", 73),
+    ],
+)
+def test_yearsElasped_format(
+    test_date_birth, test_date_current, bd_format, cd_format, expected
+):
+    assert transform.yearsElapsed(
+        test_date_birth, test_date_current, bd_format, cd_format
+    ) == pytest.approx(expected, 0.001)
+
+
+@pytest.mark.parametrize(
     "test_duration_start, test_duration_current, expected",
     [
         ("2023-02-01", "2023-03-05", 32),
