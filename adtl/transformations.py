@@ -54,12 +54,12 @@ def getFloat(value, set_decimal=None, separator=None):
         return value
 
 
-def yearsElapsed(birthdate, currentdate):
+def yearsElapsed(birthdate, currentdate, bd_format="%Y-%m-%d", cd_format="%Y-%m-%d"):
     if birthdate in [None, ""] or currentdate in [None, ""]:
         return None
 
-    bd = datetime.strptime(birthdate, "%Y-%m-%d")
-    cd = datetime.strptime(currentdate, "%Y-%m-%d")
+    bd = datetime.strptime(birthdate, bd_format)
+    cd = datetime.strptime(currentdate, cd_format)
 
     days = cd - bd
     return pint.Quantity(days.days, "days").to("years").m
