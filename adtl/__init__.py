@@ -459,7 +459,7 @@ class Parser:
         self.schemas: StrDict = {}
         self.date_fields = []
         self.report = {
-            "errors": defaultdict(Counter),
+            "validation_errors": defaultdict(Counter),
             "total_valid": defaultdict(int),
             "total": defaultdict(int),
         }
@@ -726,7 +726,7 @@ class Parser:
                     except fastjsonschema.exceptions.JsonSchemaValueException as e:
                         row["adtl_valid"] = False
                         row["adtl_error"] = e.message
-                        self.report["errors"][table].update([e.message])
+                        self.report["validation_errors"][table].update([e.message])
         return self
 
     def clear(self):
@@ -751,7 +751,6 @@ class Parser:
         "Writes to output as CSV a particular table"
 
         def writerows(fp, table):
-            print(f"Writing {table}")
             writer = csv.DictWriter(
                 fp,
                 fieldnames=(
@@ -782,9 +781,11 @@ class Parser:
                     f"|{self.report['total_valid'][table]/self.report['total'][table]:%} |"
                 )
             print()
-            for table in self.report["errors"]:
+            for table in self.report["validation_errors"]:
                 print(f"## {table}\n")
-                for message, count in self.report["errors"][table].most_common():
+                for message, count in self.report["validation_errors"][
+                    table
+                ].most_common():
                     print(f"* {count}: {message}")
                 print()
 
@@ -793,7 +794,6 @@ class Parser:
 
         for table in self.tables:
             self.write_csv(table, f"{output}-{table}.csv")
-        self.show_report()
 
 
 def main():
@@ -813,6 +813,9 @@ def main():
         "--encoding", help="Encoding input file is in", default="utf-8-sig"
     )
     cmd.add_argument(
+        "--json", help="Output metadata in JSON format", action="store_true"
+    )
+    cmd.add_argument(
         "--include-def",
         action="append",
         help="Include external definition (TOML or JSON)",
@@ -820,10 +823,17 @@ def main():
     args = cmd.parse_args()
     include_defs = args.include_def or []
     spec = Parser(args.spec, include_defs=include_defs)
-    if output := spec.parse(args.file, encoding=args.encoding).save(
-        args.output or spec.name
-    ):
-        print(output)
+
+    # run adtl
+    adtl_output = spec.parse(args.file, encoding=args.encoding)
+    adtl_output.save(args.output or spec.name)
+    if args.json:
+        adtl_output.report.update(
+            dict(encoding=args.encoding, include_defs=include_defs)
+        )
+        print(json.dumps(adtl_output.report, sort_keys=True, indent=2))
+    else:
+        adtl_output.show_report()
 
 
 if __name__ == "__main__":
