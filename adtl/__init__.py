@@ -812,9 +812,7 @@ def main():
     cmd.add_argument(
         "--encoding", help="Encoding input file is in", default="utf-8-sig"
     )
-    cmd.add_argument(
-        "--json", help="Output metadata in JSON format", action="store_true"
-    )
+    cmd.add_argument("--save-report", help="Save report in JSON format")
     cmd.add_argument(
         "--include-def",
         action="append",
@@ -827,11 +825,17 @@ def main():
     # run adtl
     adtl_output = spec.parse(args.file, encoding=args.encoding)
     adtl_output.save(args.output or spec.name)
-    if args.json:
+    if args.save_report:
         adtl_output.report.update(
-            dict(encoding=args.encoding, include_defs=include_defs)
+            dict(
+                encoding=args.encoding,
+                include_defs=include_defs,
+                file=args.file,
+                parser=args.spec,
+            )
         )
-        print(json.dumps(adtl_output.report, sort_keys=True, indent=2))
+        with open(args.save_report, "w") as fp:
+            json.dump(adtl_output.report, fp, sort_keys=True, indent=2)
     else:
         adtl_output.show_report()
 
