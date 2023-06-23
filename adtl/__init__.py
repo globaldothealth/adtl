@@ -447,7 +447,12 @@ def skip_field(row: StrDict, rule: StrDict, ctx: Context = None):
 
 
 class Parser:
-    def __init__(self, spec: Union[str, Path, StrDict], include_defs: List[str] = []):
+    def __init__(
+        self,
+        spec: Union[str, Path, StrDict],
+        include_defs: List[str] = [],
+        quiet: bool = False,
+    ):
         "Loads specification from spec in format (default json)"
 
         self.data: StrDict = {}
@@ -457,6 +462,7 @@ class Parser:
         self.include_defs = include_defs
         self.validators: StrDict = {}
         self.schemas: StrDict = {}
+        self.quiet = quiet
         self.date_fields = []
         self.report = {
             "validation_errors": defaultdict(Counter),
@@ -693,7 +699,9 @@ class Parser:
                 tqdm(
                     reader,
                     desc=f"[{self.name}] parsing {Path(file).name}",
-                ),
+                )
+                if not self.quiet
+                else reader,
                 skip_validation=skip_validation,
             )
 
@@ -812,6 +820,12 @@ def main():
     cmd.add_argument(
         "--encoding", help="Encoding input file is in", default="utf-8-sig"
     )
+    cmd.add_argument(
+        "-q",
+        "--quiet",
+        help="Quiet mode - decrease verbosity, disable progress bar",
+        action="store_true",
+    )
     cmd.add_argument("--save-report", help="Save report in JSON format")
     cmd.add_argument(
         "--include-def",
@@ -820,7 +834,7 @@ def main():
     )
     args = cmd.parse_args()
     include_defs = args.include_def or []
-    spec = Parser(args.spec, include_defs=include_defs)
+    spec = Parser(args.spec, include_defs=include_defs, quiet=args.quiet)
 
     # run adtl
     adtl_output = spec.parse(args.file, encoding=args.encoding)
