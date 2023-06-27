@@ -145,3 +145,19 @@ def test_makeDateTimeFromSeconds(date, time_seconds, date_format, tzname, expect
 )
 def test_textIfNotNull(field, return_text, expected):
     assert transform.textIfNotNull(field, return_text) == expected
+
+
+@pytest.mark.parametrize(
+    "date,time,date_format,tzname,expected",
+    [
+        ("", "00:00", "%d/%m/%Y", "UTC", None),
+        ("04/05/2020", "10:00", "%d/%m/%Y", "UTC", "2020-05-04T10:00:00+00:00"),
+        ("04/05/2020", "", "%d/%m/%Y", "UTC", "2020-05-04"),
+        ("04/05/2020", "", "%m/%d/%Y", "UTC", "2020-04-05"),
+        ("04/05/2020", "", "%Y-%m-%d", "UTC", None),
+        ("05/06/2020", "16:00", "%d/%m/%Y", "UTC", "2020-06-05T16:00:00+00:00"),
+        ("05/06/2020", "16:00", "%d/%m/%Y", "Asia/Tokyo", "2020-06-05T16:00:00+09:00"),
+    ],
+)
+def test_makeDateTime(date, time, date_format, tzname, expected):
+    assert transform.makeDateTime(date, time, date_format, tzname) == expected

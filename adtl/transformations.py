@@ -148,3 +148,26 @@ def makeDateTimeFromSeconds(date, time_seconds, date_format, tzname):
     hour = time_seconds // 3600
     minute = (time_seconds % 3600) // 60
     return t.replace(hour=hour, minute=minute).isoformat()
+
+
+def makeDateTime(date, time_24hr, date_format, timezone):
+    """Combine date and time fields into one"""
+    if date == "":
+        return None
+
+    try:
+        dt = datetime.strptime(date, date_format).replace(
+            tzinfo=zoneinfo.ZoneInfo(timezone)
+        )
+    except ValueError:
+        logging.error(
+            f"Could not convert date {date!r} from date format {date_format!r}"
+        )
+        return None
+
+    if time_24hr == "":
+        return dt.date().isoformat()  # return date only
+
+    tm = datetime.strptime(time_24hr, "%H:%M").time()
+
+    return datetime.combine(dt, tm, tzinfo=zoneinfo.ZoneInfo(timezone)).isoformat()
