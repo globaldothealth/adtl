@@ -1,0 +1,46 @@
+{
+    "adtl": {
+        "name": "oneToManyWithCommonMappings",
+        "description": "One to Many example, with common mappings",
+        "tables": {
+            "observation": {
+                "kind": "oneToMany",
+                "common": {
+                    "dataset_id": "ONE_TO_MANY"
+                }
+            }
+        }
+    },
+    "observation": [
+        {
+            "date": {
+                "field": "dt"
+            },
+            "name": "headache",
+            "is_present": true,
+            "if": {
+                "headache_cmyn": 1
+            }
+        },
+        {
+            "date": {
+                "field": "dt"
+            },
+            "name": "cough",
+            "is_present": true,
+            "if": {
+                "cough_cmyn": 1
+            }
+        },
+        {
+            "date": {
+                "field": "dt"
+            },
+            "name": "dyspnea",
+            "is_present": true,
+            "if": {
+                "dyspnea_cmyn": 1
+            }
+        }
+    ]
+}

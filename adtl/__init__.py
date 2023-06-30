@@ -48,8 +48,6 @@ def get_value(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
             return float(value)
         except ValueError:
             return value
-    except TypeError:
-        return value
 
 
 def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
@@ -321,6 +319,7 @@ def expand_for(spec: List[StrDict]) -> List[StrDict]:
         for k, v in item.items():
             if not isinstance(k, str):
                 block[k] = v
+                continue
             rk = k.format(**replace)
             if isinstance(v, dict):
                 block[rk] = replace_val(v, replace)
@@ -497,16 +496,21 @@ class Parser:
         for table in (t for t in self.tables if self.tables[t]["kind"] == "oneToMany"):
             self.spec[table] = expand_for(self.spec[table])
         for table in self.tables:
+            if self.tables[table].get("groupBy"):
+                self.data[table] = defaultdict(dict)
+            else:
+                self.data[table] = []
             if schema := self.tables[table].get("schema"):
                 optional_fields = self.tables[table].get("optional-fields")
                 if schema.startswith("http"):
                     try:
-                        if (res := requests.get(schema)).status_code != 200:
+                        res = requests.get(schema)
+                        if res.status_code != 200:
                             logging.warning(
                                 f"Could not fetch schema for table {table!r}, will not validate"
                             )
                             continue
-                    except ConnectionError:
+                    except ConnectionError:  # pragma: no cover
                         logging.warning(
                             f"Could not fetch schema for table {table!r}, will not validate"
                         )
@@ -521,11 +525,6 @@ class Parser:
                         )
                 self.date_fields.extend(get_date_fields(self.schemas[table]))
                 self.validators[table] = fastjsonschema.compile(self.schemas[table])
-
-            if self.tables[table].get("groupBy"):
-                self.data[table] = defaultdict(dict)
-            else:
-                self.data[table] = []
 
         self._set_field_names()
 
@@ -655,8 +654,6 @@ class Parser:
         group_field = self.tables[table].get("groupBy")
         kind = self.tables[table].get("kind")
         if group_field:
-            if table not in self.data:
-                self.data[table] = defaultdict(dict)
             group_key = get_value(row, self.spec[table][group_field])
             for attr in self.spec[table]:
                 value = get_value(row, self.spec[table][attr], self.ctx(attr))
@@ -679,9 +676,6 @@ class Parser:
         elif kind == "constant":  # only one row
             self.data[table] = [self.spec[table]]
         else:
-            # no grouping, one-to-one mapping
-            if table not in self.data:
-                self.data[table] = []
             self.data[table].append(
                 remove_null_keys(
                     {
@@ -711,7 +705,7 @@ class Parser:
             for table in self.tables:
                 try:
                     self.update_table(table, row)
-                except ValueError:
+                except ValueError:  # pragma: no cover
                     print(
                         "\n".join(
                             [
@@ -804,7 +798,7 @@ class Parser:
             self.write_csv(table, f"{output}-{table}.csv")
 
 
-def main():
+def main(argv=None):
     cmd = argparse.ArgumentParser(
         prog="adtl",
         description="Transforms data into CSV given a specification (+validation)",
@@ -832,7 +826,7 @@ def main():
         action="append",
         help="Include external definition (TOML or JSON)",
     )
-    args = cmd.parse_args()
+    args = cmd.parse_args(argv)
     include_defs = args.include_def or []
     spec = Parser(args.spec, include_defs=include_defs, quiet=args.quiet)
 
