@@ -1,6 +1,12 @@
+import io
 import json
+import contextlib
+import collections
 from pathlib import Path
+from typing import Dict, Iterable, Any
+
 import pytest
+import responses
 from pytest_unordered import unordered
 
 import adtl as parser
@@ -15,6 +21,14 @@ TEST_PARSERS_PATH = Path(__file__).parent / "parsers"
 TEST_SOURCES_PATH = Path(__file__).parent / "sources"
 TEST_SCHEMAS_PATH = Path(__file__).parent / "schemas"
 
+ARGV = [
+    str(TEST_PARSERS_PATH / "epoch.json"),
+    str(TEST_SOURCES_PATH / "epoch.csv"),
+    "-o",
+    "output",
+    "--encoding",
+    "utf-8",
+]
 
 LIVER_DISEASE = [
     {
@@ -108,6 +122,10 @@ ONE_MANY_SOURCE = [
 ONE_MANY_OUTPUT = [
     {"date": "2022-02-05", "name": "headache", "is_present": True},
     {"date": "2022-02-05", "name": "cough", "is_present": True},
+]
+
+ONE_MANY_OUTPUT_COMMON = [
+    {"dataset_id": "ONE_TO_MANY", **item} for item in ONE_MANY_OUTPUT
 ]
 
 ONE_MANY_IF_OUTPUT = [
@@ -374,6 +392,10 @@ OBSERVATION_RULE_FIELD_OPTION_VALUE_COMB = {
 }
 
 
+def _subdict(d: Dict, keys: Iterable[Any]) -> Dict[str, Any]:
+    return {k: d.get(k) for k in keys}
+
+
 @pytest.mark.parametrize(
     "row_rule,expected",
     [
@@ -470,6 +492,8 @@ def test_get_value(row_rule, expected):
         ((ROW_CONDITIONAL, {"outcome_type": {">=": 4}}), True),
         ((ROW_CONDITIONAL, {"outcome_type": {"<": 10}}), True),
         ((ROW_CONDITIONAL, {"outcome_type": {"!=": 4}}), False),
+        ((ROW_CONDITIONAL, {"outcome_date": {"==": 2022}}), False),
+        ((ROW_CONDITIONAL, {"outcome_date": 2022}), False),
         (
             (
                 ROW_CONDITIONAL,
@@ -503,6 +527,15 @@ def test_one_to_many():
     )
     assert actual_one_many_output_rows == ONE_MANY_OUTPUT
     assert actual_one_many_output_csv == ONE_MANY_OUTPUT
+
+
+def test_one_to_many_with_common_mappings():
+    one_many_output_rows = list(
+        parser.Parser(TEST_PARSERS_PATH / "oneToMany-commonMappings.json")
+        .parse_rows(ONE_MANY_SOURCE)
+        .read_table("observation")
+    )
+    assert one_many_output_rows == ONE_MANY_OUTPUT_COMMON
 
 
 @pytest.mark.parametrize(
@@ -830,6 +863,49 @@ FOR_PATTERN = [
     }
 ]
 
+FOR_PATTERN_LIST = [
+    {
+        "name": "headache",
+        "phase": "admission",
+        "date": {"field": "flw2_survey_date_{n}"},
+        "is_present": {
+            "combinedType": "any",
+            "fields": ["flw2_headache_{n}", "headache"],
+            "values": {"0": False, "1": True},
+            5: "non-string-key",
+        },
+        "if": {"not": {"flw2_headache_{n}": 2}},
+        "for": {"n": {"range": [1, 2]}},
+    }
+]
+
+EXPANDED_FOR_PATTERN_LIST = [
+    {
+        "name": "headache",
+        "phase": "admission",
+        "date": {"field": "flw2_survey_date_1"},
+        "is_present": {
+            "combinedType": "any",
+            "fields": ["flw2_headache_1", "headache"],
+            "values": {"0": False, "1": True},
+            5: "non-string-key",
+        },
+        "if": {"not": {"flw2_headache_1": 2}},
+    },
+    {
+        "name": "headache",
+        "phase": "admission",
+        "date": {"field": "flw2_survey_date_2"},
+        "is_present": {
+            "combinedType": "any",
+            "fields": ["flw2_headache_2", "headache"],
+            "values": {"0": False, "1": True},
+            5: "non-string-key",
+        },
+        "if": {"not": {"flw2_headache_2": 2}},
+    },
+]
+
 FOR_PATTERN_NOT_DICT = [
     {
         "name": "history_of_fever",
@@ -999,6 +1075,7 @@ EXPANDED_FOR_PATTERN_APPLY = [
         (FOR_PATTERN_ANY, EXPANDED_FOR_PATTERN_ANY),
         (FOR_PATTERN_MULTI_VAR, EXPANDED_FOR_PATTERN_MULTI_VAR),
         (FOR_PATTERN_APPLY, EXPANDED_FOR_PATTERN_APPLY),
+        (FOR_PATTERN_LIST, EXPANDED_FOR_PATTERN_LIST),
     ],
 )
 def test_expand_for(source, expected):
@@ -1013,6 +1090,20 @@ def test_expand_for_exceptions():
         parser.expand_for(FOR_PATTERN_BAD_RULE)
 
 
+@pytest.mark.parametrize(
+    "source", [str(TEST_PARSERS_PATH / "apply.toml"), TEST_PARSERS_PATH / "epoch.json"]
+)
+def test_read_definition(source):
+    assert parser.read_definition(source)
+
+
+def test_unsupported_format_raises_exception():
+    with pytest.raises(ValueError, match="Unsupported file format"):
+        parser.read_definition(TEST_PARSERS_PATH / "epoch.yml")
+    with pytest.raises(ValueError, match="adtl specification format not supported"):
+        parser.Parser(str(TEST_PARSERS_PATH / "epoch.yml"))
+
+
 # write functions to check that apply is working properly
 def test_apply_when_values_are_present():
     apply_values_present_output = list(
@@ -1022,6 +1113,26 @@ def test_apply_when_values_are_present():
     )
 
     assert apply_values_present_output == APPLY_PRESENT_OUTPUT
+
+
+def test_show_report(snapshot):
+    ps = parser.Parser(TEST_PARSERS_PATH / "epoch.json")
+    ps.report = {
+        "total": {"table": 10},
+        "total_valid": {"table": 8},
+        "validation_errors": {
+            "table": collections.Counter(
+                [
+                    "data must be valid exactly by one definition (0 matches found)",
+                    "data must contain ['epoch'] properties",
+                ]
+            )
+        },
+    }
+    ps.report_available = True
+    with contextlib.redirect_stdout(io.StringIO()) as f:
+        ps.show_report()
+    assert f.getvalue() == snapshot
 
 
 def test_apply_when_values_not_present():
@@ -1060,3 +1171,57 @@ def test_skip_field_pattern_absent(snapshot):
         .write_csv("table")
     )
     assert transformed_csv_data == snapshot
+
+
+def test_main(snapshot):
+    parser.main(ARGV)
+    assert Path("output-table.csv").read_text() == snapshot
+    Path("output-table.csv").unlink()
+
+
+@responses.activate
+def test_main_web_schema(snapshot):
+    # test with schema on the web
+    epoch_schema = json.loads(
+        Path(TEST_SCHEMAS_PATH / "epoch-data.schema.json").read_text()
+    )
+    responses.add(
+        responses.GET,
+        "http://example.com/schemas/epoch-data.schema.json",
+        json=epoch_schema,
+        status=200,
+    )
+    parser.main([str(TEST_PARSERS_PATH / "epoch-web-schema.json")] + ARGV[1:])
+    assert Path("output-table.csv").read_text() == snapshot
+    Path("output-table.csv").unlink()
+
+
+@responses.activate
+def test_main_web_schema_missing(snapshot):
+    responses.add(
+        responses.GET,
+        "http://example.com/schemas/epoch-data.schema.json",
+        json={"error": "not found"},
+        status=404,
+    )
+    parser.main([str(TEST_PARSERS_PATH / "epoch-web-schema.json")] + ARGV[1:])
+    assert Path("output-table.csv").read_text() == snapshot
+    Path("output-table.csv").unlink()
+
+
+def test_main_save_report():
+    parser.main(ARGV + ["--save-report", "epoch-report.json"])
+    report = json.loads(Path("epoch-report.json").read_text())
+    assert report["file"].endswith("tests/sources/epoch.csv")
+    assert report["parser"].endswith("tests/parsers/epoch.json")
+    assert _subdict(
+        report,
+        ["encoding", "include_defs", "total", "total_valid", "validation_errors"],
+    ) == {
+        "encoding": "utf-8",
+        "include_defs": [],
+        "total": {"table": 2},
+        "total_valid": {"table": 2},
+        "validation_errors": {},
+    }
+    Path("epoch-report.json").unlink()

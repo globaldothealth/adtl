@@ -7,6 +7,30 @@
   
   '''
 # ---
+# name: test_main
+  '''
+  adtl_valid,adtl_error,epoch,id,some_date,text
+  True,,1999-01-11,1,1999-01-24,Lorem ipsum
+  True,,2022-12-19,2,2023-01-27,example
+  
+  '''
+# ---
+# name: test_main_web_schema
+  '''
+  adtl_valid,adtl_error,epoch,id,some_date,text
+  True,,1999-01-11,1,1999-01-24,Lorem ipsum
+  True,,2022-12-19,2,2023-01-27,example
+  
+  '''
+# ---
+# name: test_main_web_schema_missing
+  '''
+  epoch,id,some_date,text
+  11/01/1999,1,24/01/1999,Lorem ipsum
+  19/12/2022,2,27/01/2023,example
+  
+  '''
+# ---
 # name: test_multi_id_groupby
   '''
   admission_date,country_iso3,dataset_id,enrolment_date,sex_at_birth,subject_id
@@ -20,6 +44,21 @@
   admission_date,country_iso3,dataset_id,enrolment_date,sex_at_birth,subject_id
   2020-06-08,GBR,dataset-2020-03-23,2020-05-06,male,S007
   2020-06-08,GBR,dataset-2020-03-23,2022-01-11,female,S001
+  
+  '''
+# ---
+# name: test_show_report
+  '''
+  
+  |table       	|valid	|total	|percentage_valid|
+  |---------------|-------|-------|----------------|
+  |table         	|8	|10	|80.000000% |
+  
+  ## table
+  
+  * 1: data must be valid exactly by one definition (0 matches found)
+  * 1: data must contain ['epoch'] properties
+  
   
   '''
 # ---

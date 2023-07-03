@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, date
 
 try:
     import zoneinfo
-except ImportError:
+except ImportError:  # pragma: no cover
     from backports import zoneinfo  # noqa
 
 import pint

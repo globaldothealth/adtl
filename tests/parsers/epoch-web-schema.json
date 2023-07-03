@@ -1,0 +1,27 @@
+{
+  "adtl": {
+    "name": "default-date-format",
+    "description": "Tests default date format",
+    "defaultDateFormat": "%d/%m/%Y",
+    "tables": {
+      "table": {
+        "kind": "oneToOne",
+        "schema": "http://example.com/schemas/epoch-data.schema.json"
+      }
+    }
+  },
+  "table": {
+    "id": {
+      "field": "Entry_ID"
+    },
+    "epoch": {
+      "field": "Epoch"
+    },
+    "some_date": {
+      "field": "SomeDate"
+    },
+    "text": {
+      "field": "Text"
+    }
+  }
+}
