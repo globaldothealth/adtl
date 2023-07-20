@@ -1,6 +1,9 @@
-# Specification format
+---
+title: Specification
+---
+# Specification
 
-The specification file describes the field mappings from the source file to the
+The ADTL specification describes the field mappings from the source file to the
 target schema. The format is under development and expected to change.
 
 Specification files can be in TOML or JSON, with TOML preferred due to readability.
