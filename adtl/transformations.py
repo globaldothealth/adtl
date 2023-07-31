@@ -3,6 +3,8 @@
 import logging
 from datetime import datetime, timedelta, date
 
+from dateutil.relativedelta import relativedelta
+
 try:
     import zoneinfo
 except ImportError:  # pragma: no cover
@@ -10,6 +12,8 @@ except ImportError:  # pragma: no cover
 
 import pint
 import re
+
+from typing import Literal
 
 
 def isNotNull(value):
@@ -171,3 +175,52 @@ def makeDateTime(date, time_24hr, date_format, timezone):
     tm = datetime.strptime(time_24hr, "%H:%M").time()
 
     return datetime.combine(dt, tm, tzinfo=zoneinfo.ZoneInfo(timezone)).isoformat()
+
+
+def splitDate(date, option: Literal["year", "month", "day"], format="%Y-%m-%d"):
+    "Splits a date into year, month, day"
+
+    if date in [None, ""]:
+        return None
+
+    try:
+        sd = datetime.strptime(date, format)
+    except ValueError:
+        logging.error(f"Could not convert date {date!r} from date format {format!r}")
+        return None
+
+    if option == "year":
+        return sd.year
+    elif option == "month":
+        return sd.month
+    elif option == "day":
+        return sd.day
+    else:
+        return None
+
+
+def startYear(currentdate, duration, dateformat="%Y-%m-%d", duration_type="years"):
+    """
+    Use to calculate year e.g. of birth from date (e.g. current date) and duration (e.g. age)
+    """
+    if currentdate in [None, ""] or duration in [None, ""]:
+        return None
+
+    try:
+        cd = datetime.strptime(currentdate, dateformat)
+    except ValueError:
+        logging.error(
+            f"Could not convert date {date!r} from date format {dateformat!r}"
+        )
+        return None
+
+    if duration_type == "years":
+        return cd.year - float(duration)
+
+    elif duration_type == "months":
+        new_date = cd - relativedelta(months=float(duration))
+        return new_date.year
+
+    elif duration_type == "days":
+        new_date = cd - timedelta(days=float(duration))
+        return new_date.year

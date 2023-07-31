@@ -161,3 +161,37 @@ def test_textIfNotNull(field, return_text, expected):
 )
 def test_makeDateTime(date, time, date_format, tzname, expected):
     assert transform.makeDateTime(date, time, date_format, tzname) == expected
+
+
+@pytest.mark.parametrize(
+    "date,option,date_format,expected",
+    [
+        ("", "year", None, None),
+        (None, "year", None, None),
+        ("2023-07-28", "blah", "%Y-%m-%d", None),
+        ("2023-07-28", "year", "%Y-%m-%d", 2023),
+        ("2023-07-28", "month", "%Y-%m-%d", 7),
+        ("2023-07-28", "day", "%Y-%m-%d", 28),
+        ("28/07/2023", "year", "%Y-%m-%d", None),
+    ],
+)
+def test_splitDate(date, option, date_format, expected):
+    assert transform.splitDate(date, option, date_format) == expected
+
+
+@pytest.mark.parametrize(
+    "date,duration,format,type,expected",
+    [
+        ("", 30, None, "years", None),
+        (None, 30, None, "years", None),
+        ("2023-07-28", "", "%Y-%m-%d", "years", None),
+        ("2023-07-28", None, "%Y-%m-%d", "years", None),
+        ("2023-07-28", 30, "%Y-%m-%d", "blah", None),
+        ("2023-07-28", 30, "%Y-%m-%d", "years", 1993),
+        ("2023-07-28", 8, "%Y-%m-%d", "months", 2022),
+        ("2023-07-28", 20, "%Y-%m-%d", "days", 2023),
+        ("28/07/2023", 30, "%Y-%m-%d", "years", None),
+    ],
+)
+def test_startYear(date, duration, format, type, expected):
+    assert transform.startYear(date, duration, format, type) == expected
