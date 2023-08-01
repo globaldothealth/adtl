@@ -1,5 +1,7 @@
 import pytest
 
+from datetime import datetime
+
 import adtl.transformations as transform
 
 
@@ -169,7 +171,7 @@ def test_makeDateTime(date, time, date_format, tzname, expected):
         ("", "year", None, None),
         (None, "year", None, None),
         ("2023-07-28", "blah", "%Y-%m-%d", None),
-        ("2023-07-28", "year", "%Y-%m-%d", 2023),
+        ("2020-07-28", "year", "%Y-%m-%d", 2020),
         ("2023-07-28", "month", "%Y-%m-%d", 7),
         ("2023-07-28", "day", "%Y-%m-%d", 28),
         ("28/07/2023", "year", "%Y-%m-%d", None),
@@ -187,11 +189,46 @@ def test_splitDate(date, option, date_format, expected):
         ("2023-07-28", "", "%Y-%m-%d", "years", None),
         ("2023-07-28", None, "%Y-%m-%d", "years", None),
         ("2023-07-28", 30, "%Y-%m-%d", "blah", None),
-        ("2023-07-28", 30, "%Y-%m-%d", "years", 1993),
-        ("2023-07-28", 8, "%Y-%m-%d", "months", 2022),
-        ("2023-07-28", 20, "%Y-%m-%d", "days", 2023),
-        ("28/07/2023", 30, "%Y-%m-%d", "years", None),
+        ("2021-05-28", 30, "%Y-%m-%d", "years", 1991),
+        ("2021-06-28", 8, "%Y-%m-%d", "months", 2020),
+        ("2021-06-28", 8.5, "%Y-%m-%d", "months", 2020),
+        ("2021-07-28", 20, "%Y-%m-%d", "days", 2021),
+        ("28/08/2023", 30, "%Y-%m-%d", "years", None),
     ],
 )
 def test_startYear(date, duration, format, type, expected):
     assert transform.startYear(date, duration, format, type) == expected
+
+
+@pytest.mark.parametrize(
+    "date,duration,format,type,expected",
+    [
+        ("", 30, None, "months", None),
+        (None, 30, None, "months", None),
+        ("2023-07-28", "", "%Y-%m-%d", "months", None),
+        ("2023-07-28", None, "%Y-%m-%d", "months", None),
+        ("2023-07-28", 30, "%Y-%m-%d", "blah", None),
+        ("2021-05-28", 3, "%Y-%m-%d", "months", 2),
+        ("2021-06-28", 8.5, "%Y-%m-%d", "months", 10),
+        ("2021-07-28", 20, "%Y-%m-%d", "days", 7),
+        ("28/08/2023", 30, "%Y-%m-%d", "months", None),
+    ],
+)
+def test_startMonth(date, duration, format, type, expected):
+    assert transform.startMonth(date, duration, format, type) == expected
+
+
+@pytest.mark.parametrize(
+    "date,format,returntype,expected",
+    [
+        ("", None, False, None),
+        (None, "%Y-%m-%d", True, None),
+        ("01/01/24", "%Y-%m-%d", True, None),
+        ("01/01/24", "%d/%m/%y", True, datetime(1924, 1, 1, 0, 0)),
+        ("01/01/20", "%d/%m/%y", True, datetime(2020, 1, 1, 0, 0)),
+        ("01/01/20", "%d/%m/%y", False, "2020-01-01"),
+        ("01/01/2030", "%d/%m/%Y", False, "2030-01-01"),
+    ],
+)
+def test_correctOldDate(date, format, returntype, expected):
+    assert transform.correctOldDate(date, format, returntype) == expected

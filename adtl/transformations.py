@@ -4,6 +4,7 @@ import logging
 from datetime import datetime, timedelta, date
 
 from dateutil.relativedelta import relativedelta
+from math import floor
 
 try:
     import zoneinfo
@@ -62,11 +63,15 @@ def yearsElapsed(birthdate, currentdate, bd_format="%Y-%m-%d", cd_format="%Y-%m-
     if birthdate in [None, ""] or currentdate in [None, ""]:
         return None
 
-    bd = datetime.strptime(birthdate, bd_format)
+    bd = correctOldDate(birthdate, bd_format, return_datetime=True)
+    # bd = datetime.strptime(birthdate, bd_format)
     cd = datetime.strptime(currentdate, cd_format)
 
-    days = cd - bd
-    return pint.Quantity(days.days, "days").to("years").m
+    try:
+        days = cd - bd
+        return pint.Quantity(days.days, "days").to("years").m
+    except TypeError:
+        return None
 
 
 def durationDays(symptomstartdate, currentdate):
@@ -94,7 +99,7 @@ def startDate(enddate, duration):
 
     ed = datetime.strptime(enddate, "%Y-%m-%d")
 
-    sd = ed - timedelta(days=duration)
+    sd = ed - timedelta(days=float(duration))
 
     return sd.strftime("%Y-%m-%d")
 
@@ -183,10 +188,9 @@ def splitDate(date, option: Literal["year", "month", "day"], format="%Y-%m-%d"):
     if date in [None, ""]:
         return None
 
-    try:
-        sd = datetime.strptime(date, format)
-    except ValueError:
-        logging.error(f"Could not convert date {date!r} from date format {format!r}")
+    sd = correctOldDate(date, format, return_datetime=True)
+
+    if sd is None:
         return None
 
     if option == "year":
@@ -201,26 +205,77 @@ def splitDate(date, option: Literal["year", "month", "day"], format="%Y-%m-%d"):
 
 def startYear(currentdate, duration, dateformat="%Y-%m-%d", duration_type="years"):
     """
-    Use to calculate year e.g. of birth from date (e.g. current date) and duration (e.g. age)
+    Use to calculate year e.g. of birth from date (e.g. current date) and
+    duration (e.g. age)
     """
     if currentdate in [None, ""] or duration in [None, ""]:
         return None
 
-    try:
-        cd = datetime.strptime(currentdate, dateformat)
-    except ValueError:
-        logging.error(
-            f"Could not convert date {date!r} from date format {dateformat!r}"
-        )
+    cd = correctOldDate(currentdate, dateformat, return_datetime=True)
+
+    if cd is None:
         return None
 
     if duration_type == "years":
         return cd.year - float(duration)
 
     elif duration_type == "months":
-        new_date = cd - relativedelta(months=float(duration))
+        new_date = cd - relativedelta(months=floor(float(duration)))  # rounds down
         return new_date.year
 
     elif duration_type == "days":
         new_date = cd - timedelta(days=float(duration))
         return new_date.year
+
+
+def startMonth(currentdate, duration, dateformat="%Y-%m-%d", duration_type="months"):
+    """
+    Use to calculate month e.g. of birth from date (e.g. current date) and
+    duration (e.g. age)
+    """
+    if currentdate in [None, ""] or duration in [None, ""]:
+        return None
+
+    cd = correctOldDate(currentdate, dateformat, return_datetime=True)
+
+    if cd is None:
+        return None
+
+    if duration_type == "months":
+        new_date = cd - relativedelta(months=floor(float(duration)))
+        return new_date.month
+
+    elif duration_type == "days":
+        new_date = cd - timedelta(days=float(duration))
+        return new_date.month
+
+
+def correctOldDate(date, format, return_datetime=False):
+    """
+    the time module converts 2 digit dates as:
+    values 69-99 are mapped to 1969-1999, and values 0-68 are mapped to
+    2000-2068. This doesn't work for e.g. birthdates here where they are
+    frequently below the cutoff.
+
+    Switches the pivot point so that 22+ converts to 19xx.
+
+    Only use for birth dates to avoid unintentional conversion for recent
+    dates.
+    """
+
+    if date in [None, ""]:
+        return None
+
+    try:
+        cd = datetime.strptime(date, format)
+    except ValueError:
+        logging.error(f"Could not convert date {date!r} from date format {format!r}")
+        return None
+
+    if cd.year >= 2022 and "y" in format:
+        cd = cd.replace(year=cd.year - 100)
+
+    if return_datetime:
+        return cd
+    else:
+        return cd.strftime("%Y-%m-%d")
