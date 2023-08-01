@@ -21,7 +21,7 @@ dependencies = [
   "requests>=2.0.0",
   "fastjsonschema==2.16.*",
   "tqdm",
-  "dateutil"
+  "python-dateutil"
 ]
 
 [project.optional-dependencies]
