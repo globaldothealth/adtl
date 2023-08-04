@@ -59,11 +59,13 @@ def getFloat(value, set_decimal=None, separator=None):
         return value
 
 
-def yearsElapsed(birthdate, currentdate, bd_format="%Y-%m-%d", cd_format="%Y-%m-%d"):
+def yearsElapsed(
+    birthdate, currentdate, epoch, bd_format="%Y-%m-%d", cd_format="%Y-%m-%d"
+):
     if birthdate in [None, ""] or currentdate in [None, ""]:
         return None
 
-    bd = correctOldDate(birthdate, bd_format, return_datetime=True)
+    bd = correctOldDate(birthdate, epoch, bd_format, return_datetime=True)
     # bd = datetime.strptime(birthdate, bd_format)
     cd = datetime.strptime(currentdate, cd_format)
 
@@ -104,14 +106,14 @@ def startDate(enddate, duration):
     return sd.strftime("%Y-%m-%d")
 
 
-def endDate(startdate, duration):
+def endDate(startdate, duration, format="%Y-%m-%d"):
     """
     Retuns the end date in ISO format, given the start date and the duration.
     """
     if startdate in [None, ""] or duration in [None, ""]:
         return None
 
-    sd = datetime.strptime(startdate, "%Y-%m-%d")
+    sd = datetime.strptime(startdate, format)
 
     duration = float(duration)
 
@@ -182,13 +184,13 @@ def makeDateTime(date, time_24hr, date_format, timezone):
     return datetime.combine(dt, tm, tzinfo=zoneinfo.ZoneInfo(timezone)).isoformat()
 
 
-def splitDate(date, option: Literal["year", "month", "day"], format="%Y-%m-%d"):
+def splitDate(date, option: Literal["year", "month", "day"], epoch, format="%Y-%m-%d"):
     "Splits a date into year, month, day"
 
     if date in [None, ""]:
         return None
 
-    sd = correctOldDate(date, format, return_datetime=True)
+    sd = correctOldDate(date, epoch, format, return_datetime=True)
 
     if sd is None:
         return None
@@ -203,7 +205,9 @@ def splitDate(date, option: Literal["year", "month", "day"], format="%Y-%m-%d"):
         return None
 
 
-def startYear(currentdate, duration, dateformat="%Y-%m-%d", duration_type="years"):
+def startYear(
+    currentdate, duration, epoch, dateformat="%Y-%m-%d", duration_type="years"
+):
     """
     Use to calculate year e.g. of birth from date (e.g. current date) and
     duration (e.g. age)
@@ -211,7 +215,7 @@ def startYear(currentdate, duration, dateformat="%Y-%m-%d", duration_type="years
     if currentdate in [None, ""] or duration in [None, ""]:
         return None
 
-    cd = correctOldDate(currentdate, dateformat, return_datetime=True)
+    cd = correctOldDate(currentdate, epoch, dateformat, return_datetime=True)
 
     if cd is None:
         return None
@@ -228,7 +232,9 @@ def startYear(currentdate, duration, dateformat="%Y-%m-%d", duration_type="years
         return new_date.year
 
 
-def startMonth(currentdate, duration, dateformat="%Y-%m-%d", duration_type="months"):
+def startMonth(
+    currentdate, duration, epoch, dateformat="%Y-%m-%d", duration_type="months"
+):
     """
     Use to calculate month e.g. of birth from date (e.g. current date) and
     duration (e.g. age)
@@ -236,7 +242,7 @@ def startMonth(currentdate, duration, dateformat="%Y-%m-%d", duration_type="mont
     if currentdate in [None, ""] or duration in [None, ""]:
         return None
 
-    cd = correctOldDate(currentdate, dateformat, return_datetime=True)
+    cd = correctOldDate(currentdate, epoch, dateformat, return_datetime=True)
 
     if cd is None:
         return None
@@ -250,14 +256,14 @@ def startMonth(currentdate, duration, dateformat="%Y-%m-%d", duration_type="mont
         return new_date.month
 
 
-def correctOldDate(date, format, return_datetime=False):
+def correctOldDate(date, epoch, format, return_datetime=False):
     """
     the time module converts 2 digit dates as:
     values 69-99 are mapped to 1969-1999, and values 0-68 are mapped to
     2000-2068. This doesn't work for e.g. birthdates here where they are
     frequently below the cutoff.
 
-    Switches the pivot point so that 22+ converts to 19xx.
+    Switches the pivot point to that set by epoch so that epoch+ converts to 19xx.
 
     Only use for birth dates to avoid unintentional conversion for recent
     dates.
@@ -272,7 +278,7 @@ def correctOldDate(date, format, return_datetime=False):
         logging.error(f"Could not convert date {date!r} from date format {format!r}")
         return None
 
-    if cd.year >= 2022 and "y" in format:
+    if cd.year >= epoch and "y" in format:
         cd = cd.replace(year=cd.year - 100)
 
     if return_datetime:

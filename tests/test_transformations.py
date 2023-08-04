@@ -13,30 +13,30 @@ def test_isNotNull(test_input, expected):
 
 
 @pytest.mark.parametrize(
-    "test_date_birth, test_date_current, expected",
+    "test_date_birth, test_date_current, epoch, expected",
     [
-        ("1996-02-22", "2023-02-22", 27.0),
-        ("", "2023-02-22", None),
-        (None, "2023-02-22", None),
+        ("1996-02-22", "2023-02-22", 2022, 27.0),
+        ("", "2023-02-22", 2022, None),
+        (None, "2023-02-22", 2022, None),
     ],
 )
-def test_yearsElasped(test_date_birth, test_date_current, expected):
-    assert transform.yearsElapsed(test_date_birth, test_date_current) == pytest.approx(
-        expected, 0.001
-    )
+def test_yearsElasped(test_date_birth, test_date_current, epoch, expected):
+    assert transform.yearsElapsed(
+        test_date_birth, test_date_current, epoch
+    ) == pytest.approx(expected, 0.001)
 
 
 @pytest.mark.parametrize(
-    "test_date_birth, test_date_current, bd_format, cd_format, expected",
+    "test_date_birth, test_date_current, epoch, bd_format, cd_format, expected",
     [
-        ("1950", "2023-01-01 00:00", "%Y", "%Y-%m-%d %H:%M", 73),
+        ("1950", "2023-01-01 00:00", 2022, "%Y", "%Y-%m-%d %H:%M", 73),
     ],
 )
 def test_yearsElasped_format(
-    test_date_birth, test_date_current, bd_format, cd_format, expected
+    test_date_birth, test_date_current, epoch, bd_format, cd_format, expected
 ):
     assert transform.yearsElapsed(
-        test_date_birth, test_date_current, bd_format, cd_format
+        test_date_birth, test_date_current, epoch, bd_format, cd_format
     ) == pytest.approx(expected, 0.001)
 
 
@@ -166,69 +166,69 @@ def test_makeDateTime(date, time, date_format, tzname, expected):
 
 
 @pytest.mark.parametrize(
-    "date,option,date_format,expected",
+    "date,option,epoch,date_format,expected",
     [
-        ("", "year", None, None),
-        (None, "year", None, None),
-        ("2023-07-28", "blah", "%Y-%m-%d", None),
-        ("2020-07-28", "year", "%Y-%m-%d", 2020),
-        ("2023-07-28", "month", "%Y-%m-%d", 7),
-        ("2023-07-28", "day", "%Y-%m-%d", 28),
-        ("28/07/2023", "year", "%Y-%m-%d", None),
+        ("", "year", 2022, None, None),
+        (None, "year", 2022, None, None),
+        ("2023-07-28", "blah", 2022, "%Y-%m-%d", None),
+        ("2020-07-28", "year", 2022, "%Y-%m-%d", 2020),
+        ("2023-07-28", "month", 2022, "%Y-%m-%d", 7),
+        ("2023-07-28", "day", 2022, "%Y-%m-%d", 28),
+        ("28/07/2023", "year", 2022, "%Y-%m-%d", None),
     ],
 )
-def test_splitDate(date, option, date_format, expected):
-    assert transform.splitDate(date, option, date_format) == expected
+def test_splitDate(date, option, epoch, date_format, expected):
+    assert transform.splitDate(date, option, epoch, date_format) == expected
 
 
 @pytest.mark.parametrize(
-    "date,duration,format,type,expected",
+    "date,duration,epoch,format,type,expected",
     [
-        ("", 30, None, "years", None),
-        (None, 30, None, "years", None),
-        ("2023-07-28", "", "%Y-%m-%d", "years", None),
-        ("2023-07-28", None, "%Y-%m-%d", "years", None),
-        ("2023-07-28", 30, "%Y-%m-%d", "blah", None),
-        ("2021-05-28", 30, "%Y-%m-%d", "years", 1991),
-        ("2021-06-28", 8, "%Y-%m-%d", "months", 2020),
-        ("2021-06-28", 8.5, "%Y-%m-%d", "months", 2020),
-        ("2021-07-28", 20, "%Y-%m-%d", "days", 2021),
-        ("28/08/2023", 30, "%Y-%m-%d", "years", None),
+        ("", 30, 2022, None, "years", None),
+        (None, 30, 2022, None, "years", None),
+        ("2023-07-28", "", 2022, "%Y-%m-%d", "years", None),
+        ("2023-07-28", None, 2022, "%Y-%m-%d", "years", None),
+        ("2023-07-28", 30, 2022, "%Y-%m-%d", "blah", None),
+        ("2021-05-28", 30, 2022, "%Y-%m-%d", "years", 1991),
+        ("2021-06-28", 8, 2022, "%Y-%m-%d", "months", 2020),
+        ("2021-06-28", 8.5, 2022, "%Y-%m-%d", "months", 2020),
+        ("2021-07-28", 20, 2022, "%Y-%m-%d", "days", 2021),
+        ("28/08/2023", 30, 2022, "%Y-%m-%d", "years", None),
     ],
 )
-def test_startYear(date, duration, format, type, expected):
-    assert transform.startYear(date, duration, format, type) == expected
+def test_startYear(date, duration, epoch, format, type, expected):
+    assert transform.startYear(date, duration, epoch, format, type) == expected
 
 
 @pytest.mark.parametrize(
-    "date,duration,format,type,expected",
+    "date,duration,epoch,format,type,expected",
     [
-        ("", 30, None, "months", None),
-        (None, 30, None, "months", None),
-        ("2023-07-28", "", "%Y-%m-%d", "months", None),
-        ("2023-07-28", None, "%Y-%m-%d", "months", None),
-        ("2023-07-28", 30, "%Y-%m-%d", "blah", None),
-        ("2021-05-28", 3, "%Y-%m-%d", "months", 2),
-        ("2021-06-28", 8.5, "%Y-%m-%d", "months", 10),
-        ("2021-07-28", 20, "%Y-%m-%d", "days", 7),
-        ("28/08/2023", 30, "%Y-%m-%d", "months", None),
+        ("", 30, 2022, None, "months", None),
+        (None, 30, 2022, None, "months", None),
+        ("2023-07-28", "", 2022, "%Y-%m-%d", "months", None),
+        ("2023-07-28", None, 2022, "%Y-%m-%d", "months", None),
+        ("2023-07-28", 30, 2022, "%Y-%m-%d", "blah", None),
+        ("2021-05-28", 3, 2022, "%Y-%m-%d", "months", 2),
+        ("2021-06-28", 8.5, 2022, "%Y-%m-%d", "months", 10),
+        ("2021-07-28", 20, 2022, "%Y-%m-%d", "days", 7),
+        ("28/08/2023", 30, 2022, "%Y-%m-%d", "months", None),
     ],
 )
-def test_startMonth(date, duration, format, type, expected):
-    assert transform.startMonth(date, duration, format, type) == expected
+def test_startMonth(date, duration, epoch, format, type, expected):
+    assert transform.startMonth(date, duration, epoch, format, type) == expected
 
 
 @pytest.mark.parametrize(
-    "date,format,returntype,expected",
+    "date,epoch,format,returntype,expected",
     [
-        ("", None, False, None),
-        (None, "%Y-%m-%d", True, None),
-        ("01/01/24", "%Y-%m-%d", True, None),
-        ("01/01/24", "%d/%m/%y", True, datetime(1924, 1, 1, 0, 0)),
-        ("01/01/20", "%d/%m/%y", True, datetime(2020, 1, 1, 0, 0)),
-        ("01/01/20", "%d/%m/%y", False, "2020-01-01"),
-        ("01/01/2030", "%d/%m/%Y", False, "2030-01-01"),
+        ("", 2022, None, False, None),
+        (None, 2022, "%Y-%m-%d", True, None),
+        ("01/01/24", 2022, "%Y-%m-%d", True, None),
+        ("01/01/24", 2022, "%d/%m/%y", True, datetime(1924, 1, 1, 0, 0)),
+        ("01/01/20", 2022, "%d/%m/%y", True, datetime(2020, 1, 1, 0, 0)),
+        ("01/01/20", 2022, "%d/%m/%y", False, "2020-01-01"),
+        ("01/01/2030", 2022, "%d/%m/%Y", False, "2030-01-01"),
     ],
 )
-def test_correctOldDate(date, format, returntype, expected):
-    assert transform.correctOldDate(date, format, returntype) == expected
+def test_correctOldDate(date, epoch, format, returntype, expected):
+    assert transform.correctOldDate(date, epoch, format, returntype) == expected
