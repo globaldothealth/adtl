@@ -18,6 +18,7 @@ def test_isNotNull(test_input, expected):
         ("1996-02-22", "2023-02-22", 2022, 27.0),
         ("", "2023-02-22", 2022, None),
         (None, "2023-02-22", 2022, None),
+        ("22/02/1996", "2023-02-22", 2022, None),
     ],
 )
 def test_yearsElasped(test_date_birth, test_date_current, epoch, expected):
@@ -30,6 +31,7 @@ def test_yearsElasped(test_date_birth, test_date_current, epoch, expected):
     "test_date_birth, test_date_current, epoch, bd_format, cd_format, expected",
     [
         ("1950", "2023-01-01 00:00", 2022, "%Y", "%Y-%m-%d %H:%M", 73),
+        # ("1950", "2023-01-01 00:00", 2022, "%Y", "%d/%m/%Y", None),
     ],
 )
 def test_yearsElasped_format(
@@ -184,16 +186,19 @@ def test_splitDate(date, option, epoch, date_format, expected):
 @pytest.mark.parametrize(
     "date,duration,epoch,format,type,expected",
     [
-        ("", 30, 2022, None, "years", None),
-        (None, 30, 2022, None, "years", None),
-        ("2023-07-28", "", 2022, "%Y-%m-%d", "years", None),
-        ("2023-07-28", None, 2022, "%Y-%m-%d", "years", None),
-        ("2023-07-28", 30, 2022, "%Y-%m-%d", "blah", None),
-        ("2021-05-28", 30, 2022, "%Y-%m-%d", "years", 1991),
-        ("2021-06-28", 8, 2022, "%Y-%m-%d", "months", 2020),
-        ("2021-06-28", 8.5, 2022, "%Y-%m-%d", "months", 2020),
-        ("2021-07-28", 20, 2022, "%Y-%m-%d", "days", 2021),
-        ("28/08/2023", 30, 2022, "%Y-%m-%d", "years", None),
+        (30, "", 2022, None, "years", None),
+        (30, None, 2022, None, "years", None),
+        ("", "2023-07-28", 2022, "%Y-%m-%d", "years", None),
+        (None, "2023-07-28", 2022, "%Y-%m-%d", "years", None),
+        (30, "2023-07-28", 2022, "%Y-%m-%d", "blah", None),
+        (30, "2021-05-28", 2022, "%Y-%m-%d", "years", 1991),
+        (8, "2021-06-28", 2022, "%Y-%m-%d", "months", 2020),
+        (8.5, "2021-06-28", 2022, "%Y-%m-%d", "months", 2020),
+        (20, "2021-07-28", 2022, "%Y-%m-%d", "days", 2021),
+        (30, "28/08/2023", 2022, "%Y-%m-%d", "years", None),
+        (20, [None, "2021-07-28", "1990-07-28"], 2022, "%Y-%m-%d", "days", 2021),
+        (20, ["", "2021-07-28", "1990-07-28"], 2022, "%Y-%m-%d", "days", 2021),
+        (20, ["", "", ""], 2022, "%Y-%m-%d", "years", None),
     ],
 )
 def test_startYear(date, duration, epoch, format, type, expected):
@@ -201,21 +206,50 @@ def test_startYear(date, duration, epoch, format, type, expected):
 
 
 @pytest.mark.parametrize(
+    "date,duration,epoch,format,type,month_day,expected",
+    [
+        (30, "2021", 2022, "%Y-%m-%d", "years", ["05", "28"], 1991),
+        (8, "2021", 2022, "%Y-%m-%d", "months", ["06", "28"], 2020),
+    ],
+)
+def test_startYear_splitdate(date, duration, epoch, format, month_day, type, expected):
+    assert (
+        transform.startYear(date, duration, epoch, format, type, month_day) == expected
+    )
+
+
+@pytest.mark.parametrize(
     "date,duration,epoch,format,type,expected",
     [
-        ("", 30, 2022, None, "months", None),
-        (None, 30, 2022, None, "months", None),
-        ("2023-07-28", "", 2022, "%Y-%m-%d", "months", None),
-        ("2023-07-28", None, 2022, "%Y-%m-%d", "months", None),
-        ("2023-07-28", 30, 2022, "%Y-%m-%d", "blah", None),
-        ("2021-05-28", 3, 2022, "%Y-%m-%d", "months", 2),
-        ("2021-06-28", 8.5, 2022, "%Y-%m-%d", "months", 10),
-        ("2021-07-28", 20, 2022, "%Y-%m-%d", "days", 7),
-        ("28/08/2023", 30, 2022, "%Y-%m-%d", "months", None),
+        (30, "", 2022, None, "months", None),
+        (30, None, 2022, None, "months", None),
+        ("", "2023-07-28", 2022, "%Y-%m-%d", "months", None),
+        (None, "2023-07-28", 2022, "%Y-%m-%d", "months", None),
+        (30, "2023-07-28", 2022, "%Y-%m-%d", "blah", None),
+        (3, "2021-05-28", 2022, "%Y-%m-%d", "months", 2),
+        (8.5, "2021-06-28", 2022, "%Y-%m-%d", "months", 10),
+        (20, "2021-07-28", 2022, "%Y-%m-%d", "days", 7),
+        (30, "28/08/2023", 2022, "%Y-%m-%d", "months", None),
+        (20, [None, "2021-07-28", "1990-07-28"], 2022, "%Y-%m-%d", "days", 7),
+        (20, ["", "2021-07-28", "1990-07-28"], 2022, "%Y-%m-%d", "days", 7),
+        (20, ["", "", ""], 2022, "%Y-%m-%d", "months", None),
     ],
 )
 def test_startMonth(date, duration, epoch, format, type, expected):
     assert transform.startMonth(date, duration, epoch, format, type) == expected
+
+
+@pytest.mark.parametrize(
+    "date,duration,epoch,format,type,month_day,expected",
+    [
+        (3, "2021", 2022, "%Y-%m-%d", "months", ["05", "28"], 2),
+        (8.5, "2021", 2022, "%Y-%m-%d", "months", ["06", "28"], 10),
+    ],
+)
+def test_startMonth_splitdate(date, duration, epoch, format, type, month_day, expected):
+    assert (
+        transform.startMonth(date, duration, epoch, format, type, month_day) == expected
+    )
 
 
 @pytest.mark.parametrize(

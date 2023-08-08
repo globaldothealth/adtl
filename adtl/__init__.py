@@ -74,15 +74,26 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
             # apply data transformations.
             transformation = rule["apply"]["function"]
             if "params" in rule["apply"]:
-                params = [
-                    row[rule["apply"]["params"][i][1:]]
-                    if (
-                        isinstance(rule["apply"]["params"][i], str)
-                        and rule["apply"]["params"][i].startswith("$")
-                    )
-                    else rule["apply"]["params"][i]
-                    for i in range(len(rule["apply"]["params"]))
-                ]
+                params = []
+                for i in range(len(rule["apply"]["params"])):
+                    if isinstance(rule["apply"]["params"][i], str) and rule["apply"][
+                        "params"
+                    ][i].startswith("$"):
+                        params.append(row[rule["apply"]["params"][i][1:]])
+                    elif isinstance(rule["apply"]["params"][i], list):
+                        param = [
+                            row[rule["apply"]["params"][i][j][1:]]
+                            if (
+                                isinstance(rule["apply"]["params"][i][j], str)
+                                and rule["apply"]["params"][i][j].startswith("$")
+                            )
+                            else rule["apply"]["params"][i][j]
+                            for j in range(len(rule["apply"]["params"][i]))
+                        ]
+                        params.append(param)
+                    else:
+                        params.append(rule["apply"]["params"][i])
+
                 try:
                     value = getattr(tf, transformation)(value, *params)
                 except AttributeError:

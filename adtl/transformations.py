@@ -66,14 +66,14 @@ def yearsElapsed(
         return None
 
     bd = correctOldDate(birthdate, epoch, bd_format, return_datetime=True)
-    # bd = datetime.strptime(birthdate, bd_format)
+
+    if bd is None:
+        return None
+
     cd = datetime.strptime(currentdate, cd_format)
 
-    try:
-        days = cd - bd
-        return pint.Quantity(days.days, "days").to("years").m
-    except TypeError:
-        return None
+    days = cd - bd
+    return pint.Quantity(days.days, "days").to("years").m
 
 
 def durationDays(symptomstartdate, currentdate):
@@ -206,16 +206,31 @@ def splitDate(date, option: Literal["year", "month", "day"], epoch, format="%Y-%
 
 
 def startYear(
-    currentdate, duration, epoch, dateformat="%Y-%m-%d", duration_type="years"
+    duration,
+    currentdate: list | str,
+    epoch,
+    dateformat="%Y-%m-%d",
+    duration_type="years",
+    provide_month_day: bool | list = False,
 ):
     """
     Use to calculate year e.g. of birth from date (e.g. current date) and
     duration (e.g. age)
+
+    The date can be provided as a list of possible dates (if a hierarcy needs searching through)
     """
+    if isinstance(currentdate, list):
+        # find the first non nan instance, else return None
+        currentdate = next((s for s in currentdate if s), None)
+
     if currentdate in [None, ""] or duration in [None, ""]:
         return None
 
-    cd = correctOldDate(currentdate, epoch, dateformat, return_datetime=True)
+    if provide_month_day:
+        cd = makeDate(currentdate, provide_month_day[0], provide_month_day[1])
+        cd = datetime.strptime(cd, "%Y-%m-%d")
+    else:
+        cd = correctOldDate(currentdate, epoch, dateformat, return_datetime=True)
 
     if cd is None:
         return None
@@ -233,16 +248,29 @@ def startYear(
 
 
 def startMonth(
-    currentdate, duration, epoch, dateformat="%Y-%m-%d", duration_type="months"
+    duration,
+    currentdate: str | list,
+    epoch,
+    dateformat="%Y-%m-%d",
+    duration_type="months",
+    provide_month_day: bool | list = False,
 ):
     """
     Use to calculate month e.g. of birth from date (e.g. current date) and
     duration (e.g. age)
     """
+    if isinstance(currentdate, list):
+        # find the first non nan instance, else return None
+        currentdate = next((s for s in currentdate if s), None)
+
     if currentdate in [None, ""] or duration in [None, ""]:
         return None
 
-    cd = correctOldDate(currentdate, epoch, dateformat, return_datetime=True)
+    if provide_month_day:
+        cd = makeDate(currentdate, provide_month_day[0], provide_month_day[1])
+        cd = datetime.strptime(cd, "%Y-%m-%d")
+    else:
+        cd = correctOldDate(currentdate, epoch, dateformat, return_datetime=True)
 
     if cd is None:
         return None

@@ -28,3 +28,7 @@
 [subject.icu_admitted]
   field = "icu_hostdat"
   apply = { function = "isNotNull" }
+
+[subject.dob_year]
+  field = "age"
+  apply = { function = "startYear", params = [["$brthdtc", "$dsstdat"], 2022] }
