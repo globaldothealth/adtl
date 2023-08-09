@@ -14,7 +14,7 @@ except ImportError:  # pragma: no cover
 import pint
 import re
 
-from typing import Literal
+from typing import Literal, Union
 
 
 def isNotNull(value):
@@ -208,7 +208,12 @@ def makeDateTime(date, time_24hr, date_format, timezone):
     return datetime.combine(dt, tm, tzinfo=zoneinfo.ZoneInfo(timezone)).isoformat()
 
 
-def splitDate(date, option: Literal["year", "month", "day"], epoch, format="%Y-%m-%d"):
+def splitDate(
+    date: str,
+    option: Literal["year", "month", "day"],
+    epoch: float,
+    format: str = "%Y-%m-%d",
+):
     "Splits a date into year, month, day"
 
     if date in [None, ""]:
@@ -230,12 +235,12 @@ def splitDate(date, option: Literal["year", "month", "day"], epoch, format="%Y-%
 
 
 def startYear(
-    duration,
-    currentdate: list | str,
-    epoch,
-    dateformat="%Y-%m-%d",
-    duration_type="years",
-    provide_month_day: bool | list = False,
+    duration: Union[str, float],
+    currentdate: Union[list, str],
+    epoch: float,
+    dateformat: str = "%Y-%m-%d",
+    duration_type: Literal["years", "months", "days"] = "years",
+    provide_month_day: Union[bool, list] = False,
 ):
     """
     Use to calculate year e.g. of birth from date (e.g. current date) and
@@ -272,12 +277,12 @@ def startYear(
 
 
 def startMonth(
-    duration,
-    currentdate: str | list,
-    epoch,
-    dateformat="%Y-%m-%d",
-    duration_type="months",
-    provide_month_day: bool | list = False,
+    duration: Union[str, float],
+    currentdate: Union[list, str],
+    epoch: float,
+    dateformat: str = "%Y-%m-%d",
+    duration_type: Literal["years", "months", "days"] = "years",
+    provide_month_day: Union[bool, list] = False,
 ):
     """
     Use to calculate month e.g. of birth from date (e.g. current date) and
@@ -308,7 +313,7 @@ def startMonth(
         return new_date.month
 
 
-def correctOldDate(date, epoch, format, return_datetime=False):
+def correctOldDate(date: str, epoch: float, format: str, return_datetime: bool = False):
     """
     the time module converts 2 digit dates as:
     values 69-99 are mapped to 1969-1999, and values 0-68 are mapped to
