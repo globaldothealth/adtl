@@ -25,6 +25,30 @@ def textIfNotNull(field, return_val):
     return return_val if field not in [None, ""] else None
 
 
+def wordSubstituteSet(value, params):
+    """
+    For a value that can have multiple words, use substitutions from params.
+    params is a list of 2-tuples, in the form
+
+        [(w1, s1), (w2, s2), ... (w_n, s_n)]
+
+    where w1 is replaced by s1, w2 is replaced by s2.
+
+    Word matches are regular expressions, delimited by the `\b` word boundary
+    delimiter so can have arbitrary regular expressions to match. Any match of
+    regex w_n will use substitute s_n. Case is ignored when matching.
+    """
+    out = []
+    for i in params:
+        if not isinstance(i, (tuple, list)):
+            raise ValueError("wordSubstituteSet: params item not a tuple or list")
+        sub_map = dict(params)
+        for match, subst in sub_map.items():
+            if re.search(r"\b" + match + r"\b", value, re.IGNORECASE):
+                out.append(subst)
+    return sorted(set(out)) if out else None
+
+
 def getFloat(value, set_decimal=None, separator=None):
     """
     In cases where the decimal seperators is not a . you can

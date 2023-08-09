@@ -13,6 +13,39 @@ def test_isNotNull(test_input, expected):
 
 
 @pytest.mark.parametrize(
+    "test_input,expected",
+    [
+        (
+            (
+                "Metilprednisolona - Dexametasona - Fluticasona",
+                [
+                    ("Metilprednisolona", "Methylprednisolone"),
+                    ("Fluticasona", "Fluticasone"),
+                    ("Dexametasona", "Dexamethasone"),
+                ],
+            ),
+            ["Dexamethasone", "Fluticasone", "Methylprednisolone"],
+        ),
+        (
+            (
+                "Hidrocortisona - Fluticasona",
+                [("Hidrocortisona", "Hydrocortisone"), ("Fluticasona", "Fluticasone")],
+            ),
+            ["Fluticasone", "Hydrocortisone"],
+        ),
+        ((("Hidrocortisona - Fluticasona"), [("Cortisona", "Cortisone")]), None),
+    ],
+)
+def test_wordSubstituteSet(test_input, expected):
+    assert transform.wordSubstituteSet(*test_input) == expected
+
+
+def test_wordSubstituteSet_error():
+    with pytest.raises(ValueError):
+        transform.wordSubstituteSet("value", [20, 30])
+
+
+@pytest.mark.parametrize(
     "test_date_birth, test_date_current, epoch, expected",
     [
         ("1996-02-22", "2023-02-22", 2022, 27.0),
