@@ -16,22 +16,21 @@ def test_isNotNull(test_input, expected):
         (
             (
                 "Metilprednisolona - Dexametasona - Fluticasona",
-                [
-                    ("Metilprednisolona", "Methylprednisolone"),
-                    ("Fluticasona", "Fluticasone"),
-                    ("Dexametasona", "Dexamethasone"),
-                ],
+                ("Metilprednisolona", "Methylprednisolone"),
+                ("Fluticasona", "Fluticasone"),
+                ("Dexametasona", "Dexamethasone"),
             ),
             ["Dexamethasone", "Fluticasone", "Methylprednisolone"],
         ),
         (
             (
                 "Hidrocortisona - Fluticasona",
-                [("Hidrocortisona", "Hydrocortisone"), ("Fluticasona", "Fluticasone")],
+                ("Hidrocortisona", "Hydrocortisone"),
+                ("Fluticasona", "Fluticasone"),
             ),
             ["Fluticasone", "Hydrocortisone"],
         ),
-        ((("Hidrocortisona - Fluticasona"), [("Cortisona", "Cortisone")]), None),
+        (("Hidrocortisona - Fluticasona", ("Cortisona", "Cortisone")), None),
     ],
 )
 def test_wordSubstituteSet(test_input, expected):
