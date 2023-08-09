@@ -20,7 +20,7 @@ def textIfNotNull(field, return_val):
     return return_val if field not in [None, ""] else None
 
 
-def wordSubstituteSet(value, params):
+def wordSubstituteSet(value, *params):
     """
     For a value that can have multiple words, use substitutions from params.
     params is a list of 2-tuples, in the form
@@ -35,7 +35,7 @@ def wordSubstituteSet(value, params):
     """
     out = []
     for i in params:
-        if not isinstance(i, (tuple, list)):
+        if not isinstance(i, (tuple, list)) or not all(isinstance(s, str) for s in i):
             raise ValueError("wordSubstituteSet: params item not a tuple or list")
         sub_map = dict(params)
         for match, subst in sub_map.items():
