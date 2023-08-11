@@ -16,6 +16,7 @@ release = "0.4.0"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.coverage",
+    "sphinx.ext.napoleon",
     "myst_parser",
     "sphinx_rtd_theme",
 ]

@@ -1,6 +1,7 @@
 """ Functions which can be applied to source fields, allowing extensibility """
 
 import logging
+from typing import Any, Optional, List
 from datetime import datetime, timedelta, date
 
 try:
@@ -12,26 +13,34 @@ import pint
 import re
 
 
-def isNotNull(value):
+def isNotNull(value: Optional[str]) -> bool:
+    "Returns whether value is not null or an empty string"
     return value not in [None, ""]
 
 
-def textIfNotNull(field, return_val):
+def textIfNotNull(field: str, return_val: Any) -> Any:
+    "Returns a default value if field is not null"
     return return_val if field not in [None, ""] else None
 
 
-def wordSubstituteSet(value, *params):
+def wordSubstituteSet(value: str, *params) -> List[str]:
     """
     For a value that can have multiple words, use substitutions from params.
-    params is a list of 2-tuples, in the form
 
-        [(w1, s1), (w2, s2), ... (w_n, s_n)]
+    Args:
+        value: String containing a list of words that should be substituted
+        params: List of 2-tuples, in the form
+            [(w1, s1), (w2, s2), ... (w_n, s_n)]
+            where w1 is replaced by s1, w2 is replaced by s2.
 
-    where w1 is replaced by s1, w2 is replaced by s2.
+            Word matches are regular expressions, delimited by the `\b` word
+            boundary delimiter so can have arbitrary regular expressions to
+            match. Any match of regex w_n will use substitute s_n. Case is
+            ignored when matching.
 
-    Word matches are regular expressions, delimited by the `\b` word boundary
-    delimiter so can have arbitrary regular expressions to match. Any match of
-    regex w_n will use substitute s_n. Case is ignored when matching.
+    Returns:
+        List of words after finding matches and substituting.
+        Duplicate words are only represented once.
     """
     out = []
     for i in params:
@@ -44,11 +53,17 @@ def wordSubstituteSet(value, *params):
     return sorted(set(out)) if out else None
 
 
-def getFloat(value, set_decimal=None, separator=None):
-    """
-    In cases where the decimal seperators is not a . you can
-    use set_decimal. Similarly, if thousand seperators are
-    used they can be specified.
+def getFloat(
+    value: str, set_decimal: Optional[str] = None, separator: Optional[str] = None
+):
+    """Returns value transformed into a float.
+
+    Args:
+        value: Value to be transformed to float
+        set_decimal: optional, set if decimal separator is not a
+            full stop or period (.)
+        separator: optional, set to the character used for separating
+            thousands (such as `,`).
     """
 
     if not value:
@@ -78,7 +93,25 @@ def getFloat(value, set_decimal=None, separator=None):
         return value
 
 
-def yearsElapsed(birthdate, currentdate, bd_format="%Y-%m-%d", cd_format="%Y-%m-%d"):
+def yearsElapsed(
+    birthdate: str,
+    currentdate: str,
+    bd_format: str = "%Y-%m-%d",
+    cd_format: str = "%Y-%m-%d",
+):
+    """Returns the number of years elapsed between two dates, useful for calculating ages
+
+    Args:
+        birthdate: Start date of duration
+        currentdate: End date of duration
+        bd_format: Date format for *birthdate* specified using :manpage:`strftime(3)` conventions.
+            Defaults to ISO format ("%Y-%m-%d")
+        cd_format: Date format for *currentdate* specified using :manpage:`strftime(3)` conventions.
+            Defaults to ISO format ("%Y-%m-%d")
+
+    Returns:
+        int | None: Number of years elapsed or None if invalid dates were encountered
+    """
     if birthdate in [None, ""] or currentdate in [None, ""]:
         return None
 
@@ -89,25 +122,25 @@ def yearsElapsed(birthdate, currentdate, bd_format="%Y-%m-%d", cd_format="%Y-%m-
     return pint.Quantity(days.days, "days").to("years").m
 
 
-def durationDays(symptomstartdate, currentdate):
+def durationDays(startdate: str, currentdate: str) -> int:
     """
     Returns the number of days between two dates.
     Preferable to Y-M-D elapsed, as month length is ambiguous -
     can be anywhere between 28-31 days.
     """
-    if symptomstartdate in [None, ""] or currentdate in [None, ""]:
+    if startdate in [None, ""] or currentdate in [None, ""]:
         return None
 
-    bd = datetime.strptime(symptomstartdate, "%Y-%m-%d")
+    bd = datetime.strptime(startdate, "%Y-%m-%d")
     cd = datetime.strptime(currentdate, "%Y-%m-%d")
 
     days = cd - bd
     return days.days
 
 
-def startDate(enddate, duration):
+def startDate(enddate: str, duration: str) -> str:
     """
-    Retuns the start date in ISO format, given the end date and the duration.
+    Returns the start date in ISO format, given the end date and the duration.
     """
     if enddate in [None, ""] or duration in [None, ""]:
         return None
@@ -119,7 +152,7 @@ def startDate(enddate, duration):
     return sd.strftime("%Y-%m-%d")
 
 
-def endDate(startdate, duration):
+def endDate(startdate: str, duration: str) -> str:
     """
     Retuns the end date in ISO format, given the start date and the duration.
     """
@@ -135,7 +168,8 @@ def endDate(startdate, duration):
     return ed.strftime("%Y-%m-%d")
 
 
-def makeDate(year, month, day):
+def makeDate(year: str, month: str, day: str) -> str:
+    "Returns a date from components specified as year, month and day"
     if year in [None, ""] or month in [None, ""] or day in [None, ""]:
         return None
     try:
@@ -154,12 +188,26 @@ def makeDate(year, month, day):
         return None
 
 
-def makeDateTimeFromSeconds(date, time_seconds, date_format, tzname):
+def makeDateTimeFromSeconds(
+    date: str, time_seconds: int, date_format: str, timezone: str
+) -> datetime:
+    """Returns a datetime from date and time specified in
+    elapsed seconds since the beginning of the day
+
+    Args:
+        date: Date to be converted
+        time_seconds: Elapsed time in seconds within that day (0 - 86399)
+        date_format: Date format in :manpage:`strftime(3)` format
+        timezone: Timezone to use, specified in tzdata format
+
+    Returns:
+        datetime.datetime: A timezone aware datetime object
+    """
     if date == "":
         return None
     try:
         t = datetime.strptime(date, date_format).replace(
-            tzinfo=zoneinfo.ZoneInfo(tzname)
+            tzinfo=zoneinfo.ZoneInfo(timezone)
         )
     except ValueError:
         logging.error(
@@ -174,8 +222,20 @@ def makeDateTimeFromSeconds(date, time_seconds, date_format, tzname):
     return t.replace(hour=hour, minute=minute).isoformat()
 
 
-def makeDateTime(date, time_24hr, date_format, timezone):
-    """Combine date and time fields into one"""
+def makeDateTime(
+    date: str, time_24hr: str, date_format: str, timezone: str
+) -> datetime:
+    """Returns a combined date and time
+
+    Args:
+        date: Date to be converted
+        time_24hr: Time specified in HH:MM format
+        date_format: Date format in :manpage:`strftime(3)` format
+        timezone: Timezone to use, specified in tzdata format
+
+    Returns:
+        datetime.datetime: A timezone aware datetime object
+    """
     if date == "":
         return None
 

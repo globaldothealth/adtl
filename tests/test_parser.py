@@ -578,7 +578,7 @@ def test_one_to_many_with_common_mappings():
 )
 def test_default_if_rule_is_correct(rule, expected):
     psr = parser.Parser(TEST_PARSERS_PATH / "oneToMany-missingIf.toml")
-    assert psr.default_if("observation", rule)["if"] == expected
+    assert psr._default_if("observation", rule)["if"] == expected
 
 
 def test_one_to_many_correct_if_behaviour():

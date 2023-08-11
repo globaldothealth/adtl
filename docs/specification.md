@@ -75,7 +75,7 @@ supports references anywhere a dictionary or object is allowed using `ref = "som
 
 This would require a `someReference` key within the top-level definitions section:
 
-```ini
+```toml
 [adtl]
 name = "parser"
 
@@ -140,7 +140,7 @@ such as hashing the field.
 
 Every value in the table is the same constant value
 
-```ini
+```toml
 country_iso3 = "GBR"
 ```
 
@@ -148,7 +148,7 @@ country_iso3 = "GBR"
 
 Maps to a single field from the source format
 
-```ini
+```toml
 [table.date_death]  # specifies that date_death is under table named 'table'
 field = "flw_date_death"
 description = "Date of death"
@@ -159,7 +159,7 @@ description = "Date of death"
 Maps to a single field from the source format only if condition(s) are met. The
 value is set to *null* if the condition fails.
 
-```ini
+```toml
 field = "foobar"
 if = { foobar_type = 4 }
 ```
@@ -172,7 +172,7 @@ In the above example, if we wanted to set from field *foobar* only if
 *foobar_type* is 4 and *bazbar* < 5. For simplicity, the equals operation is optional,
 and adtl allows conditions of the form `{ field_name = value }`:
 
-```ini
+```toml
 field = "foobar"
 if.all = [  # in TOML this is a nested key, like { "if": { "all": [ ... ] } }
   { foobar_type = 4 },
@@ -185,7 +185,7 @@ if the row is not empty, and contains values which can be mapped correctly if ma
 provided. For example, an observation recording the presence/absence of vomiting should only
 be shown if values map to True/False:
 
-```ini
+```toml
 [[table]]
   name = "vomiting_nausea"
   is_present = { field = "Admission Symptoms.Vomiting", values = {1 = True, 0 = False} } # values = ['0', 'Unknown', '1', 'UNKNOWN', '']
@@ -197,7 +197,7 @@ based on the condition of a different field, this behaviour can be overridden by
 if condition into the parser; note that this will *stop any automated generation*, you should
 specify all conditions under which the row should be displayed, for example:
 
-```ini
+```toml
 [[observation]]
   name = "transfer_from_other_facility"
   phase = "study"
@@ -216,7 +216,7 @@ that pint understands. Generally pint works well with
 The `source_unit` field can also be a rule, but `unit` must be a string. For example,
 to set the age based on a field called `age_unit` which can be months or years:
 
-```ini
+```toml
 field = "age_estimate"
 source_unit = { field = "age_estimateunit", values = { 1 = "months", 2 = "years" }}
 unit = "years"
@@ -232,7 +232,7 @@ specified, it defaults to ISO 8601 date format `%Y-%m-%d`.
 
 Date formats are specified in [strftime(3)](http://man.openbsd.org/strftime) format.
 
-```ini
+```toml
 field = "outcome_date"
 source_date = "%d/%m/%Y"
 date = "%Y-%m-%d"
@@ -244,7 +244,7 @@ Same as **Single field**, but with an extra `values` key that describes the
 mapping from the values to the ones in the schema. This covers boolean fields,
 with the mappings being to `true` | `false` | `null`.
 
-```ini
+```toml
 [table.sex_at_birth]
 field = "sex"
 values = { 1 = "male", 2 = "female", 3 = "non_binary" }
@@ -256,7 +256,7 @@ could be useful when mapping to controlled terminologies, where you want to map
 the value to a known set if found, but keep the value as free text if not. This
 can be done by adding `ignoreMissingKey = true` to the rule:
 
-```ini
+```toml
 [table.sex_at_birth]
 field = "sex"
 values = { homme = "male", femme = "female" }
@@ -271,7 +271,7 @@ parser would return `null` when it does not find a match.
 
 Example with boolean values
 
-```ini
+```toml
 [table.has_dementia]
 field = "dementia_mhyn"
 values = { 1 = true, 2 = false }
@@ -297,7 +297,7 @@ A combinedType can have multiple fields within a `fields` key, or can specify
 multiple fields with a `fieldPattern` key which is a regex that is matched to the
 list of fields:
 
-```ini
+```toml
 [table.has_liver_disease]
 combinedType = "list"
 fields = [
@@ -307,7 +307,7 @@ fields = [
 
 Example of a `combinedType = "any"` mapping:
 
-```ini
+```toml
 [table.has_liver_disease]
 combinedType = "any"
 fields =  [
@@ -329,7 +329,7 @@ Rather than writing a new parser for every data file with minor differences, par
 robust to a certain amount of missing data by tagging applicable fields with `can_skip = True`,
 for example:
 
-```ini
+```toml
 [[observation]]
   name = "cough"
   phase = "admission"
@@ -344,7 +344,7 @@ If there are lots of fields missing all with similar field names, for example if
 has been omitted and all the followup fields are labelled with a `flw` prefix e.g., `flw_cough`,
 `flw2_fatigue`, this can be specified at the top of the file:
 
-```ini
+```toml
 [adtl]
   name = "isaric-core"
   description = "isaric-core"
@@ -373,7 +373,7 @@ passed to the transformation function.
 If the parameter is a field attribute value from the source data, the field name
 should be prefixed with a `$` to distinguish it from constant strings.
 
-```ini
+```toml
 [[table]]
   field = "icu_admitted"
   apply = { function = "isNotNull" }
@@ -391,7 +391,7 @@ multiple rows for the target. This is expressed in the specification by making t
 value corresponding to the table key a list instead of an object. Additionally
 an `if` key sets the condition under which the row is emitted.
 
-```ini
+```toml
 [[table]]
 date = { field = "dsstdtc" }
 name = "headache"
