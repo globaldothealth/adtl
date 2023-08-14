@@ -107,6 +107,7 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
                     raise AttributeError(
                         f"Error using a data transformation: Function {transformation} has not been defined."
                     )
+            return value
         if value == "":
             return None
         if "values" in rule:
