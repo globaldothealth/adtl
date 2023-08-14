@@ -217,7 +217,7 @@ def test_splitDate(date, option, epoch, date_format, expected):
 
 
 @pytest.mark.parametrize(
-    "date,duration,epoch,format,type,expected",
+    "duration,date,epoch,format,type,expected",
     [
         (30, "", 2022, None, "years", None),
         (30, None, 2022, None, "years", None),
@@ -234,8 +234,8 @@ def test_splitDate(date, option, epoch, date_format, expected):
         (20, ["", "", ""], 2022, "%Y-%m-%d", "years", None),
     ],
 )
-def test_startYear(date, duration, epoch, format, type, expected):
-    assert transform.startYear(date, duration, epoch, format, type) == expected
+def test_startYear(duration, date, epoch, format, type, expected):
+    assert transform.startYear(duration, date, epoch, format, type) == expected
 
 
 @pytest.mark.parametrize(
