@@ -121,7 +121,7 @@ def yearsElapsed(
     Returns:
         int | None: Number of years elapsed or None if invalid dates were encountered
     """
-):
+
     if birthdate in [None, ""] or currentdate in [None, ""]:
         return None
 
