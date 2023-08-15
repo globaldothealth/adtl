@@ -489,6 +489,20 @@ def test_get_value(row_rule, expected):
 @pytest.mark.parametrize(
     "row_rule,expected",
     [
+        (({"pathogen": "covid 19"}, {"pathogen": {"=~": ".*covid.*"}}), True),
+        (({"pathogen": "covid 19"}, {"pathogen": {"=~": ".*SARS-?CoV-?2.*"}}), False),
+        (
+            ({"pathogen": "sars cov 2"}, {"pathogen": {"=~": ".*SARS[- ]CoV[- ]2.*"}}),
+            True,
+        ),
+        (
+            ({"pathogen": "sars-cov 2"}, {"pathogen": {"=~": ".*SARS[- ]CoV[- ]2.*"}}),
+            True,
+        ),
+        (
+            ({"pathogen": "coronavírus"}, {"pathogen": {"=~": ".*coronav[ií]rus.*"}}),
+            True,
+        ),
         ((ROW_CONDITIONAL, {"outcome_type": 4}), True),
         ((ROW_CONDITIONAL, {"not": {"outcome_type": 4}}), False),
         ((ROW_CONDITIONAL, {"outcome_type": {"==": 4}}), True),

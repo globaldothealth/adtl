@@ -207,6 +207,8 @@ def parse_if(
             return cast_value != value
         elif cmp in ["=", "=="]:
             return cast_value == value
+        elif cmp == "=~":
+            return bool(re.match(value, cast_value, re.IGNORECASE))
         else:
             raise ValueError(f"Unrecognized operand: {cmp}")
     elif isinstance(rule[key], set):  # common error, missed colon to make it a dict
