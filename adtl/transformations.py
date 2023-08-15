@@ -312,12 +312,25 @@ def startYear(
     dateformat: str = "%Y-%m-%d",
     duration_type: Literal["years", "months", "days"] = "years",
     provide_month_day: Union[bool, list] = False,
-):
+) -> Union[int, float]:
     """
     Use to calculate year e.g. of birth from date (e.g. current date) and
     duration (e.g. age)
 
-    The date can be provided as a list of possible dates (if a hierarcy needs searching through)
+    The date can be provided as a list of possible dates (if a hierarchy needs searching through)
+
+    Args:
+        duration: Duration value
+        currentdate: Date to offset duration from
+        epoch: Epoch year to use for conversion of two digit years. Any dates
+            after the epoch are converted to the last century
+        dateformat: Date format that currentdate is in
+        duration_type: One of 'years', 'months' or 'days'
+        provide_month_day: If currentdate is only year, and this is specified
+            as a tuple of (month, day), uses these to construct the date
+
+    Returns:
+        Starting year, offset by duration
     """
     if isinstance(currentdate, list):
         # find the first non nan instance, else return None
@@ -357,7 +370,9 @@ def startMonth(
 ):
     """
     Use to calculate month e.g. of birth from date (e.g. current date) and
-    duration (e.g. age)
+    duration (e.g. age), parameter descriptions are same as
+    :meth:`adtl.transformations.startYear`, except this function
+    returns the month component
     """
     if isinstance(currentdate, list):
         # find the first non nan instance, else return None
@@ -386,8 +401,9 @@ def startMonth(
 
 def correctOldDate(date: str, epoch: float, format: str, return_datetime: bool = False):
     """
-    the time module converts 2 digit dates as:
-    values 69-99 are mapped to 1969-1999, and values 0-68 are mapped to
+    Fixes dates so that they are the correct century for when the year
+    is not fully specified. The time module converts 2 digit dates by
+    mapping values 69-99 to 1969-1999, and values 0-68 are mapped to
     2000-2068. This doesn't work for e.g. birthdates here where they are
     frequently below the cutoff.
 
@@ -395,6 +411,16 @@ def correctOldDate(date: str, epoch: float, format: str, return_datetime: bool =
 
     Only use for birth dates to avoid unintentional conversion for recent
     dates.
+
+    Args:
+        date: Date to convert
+        epoch: Epoch as year
+        format: :manpage:`strftime(3)` format that date is in
+        return_datetime: Whether to return date in a datetime.datetime format
+            (when True), or a string (when False, default)
+
+    Returns:
+        str | datetime.datetime: Fixed date, return type depends on return_datetime
     """
 
     if date in [None, ""]:
