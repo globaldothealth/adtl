@@ -165,7 +165,7 @@ if = { foobar_type = 4 }
 ```
 
 Operations other than equals can be specified as `{ field_name = {op = value} }`
-where *op* is one of `< | > | <= | >= | !=`. Logical operations (and, or, not) are
+where *op* is one of `< | > | <= | >= | != | =~`. Logical operations (and, or, not) are
 supported with `any = [ condition-list ]` (or), `all = [ condition-list ]` (and),
 `not = { condition }` (not).
 In the above example, if we wanted to set from field *foobar* only if
@@ -178,6 +178,15 @@ if.all = [  # in TOML this is a nested key, like { "if": { "all": [ ... ] } }
   { foobar_type = 4 },
   { bazbar = { "<" = 5 }}
 ]
+```
+
+The `=~` operator allows matching with regular expressions, similar to the Bash
+and Perl operators. The following will match strings `SARS-CoV 2`, `SARS COV 2`
+and `sars-cov-2`. Case is ignored when matching.
+
+```toml
+field = "foobar"
+if.foobar."=~" = ".*SARS[- ]CoV[- ]2.*"
 ```
 
 The **oneToMany** table has default conditional behaviour so that rows are only shown
