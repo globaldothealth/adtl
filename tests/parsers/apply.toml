@@ -18,7 +18,7 @@
 
     [[subject.age.fields]]
       field = "brthdtc"
-      apply = { function = "yearsElapsed", params = ["$dsstdat"] }
+      apply = { function = "yearsElapsed", params = ["$dsstdat", 2022] }
 
     [[subject.age.fields]]
       field = "age"
@@ -28,3 +28,7 @@
 [subject.icu_admitted]
   field = "icu_hostdat"
   apply = { function = "isNotNull" }
+
+[subject.dob_year]
+  field = "age"
+  apply = { function = "startYear", params = [["$brthdtc", "$dsstdat"], 2022] }
