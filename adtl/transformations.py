@@ -4,6 +4,9 @@ import logging
 from typing import Any, Optional, List
 from datetime import datetime, timedelta, date
 
+from dateutil.relativedelta import relativedelta
+from math import floor
+
 try:
     import zoneinfo
 except ImportError:  # pragma: no cover
@@ -11,6 +14,8 @@ except ImportError:  # pragma: no cover
 
 import pint
 import re
+
+from typing import Literal, Union
 
 
 def isNotNull(value: Optional[str]) -> bool:
@@ -96,6 +101,7 @@ def getFloat(
 def yearsElapsed(
     birthdate: str,
     currentdate: str,
+    epoch: float,
     bd_format: str = "%Y-%m-%d",
     cd_format: str = "%Y-%m-%d",
 ):
@@ -104,6 +110,9 @@ def yearsElapsed(
     Args:
         birthdate: Start date of duration
         currentdate: End date of duration
+        epoch: Epoch year after which dates will be converted to the last century.
+            As an example, if epoch is 2022, then the date 1/1/23 will be converted
+            to the January 1, 1923.
         bd_format: Date format for *birthdate* specified using :manpage:`strftime(3)` conventions.
             Defaults to ISO format ("%Y-%m-%d")
         cd_format: Date format for *currentdate* specified using :manpage:`strftime(3)` conventions.
@@ -112,10 +121,15 @@ def yearsElapsed(
     Returns:
         int | None: Number of years elapsed or None if invalid dates were encountered
     """
+):
     if birthdate in [None, ""] or currentdate in [None, ""]:
         return None
 
-    bd = datetime.strptime(birthdate, bd_format)
+    bd = correctOldDate(birthdate, epoch, bd_format, return_datetime=True)
+
+    if bd is None:
+        return None
+
     cd = datetime.strptime(currentdate, cd_format)
 
     days = cd - bd
@@ -147,19 +161,27 @@ def startDate(enddate: str, duration: str) -> str:
 
     ed = datetime.strptime(enddate, "%Y-%m-%d")
 
-    sd = ed - timedelta(days=duration)
+    sd = ed - timedelta(days=float(duration))
 
     return sd.strftime("%Y-%m-%d")
 
 
-def endDate(startdate: str, duration: str) -> str:
+def endDate(startdate: str, duration: str, format="%Y-%m-%d"):
     """
-    Retuns the end date in ISO format, given the start date and the duration.
+    Returns the end date in ISO format, given the start date and the duration.
+
+    Args:
+        startdate: Start date
+        duration: Duration in days
+        format: :manpage:`strftime(3)` format that dates are in
+
+    Returns:
+        End date in the specified format
     """
     if startdate in [None, ""] or duration in [None, ""]:
         return None
 
-    sd = datetime.strptime(startdate, "%Y-%m-%d")
+    sd = datetime.strptime(startdate, format)
 
     duration = float(duration)
 
@@ -255,3 +277,139 @@ def makeDateTime(
     tm = datetime.strptime(time_24hr, "%H:%M").time()
 
     return datetime.combine(dt, tm, tzinfo=zoneinfo.ZoneInfo(timezone)).isoformat()
+
+
+def splitDate(
+    date: str,
+    option: Literal["year", "month", "day"],
+    epoch: float,
+    format: str = "%Y-%m-%d",
+):
+    "Splits a date into year, month, day"
+
+    if date in [None, ""]:
+        return None
+
+    sd = correctOldDate(date, epoch, format, return_datetime=True)
+
+    if sd is None:
+        return None
+
+    if option == "year":
+        return sd.year
+    elif option == "month":
+        return sd.month
+    elif option == "day":
+        return sd.day
+    else:
+        return None
+
+
+def startYear(
+    duration: Union[str, float],
+    currentdate: Union[list, str],
+    epoch: float,
+    dateformat: str = "%Y-%m-%d",
+    duration_type: Literal["years", "months", "days"] = "years",
+    provide_month_day: Union[bool, list] = False,
+):
+    """
+    Use to calculate year e.g. of birth from date (e.g. current date) and
+    duration (e.g. age)
+
+    The date can be provided as a list of possible dates (if a hierarcy needs searching through)
+    """
+    if isinstance(currentdate, list):
+        # find the first non nan instance, else return None
+        currentdate = next((s for s in currentdate if s), None)
+
+    if currentdate in [None, ""] or duration in [None, ""]:
+        return None
+
+    if provide_month_day:
+        cd = makeDate(currentdate, provide_month_day[0], provide_month_day[1])
+        cd = datetime.strptime(cd, "%Y-%m-%d")
+    else:
+        cd = correctOldDate(currentdate, epoch, dateformat, return_datetime=True)
+
+    if cd is None:
+        return None
+
+    if duration_type == "years":
+        return cd.year - float(duration)
+
+    elif duration_type == "months":
+        new_date = cd - relativedelta(months=floor(float(duration)))  # rounds down
+        return new_date.year
+
+    elif duration_type == "days":
+        new_date = cd - timedelta(days=float(duration))
+        return new_date.year
+
+
+def startMonth(
+    duration: Union[str, float],
+    currentdate: Union[list, str],
+    epoch: float,
+    dateformat: str = "%Y-%m-%d",
+    duration_type: Literal["years", "months", "days"] = "years",
+    provide_month_day: Union[bool, list] = False,
+):
+    """
+    Use to calculate month e.g. of birth from date (e.g. current date) and
+    duration (e.g. age)
+    """
+    if isinstance(currentdate, list):
+        # find the first non nan instance, else return None
+        currentdate = next((s for s in currentdate if s), None)
+
+    if currentdate in [None, ""] or duration in [None, ""]:
+        return None
+
+    if provide_month_day:
+        cd = makeDate(currentdate, provide_month_day[0], provide_month_day[1])
+        cd = datetime.strptime(cd, "%Y-%m-%d")
+    else:
+        cd = correctOldDate(currentdate, epoch, dateformat, return_datetime=True)
+
+    if cd is None:
+        return None
+
+    if duration_type == "months":
+        new_date = cd - relativedelta(months=floor(float(duration)))
+        return new_date.month
+
+    elif duration_type == "days":
+        new_date = cd - timedelta(days=float(duration))
+        return new_date.month
+
+
+def correctOldDate(date: str, epoch: float, format: str, return_datetime: bool = False):
+    """
+    the time module converts 2 digit dates as:
+    values 69-99 are mapped to 1969-1999, and values 0-68 are mapped to
+    2000-2068. This doesn't work for e.g. birthdates here where they are
+    frequently below the cutoff.
+
+    Switches the pivot point to that set by epoch so that epoch+ converts to 19xx.
+
+    Only use for birth dates to avoid unintentional conversion for recent
+    dates.
+    """
+
+    if date in [None, ""]:
+        return None
+
+    try:
+        cd = datetime.strptime(date, format)
+    except ValueError:
+        logging.error(f"Could not convert date {date!r} from date format {format!r}")
+        return None
+
+    if cd.year >= epoch and "y" in format:
+        cd = cd.replace(year=cd.year - 100)
+
+    if return_datetime:
+        return cd
+    else:
+        return cd.strftime("%Y-%m-%d")

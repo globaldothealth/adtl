@@ -274,7 +274,12 @@ SOURCE_APPLY_PRESENT = [
     }
 ]
 APPLY_PRESENT_OUTPUT = [
-    {"subject_id": "S007", "age": pytest.approx(27.0, 0.001), "icu_admitted": True}
+    {
+        "subject_id": "S007",
+        "age": pytest.approx(27.0, 0.001),
+        "icu_admitted": True,
+        "dob_year": 1974,
+    }
 ]
 SOURCE_APPLY_ABSENT = [
     {
@@ -286,7 +291,9 @@ SOURCE_APPLY_ABSENT = [
         "icu_hostdat": "",
     }
 ]
-APPLY_ABSENT_OUTPUT = [{"subject_id": "S007", "age": 22.0, "icu_admitted": False}]
+APPLY_ABSENT_OUTPUT = [
+    {"subject_id": "S007", "age": 22.0, "icu_admitted": False, "dob_year": 2001}
+]
 
 APPLY_OBSERVATIONS_SOURCE = [
     {
