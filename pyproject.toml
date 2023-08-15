@@ -7,9 +7,12 @@ packages = ["adtl"]
 
 [project]
 name = "adtl"
-version = "0.4.0"
+version = "0.5.0"
 description = "Another data transformation language"
-authors = [{name = "Abhishek Dasgupta", email = "abhishek.dasgupta@dtc.ox.ac.uk"}]
+authors = [
+  {name = "Abhishek Dasgupta", email = "abhishek.dasgupta@dtc.ox.ac.uk"},
+  {name = "Pip Liggins", email = "philippa.liggins@dtc.ox.ac.uk"}
+]
 license = {file = "LICENSE"}
 requires-python = ">=3.8"
 readme = "README.md"
