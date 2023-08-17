@@ -1288,4 +1288,4 @@ def test_combinedtype_wordsubstituteset(test_row, test_combination, expected):
         ],
     }
 
-    assert parser.get_combined_type(test_row, test_rule) == expected
+    assert parser.get_combined_type(test_row, test_rule) == unordered(expected)
