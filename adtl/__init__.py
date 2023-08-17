@@ -269,7 +269,7 @@ def get_combined_type(row: StrDict, rule: StrDict, ctx: Context = None):
             return next(
                 filter(
                     lambda item: item is not None,
-                    [get_value(row, r, ctx) for r in rules],
+                    flatten([get_value(row, r, ctx) for r in rules]),
                 )
             )
         except StopIteration:
@@ -283,11 +283,11 @@ def get_combined_type(row: StrDict, rule: StrDict, ctx: Context = None):
                 "excludeWhen rule should be 'none', 'false-like', or a list of values"
             )
 
-        values = [get_value(row, r, ctx) for r in rules]
+        values = flatten([get_value(row, r, ctx) for r in rules])
         if combined_type == "set":
             values = [*set(values)]
         if excludeWhen is None:
-            return values
+            return list(values)
         if excludeWhen == "none":
             return [v for v in values if v is not None]
         elif excludeWhen == "false-like":
@@ -296,6 +296,19 @@ def get_combined_type(row: StrDict, rule: StrDict, ctx: Context = None):
             return [v for v in values if v not in excludeWhen]
     else:
         raise ValueError(f"Unknown {combined_type} in {rule}")
+
+
+def flatten(xs):
+    """
+    Flatten a list of lists +-/ non-list items
+    e.g.
+    [None, ['Dexamethasone']] -> [None, 'Dexamethasome']
+    """
+    for x in xs:
+        if isinstance(x, Iterable) and not isinstance(x, (str, bytes)):
+            yield from flatten(x)
+        else:
+            yield x
 
 
 def expand_refs(spec_fragment: StrDict, defs: StrDict) -> Union[StrDict, List[StrDict]]:

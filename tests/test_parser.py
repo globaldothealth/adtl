@@ -1232,3 +1232,60 @@ def test_main_save_report():
         "validation_errors": {},
     }
     Path("epoch-report.json").unlink()
+
+
+@pytest.mark.parametrize(
+    "test_input,expected",
+    [
+        (
+            [None, ["Dexamethasone", "Fluticasone", "Methylprednisolone"]],
+            [None, "Dexamethasone", "Fluticasone", "Methylprednisolone"],
+        ),
+        ([12, ["13", "14"], [[15], ["sixteen"]]], [12, "13", "14", 15, "sixteen"]),
+    ],
+)
+def test_flatten(test_input, expected):
+    assert list(parser.flatten(test_input)) == expected
+
+
+@pytest.mark.parametrize(
+    "test_row, test_combination, expected",
+    [
+        (
+            {"corticost": "", "corticost_v2": "Dexa"},
+            "set",
+            [None, "Dexamethasone"],
+        ),
+        ({"corticost": "Decadron", "corticost_v2": "Dexa"}, "set", ["Dexamethasone"]),
+        (
+            {"corticost": "", "corticost_v2": "Cortisonal"},
+            "firstNonNull",
+            "Cortisonal",
+        ),
+    ],
+)
+def test_combinedtype_wordsubstituteset(test_row, test_combination, expected):
+    test_rule = {
+        "combinedType": test_combination,
+        "fields": [
+            {
+                "field": "corticost",
+                "apply": {
+                    "function": "wordSubstituteSet",
+                    "params": [
+                        ["Metil?corten", "Prednisone"],
+                        ["Decadron", "Dexamethasone"],
+                    ],
+                },
+            },
+            {
+                "field": "corticost_v2",
+                "apply": {
+                    "function": "wordSubstituteSet",
+                    "params": [["Cortisonal", "Cortisonal"], ["Dexa", "Dexamethasone"]],
+                },
+            },
+        ],
+    }
+
+    assert parser.get_combined_type(test_row, test_rule) == unordered(expected)
