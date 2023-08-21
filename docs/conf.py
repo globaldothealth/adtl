@@ -6,9 +6,15 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import os
+import sys
+
+# Add root dir so that adtl module is visible to Sphinx
+sys.path.insert(0, os.path.abspath(".."))
+
 project = "adtl"
 copyright = "2023, Global.health"
-release = "0.4.0"
+release = "0.5.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
