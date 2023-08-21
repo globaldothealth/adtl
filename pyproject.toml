@@ -35,6 +35,11 @@ test = [
   "responses",
   "pytest-unordered"
 ]
+docs = [
+  "sphinx>=7.2.2",
+  "myst-parser==2.0.*",
+  "furo"
+]
 
 [project.urls]
 Home = "https://github.com/globaldothealth/adtl"
