@@ -349,7 +349,7 @@ def startYear(
         return None
 
     if duration_type == "years":
-        return cd.year - float(duration)
+        return cd.year - floor(float(duration))
 
     elif duration_type == "months":
         new_date = cd - relativedelta(months=floor(float(duration)))  # rounds down
