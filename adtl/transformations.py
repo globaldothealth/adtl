@@ -1,6 +1,7 @@
 """ Functions which can be applied to source fields, allowing extensibility """
 
 import logging
+from typing import Any, Optional, List
 from datetime import datetime, timedelta, date
 
 from dateutil.relativedelta import relativedelta
@@ -17,26 +18,34 @@ import re
 from typing import Literal, Union
 
 
-def isNotNull(value):
+def isNotNull(value: Optional[str]) -> bool:
+    "Returns whether value is not null or an empty string"
     return value not in [None, ""]
 
 
-def textIfNotNull(field, return_val):
+def textIfNotNull(field: str, return_val: Any) -> Any:
+    "Returns a default value if field is not null"
     return return_val if field not in [None, ""] else None
 
 
-def wordSubstituteSet(value, *params):
+def wordSubstituteSet(value: str, *params) -> List[str]:
     """
     For a value that can have multiple words, use substitutions from params.
-    params is a list of 2-tuples, in the form
 
-        [(w1, s1), (w2, s2), ... (w_n, s_n)]
+    Args:
+        value: String containing a list of words that should be substituted
+        params: List of 2-tuples, in the form
+            [(w1, s1), (w2, s2), ... (w_n, s_n)]
+            where w1 is replaced by s1, w2 is replaced by s2.
 
-    where w1 is replaced by s1, w2 is replaced by s2.
+            Word matches are regular expressions, delimited by the `\b` word
+            boundary delimiter so can have arbitrary regular expressions to
+            match. Any match of regex w_n will use substitute s_n. Case is
+            ignored when matching.
 
-    Word matches are regular expressions, delimited by the `\b` word boundary
-    delimiter so can have arbitrary regular expressions to match. Any match of
-    regex w_n will use substitute s_n. Case is ignored when matching.
+    Returns:
+        List of words after finding matches and substituting.
+        Duplicate words are only represented once.
     """
     out = []
     for i in params:
@@ -49,11 +58,17 @@ def wordSubstituteSet(value, *params):
     return sorted(set(out)) if out else None
 
 
-def getFloat(value, set_decimal=None, separator=None):
-    """
-    In cases where the decimal seperators is not a . you can
-    use set_decimal. Similarly, if thousand seperators are
-    used they can be specified.
+def getFloat(
+    value: str, set_decimal: Optional[str] = None, separator: Optional[str] = None
+):
+    """Returns value transformed into a float.
+
+    Args:
+        value: Value to be transformed to float
+        set_decimal: optional, set if decimal separator is not a
+            full stop or period (.)
+        separator: optional, set to the character used for separating
+            thousands (such as `,`).
     """
 
     if not value:
@@ -84,8 +99,29 @@ def getFloat(value, set_decimal=None, separator=None):
 
 
 def yearsElapsed(
-    birthdate, currentdate, epoch, bd_format="%Y-%m-%d", cd_format="%Y-%m-%d"
+    birthdate: str,
+    currentdate: str,
+    epoch: float,
+    bd_format: str = "%Y-%m-%d",
+    cd_format: str = "%Y-%m-%d",
 ):
+    """Returns the number of years elapsed between two dates, useful for calculating ages
+
+    Args:
+        birthdate: Start date of duration
+        currentdate: End date of duration
+        epoch: Epoch year after which dates will be converted to the last century.
+            As an example, if epoch is 2022, then the date 1/1/23 will be converted
+            to the January 1, 1923.
+        bd_format: Date format for *birthdate* specified using :manpage:`strftime(3)` conventions.
+            Defaults to ISO format ("%Y-%m-%d")
+        cd_format: Date format for *currentdate* specified using :manpage:`strftime(3)` conventions.
+            Defaults to ISO format ("%Y-%m-%d")
+
+    Returns:
+        int | None: Number of years elapsed or None if invalid dates were encountered
+    """
+
     if birthdate in [None, ""] or currentdate in [None, ""]:
         return None
 
@@ -100,25 +136,25 @@ def yearsElapsed(
     return pint.Quantity(days.days, "days").to("years").m
 
 
-def durationDays(symptomstartdate, currentdate):
+def durationDays(startdate: str, currentdate: str) -> int:
     """
     Returns the number of days between two dates.
     Preferable to Y-M-D elapsed, as month length is ambiguous -
     can be anywhere between 28-31 days.
     """
-    if symptomstartdate in [None, ""] or currentdate in [None, ""]:
+    if startdate in [None, ""] or currentdate in [None, ""]:
         return None
 
-    bd = datetime.strptime(symptomstartdate, "%Y-%m-%d")
+    bd = datetime.strptime(startdate, "%Y-%m-%d")
     cd = datetime.strptime(currentdate, "%Y-%m-%d")
 
     days = cd - bd
     return days.days
 
 
-def startDate(enddate, duration):
+def startDate(enddate: str, duration: str) -> str:
     """
-    Retuns the start date in ISO format, given the end date and the duration.
+    Returns the start date in ISO format, given the end date and the duration.
     """
     if enddate in [None, ""] or duration in [None, ""]:
         return None
@@ -130,9 +166,17 @@ def startDate(enddate, duration):
     return sd.strftime("%Y-%m-%d")
 
 
-def endDate(startdate, duration, format="%Y-%m-%d"):
+def endDate(startdate: str, duration: str, format="%Y-%m-%d"):
     """
-    Retuns the end date in ISO format, given the start date and the duration.
+    Returns the end date in ISO format, given the start date and the duration.
+
+    Args:
+        startdate: Start date
+        duration: Duration in days
+        format: :manpage:`strftime(3)` format that dates are in
+
+    Returns:
+        End date in the specified format
     """
     if startdate in [None, ""] or duration in [None, ""]:
         return None
@@ -146,7 +190,8 @@ def endDate(startdate, duration, format="%Y-%m-%d"):
     return ed.strftime("%Y-%m-%d")
 
 
-def makeDate(year, month, day):
+def makeDate(year: str, month: str, day: str) -> str:
+    "Returns a date from components specified as year, month and day"
     if year in [None, ""] or month in [None, ""] or day in [None, ""]:
         return None
     try:
@@ -165,12 +210,26 @@ def makeDate(year, month, day):
         return None
 
 
-def makeDateTimeFromSeconds(date, time_seconds, date_format, tzname):
+def makeDateTimeFromSeconds(
+    date: str, time_seconds: int, date_format: str, timezone: str
+) -> datetime:
+    """Returns a datetime from date and time specified in
+    elapsed seconds since the beginning of the day
+
+    Args:
+        date: Date to be converted
+        time_seconds: Elapsed time in seconds within that day (0 - 86399)
+        date_format: Date format in :manpage:`strftime(3)` format
+        timezone: Timezone to use, specified in tzdata format
+
+    Returns:
+        datetime.datetime: A timezone aware datetime object
+    """
     if date == "":
         return None
     try:
         t = datetime.strptime(date, date_format).replace(
-            tzinfo=zoneinfo.ZoneInfo(tzname)
+            tzinfo=zoneinfo.ZoneInfo(timezone)
         )
     except ValueError:
         logging.error(
@@ -185,8 +244,20 @@ def makeDateTimeFromSeconds(date, time_seconds, date_format, tzname):
     return t.replace(hour=hour, minute=minute).isoformat()
 
 
-def makeDateTime(date, time_24hr, date_format, timezone):
-    """Combine date and time fields into one"""
+def makeDateTime(
+    date: str, time_24hr: str, date_format: str, timezone: str
+) -> datetime:
+    """Returns a combined date and time
+
+    Args:
+        date: Date to be converted
+        time_24hr: Time specified in HH:MM format
+        date_format: Date format in :manpage:`strftime(3)` format
+        timezone: Timezone to use, specified in tzdata format
+
+    Returns:
+        datetime.datetime: A timezone aware datetime object
+    """
     if date == "":
         return None
 
@@ -241,12 +312,25 @@ def startYear(
     dateformat: str = "%Y-%m-%d",
     duration_type: Literal["years", "months", "days"] = "years",
     provide_month_day: Union[bool, list] = False,
-):
+) -> Union[int, float]:
     """
     Use to calculate year e.g. of birth from date (e.g. current date) and
     duration (e.g. age)
 
-    The date can be provided as a list of possible dates (if a hierarcy needs searching through)
+    The date can be provided as a list of possible dates (if a hierarchy needs searching through)
+
+    Args:
+        duration: Duration value
+        currentdate: Date to offset duration from
+        epoch: Epoch year to use for conversion of two digit years. Any dates
+            after the epoch are converted to the last century
+        dateformat: Date format that currentdate is in
+        duration_type: One of 'years', 'months' or 'days'
+        provide_month_day: If currentdate is only year, and this is specified
+            as a tuple of (month, day), uses these to construct the date
+
+    Returns:
+        Starting year, offset by duration
     """
     if isinstance(currentdate, list):
         # find the first non nan instance, else return None
@@ -286,7 +370,9 @@ def startMonth(
 ):
     """
     Use to calculate month e.g. of birth from date (e.g. current date) and
-    duration (e.g. age)
+    duration (e.g. age), parameter descriptions are same as
+    :meth:`adtl.transformations.startYear`, except this function
+    returns the month component
     """
     if isinstance(currentdate, list):
         # find the first non nan instance, else return None
@@ -315,8 +401,9 @@ def startMonth(
 
 def correctOldDate(date: str, epoch: float, format: str, return_datetime: bool = False):
     """
-    the time module converts 2 digit dates as:
-    values 69-99 are mapped to 1969-1999, and values 0-68 are mapped to
+    Fixes dates so that they are the correct century for when the year
+    is not fully specified. The time module converts 2 digit dates by
+    mapping values 69-99 to 1969-1999, and values 0-68 are mapped to
     2000-2068. This doesn't work for e.g. birthdates here where they are
     frequently below the cutoff.
 
@@ -324,6 +411,16 @@ def correctOldDate(date: str, epoch: float, format: str, return_datetime: bool =
 
     Only use for birth dates to avoid unintentional conversion for recent
     dates.
+
+    Args:
+        date: Date to convert
+        epoch: Epoch as year
+        format: :manpage:`strftime(3)` format that date is in
+        return_datetime: Whether to return date in a datetime.datetime format
+            (when True), or a string (when False, default)
+
+    Returns:
+        str | datetime.datetime: Fixed date, return type depends on return_datetime
     """
 
     if date in [None, ""]:

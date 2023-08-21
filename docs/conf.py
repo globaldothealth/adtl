@@ -16,16 +16,32 @@ release = "0.4.0"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.coverage",
+    "sphinx.ext.napoleon",
     "myst_parser",
-    "sphinx_rtd_theme",
 ]
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "venv"]
-
+manpages_url = "https://manpages.debian.org/{path}"
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "sphinx_rtd_theme"
+html_theme = "furo"
 html_static_path = ["_static"]
+
+html_theme_options = {
+    "light_css_variables": {
+        "color-brand-primary": "#0e7569",
+        "color-problematic": "#0e7569",
+        "color-brand-content": "#0e7569",
+        "color-background-secondary": "#ecf3f0",
+        "color-background-hover": "#cfe6db",
+    },
+    "dark_css_variables": {
+        "color-brand-primary": "#d2d9d6",
+        "color-problematic": "#d2d9d6",
+        "color-brand-content": "#d2d9d6",
+        "color-background-secondary": "#0b5950",
+    },
+}

@@ -471,13 +471,34 @@ def skip_field(row: StrDict, rule: StrDict, ctx: Context = None):
 
 
 class Parser:
+    """Main parser class that loads a specification
+
+    Typical use of this within Python code::
+
+        import adtl
+
+        parser = adtl.Parser(specification)
+        print(parser.tables) # list of tables created
+
+        for row in parser.parse().read_table(table):
+            print(row)
+    """
+
     def __init__(
         self,
         spec: Union[str, Path, StrDict],
         include_defs: List[str] = [],
         quiet: bool = False,
     ):
-        "Loads specification from spec in format (default json)"
+        """Loads specification from spec in format (default json)
+
+        Args:
+            spec: Either the specification file to read (as Path or str), or
+                the specification loaded into a dictionary
+            include_defs: Definition files to include. These are spliced
+                directly into the adtl.defs section of the :ref:`specification`.
+            quiet: Boolean that switches on the verbosity of the parser, default False
+        """
 
         self.data: StrDict = {}
         self.defs: StrDict = {}
@@ -611,7 +632,7 @@ class Parser:
                     for match in self.spec[table]:
                         match.update(commonMappings)
 
-    def default_if(self, table: str, rule: StrDict):
+    def _default_if(self, table: str, rule: StrDict):
         """
         Default behaviour for oneToMany table, row not displayed if there's an empty
         string or values not mapped in the rule.
@@ -674,7 +695,12 @@ class Parser:
         return rule
 
     def update_table(self, table: str, row: StrDict):
-        # Currently only aggregations are supported
+        """Updates table with a new row
+
+        Args:
+            table: Table to update
+            row: Dictionary with keys as field names and values as field values
+        """
 
         group_field = self.tables[table].get("groupBy")
         kind = self.tables[table].get("kind")
@@ -688,7 +714,7 @@ class Parser:
         elif kind == "oneToMany":
             for match in self.spec[table]:
                 if "if" not in match:
-                    match = self.default_if(table, match)
+                    match = self._default_if(table, match)
                 if parse_if(row, match["if"], self.ctx):
                     self.data[table].append(
                         remove_null_keys(
@@ -711,7 +737,16 @@ class Parser:
             )
 
     def parse(self, file: str, encoding: str = "utf-8", skip_validation=False):
-        "Transform file according to specification"
+        """Transform file according to specification
+
+        Args:
+            file: Source file to transform
+            encoding: Source file encoding
+            skip_validation: Whether to skip validation, default off
+
+        Returns:
+            adtl.Parser: Returns an instance of itself, updated with the parsed tables
+        """
         with open(file, encoding=encoding) as fp:
             reader = csv.DictReader(fp)
             return self.parse_rows(
@@ -725,7 +760,15 @@ class Parser:
             )
 
     def parse_rows(self, rows: Iterable[StrDict], skip_validation=False):
-        "Transform rows from an iterable according to specification"
+        """Transform rows from an iterable according to specification
+
+        Args:
+            rows: Iterable of rows, specified as a dictionary of (field name, field value) pairs
+            skip_validation: Whether to skip validation, default off
+
+        Returns:
+            adtl.Parser: Returns an instance of itself, updated with the parsed tables
+        """
         for row in rows:
             for table in self.tables:
                 try:
@@ -761,6 +804,14 @@ class Parser:
         self.data = {}
 
     def read_table(self, table: str) -> Iterable[StrDict]:
+        """Returns parsed table
+
+        Args:
+            table: Table to read
+
+        Returns:
+            Iterable of transformed rows in table
+        """
         if table not in self.tables:
             raise ValueError(f"Invalid table: {table}")
         if "groupBy" in self.tables[table]:
@@ -775,7 +826,13 @@ class Parser:
         table: str,
         output: Optional[str] = None,
     ) -> Optional[str]:
-        "Writes to output as CSV a particular table"
+        """Writes to output as CSV a particular table
+
+        Args:
+            table: Table that should be written to CSV
+            output: (optional) Output file name. If not specified, defaults to parser name + table name
+                with a csv suffix.
+        """
 
         def writerows(fp, table):
             writer = csv.DictWriter(
@@ -799,6 +856,7 @@ class Parser:
             return writerows(buf, table).getvalue()
 
     def show_report(self):
+        "Shows report with validation errors"
         if self.report_available:
             print("\n|table       \t|valid\t|total\t|percentage_valid|")
             print("|---------------|-------|-------|----------------|")
@@ -817,7 +875,11 @@ class Parser:
                 print()
 
     def save(self, output: Optional[str] = None):
-        "Saves all tables to CSV"
+        """Saves all tables to CSV
+
+        Args:
+            output: (optional) Filename prefix that is used for all tables
+        """
 
         for table in self.tables:
             self.write_csv(table, f"{output}-{table}.csv")
