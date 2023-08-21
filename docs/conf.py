@@ -11,6 +11,7 @@ import sys
 
 # Add root dir so that adtl module is visible to Sphinx
 sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath("."))
 
 project = "adtl"
 copyright = "2023, Global.health"
