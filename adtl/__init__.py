@@ -7,6 +7,7 @@ import logging
 import itertools
 import copy
 import re
+import importlib.metadata
 from collections import defaultdict, Counter
 from datetime import datetime
 from pathlib import Path
@@ -28,6 +29,7 @@ StrDict = Dict[str, Any]
 Rule = Union[str, StrDict]
 Context = Optional[Dict[str, Union[bool, int, str, List[str]]]]
 
+__version__ = importlib.metadata.version("adtl")
 
 def get_value(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
     """Gets value from row using rule
@@ -890,31 +892,32 @@ class Parser:
 def main(argv=None):
     cmd = argparse.ArgumentParser(
         prog="adtl",
-        description="Transforms data into CSV given a specification (+validation)",
+        description="Transforms and validates data into CSV given a specification",
     )
     cmd.add_argument(
         "spec",
-        help="Specification file to use",
+        help="specification file to use",
     )
-    cmd.add_argument("file", help="File to read in")
+    cmd.add_argument("file", help="file to read in")
     cmd.add_argument(
-        "-o", "--output", help="Output file, if blank, writes to standard output"
+        "-o", "--output", help="output file, if blank, writes to standard output"
     )
     cmd.add_argument(
-        "--encoding", help="Encoding input file is in", default="utf-8-sig"
+        "--encoding", help="encoding input file is in", default="utf-8-sig"
     )
     cmd.add_argument(
         "-q",
         "--quiet",
-        help="Quiet mode - decrease verbosity, disable progress bar",
+        help="quiet mode - decrease verbosity, disable progress bar",
         action="store_true",
     )
-    cmd.add_argument("--save-report", help="Save report in JSON format")
+    cmd.add_argument("--save-report", help="save report in JSON format")
     cmd.add_argument(
         "--include-def",
         action="append",
-        help="Include external definition (TOML or JSON)",
+        help="include external definition (TOML or JSON)",
     )
+    cmd.add_argument('--version', action='version', version='%(prog)s ' + __version__)
     args = cmd.parse_args(argv)
     include_defs = args.include_def or []
     spec = Parser(args.spec, include_defs=include_defs, quiet=args.quiet)
