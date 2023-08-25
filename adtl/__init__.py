@@ -31,6 +31,7 @@ Context = Optional[Dict[str, Union[bool, int, str, List[str]]]]
 
 __version__ = importlib.metadata.version("adtl")
 
+
 def get_value(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
     """Gets value from row using rule
 
@@ -917,7 +918,7 @@ def main(argv=None):
         action="append",
         help="include external definition (TOML or JSON)",
     )
-    cmd.add_argument('--version', action='version', version='%(prog)s ' + __version__)
+    cmd.add_argument("--version", action="version", version="%(prog)s " + __version__)
     args = cmd.parse_args(argv)
     include_defs = args.include_def or []
     spec = Parser(args.spec, include_defs=include_defs, quiet=args.quiet)
