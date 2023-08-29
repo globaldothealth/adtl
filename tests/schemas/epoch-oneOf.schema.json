@@ -20,6 +20,20 @@
       ]
     }
   ],
+  "anyOf": [
+    {
+      "required": [
+        "sex",
+        "epoch"
+      ]
+    },
+    {
+      "required": [
+        "sex_at_birth",
+        "epoch"
+      ]
+    }
+  ],
   "properties": {
     "epoch": {
       "description": "Epoch of dataset",
