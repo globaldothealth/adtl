@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional, Union, Callable
+from more_itertools import unique_everseen
 
 import pint
 import tomli
@@ -431,17 +432,20 @@ def make_fields_optional(
         return schema
     _schema = copy.deepcopy(schema)
     _schema["required"] = sorted(set(schema["required"]) - set(optional_fields))
-    if "oneOf" in _schema:
-        if any("required" in _schema["oneOf"][x] for x in range(len(_schema["oneOf"]))):
-            for x in range(len(_schema["oneOf"])):
-                _schema["oneOf"][x]["required"] = list(
-                    set(_schema["oneOf"][x]["required"]) - set(optional_fields or [])
-                )
-            if all(
-                all(bool(v) is False for v in _schema["oneOf"][x].values())
-                for x in range(len(_schema["oneOf"]))
-            ):
-                _schema.pop("oneOf")
+    for opt in ["oneOf", "anyOf"]:
+        if opt in _schema:
+            if any("required" in _schema[opt][x] for x in range(len(_schema[opt]))):
+                for x in range(len(_schema[opt])):
+                    _schema[opt][x]["required"] = list(
+                        set(_schema[opt][x]["required"]) - set(optional_fields or [])
+                    )
+                if all(
+                    all(bool(v) is False for v in _schema[opt][x].values())
+                    for x in range(len(_schema[opt]))
+                ):
+                    _schema.pop(opt)
+                else:
+                    _schema[opt] = list(unique_everseen(_schema[opt]))
     return _schema
 
 

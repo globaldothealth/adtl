@@ -843,6 +843,19 @@ def test_make_fields_optional():
     ]
     assert "oneOf" not in parser.make_fields_optional(schema, ["sex", "sex_at_birth"])
 
+    assert schema["anyOf"] == [
+        {"required": ["sex", "epoch"]},
+        {"required": ["sex_at_birth", "epoch"]},
+    ]
+
+    assert parser.make_fields_optional(schema, ["epoch"])["anyOf"] == [
+        {"required": ["sex"]},
+        {"required": ["sex_at_birth"]},
+    ]
+    assert parser.make_fields_optional(schema, ["sex", "sex_at_birth"])["anyOf"] == [
+        {"required": ["epoch"]}
+    ]
+
 
 def test_reference_expansion():
     ps_noref = parser.Parser(TEST_PARSERS_PATH / "groupBy.json")
