@@ -3,7 +3,7 @@ title: Specification
 ---
 # Specification
 
-The ADTL specification describes the field mappings from the source file to the
+The adtl specification describes the field mappings from the source file to the
 target schema. The format is under development and expected to change.
 
 Specification files can be in TOML or JSON, with TOML preferred due to readability.
@@ -49,7 +49,7 @@ These metadata fields are defined under a header key `adtl`.
 * **include-def** (list): List of additional TOML or JSON files to import as
   definitions
 * **skipFieldPattern** : Regex string matching field names which may be skipped
-if not present in a datafile, following the same syntax as `fieldPattern` key.
+if not present in a data file, following the same syntax as `fieldPattern` key.
 * **defaultDateFormat**: Default source date format, applied to all fields
   with either "date_" / "_date" in the field name or that have format date
   set in the JSON schema
@@ -57,7 +57,7 @@ if not present in a datafile, following the same syntax as `fieldPattern` key.
 ## Validation
 
 adtl supports validation using [JSON
-Schema](https://json-schema.org/draft-07/json-schema-core.html), upto draft-07
+Schema](https://json-schema.org/draft-07/json-schema-core.html), up to draft-07
 of the specification. Validation is performed using
 [fastjsonschema](https://github.com/horejsek/python-fastjsonschema).
 
@@ -322,7 +322,7 @@ If *excludeWhen* is not set, no exclusions take place and all values are returne
 
 ### Skippable fields
 
-In some cases, a study will be assocaited with multiple data files, all of which have been
+In some cases, a study will be associated with multiple data files, all of which have been
 filled in to varying degrees. For example, one study site may not provide any follow-up data.
 
 Rather than writing a new parser for every data file with minor differences, parsers can be made
@@ -445,7 +445,7 @@ condition could look like
 ```
 
 Multiple variables are supported in the for loop. If multiple variables are
-specified, then the block is repeated for as many instances as the [Cartesian
+specified, then the block is repeated for as many instances as the [cartesian
 product](https://en.wikipedia.org/wiki/Cartesian_product) of the values the
 variables correspond to. As an example the for expression
 

@@ -1,0 +1,16 @@
+adtl
+excludeWhen
+truthy
+fastjsonschema
+groupBy
+defs
+date_
+_date
+boolean
+[Ss]kippable
+combinedType
+cartesian
+codecov
+isaric
+ISARIC
+DTLs?
