@@ -98,6 +98,19 @@ def getFloat(
         return value
 
 
+def Percentage(value: float):
+    "transform a decimal into a percentage"
+    try:
+        value = float(value)
+    except ValueError:
+        return value
+
+    if value > 1 or value is None:
+        return value
+
+    return value * 100
+
+
 def yearsElapsed(
     birthdate: str,
     currentdate: str,
