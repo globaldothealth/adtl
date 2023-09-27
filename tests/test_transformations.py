@@ -45,6 +45,22 @@ def test_wordSubstituteSet_error():
 
 
 @pytest.mark.parametrize(
+    "test_value, expected",
+    [
+        (0.1, 10),
+        (1, 100),
+        (5, 5),
+        ("0.5", 50),
+        ("five", "five"),
+        ("", ""),
+        (None, None),
+    ],
+)
+def test_Percentage(test_value, expected):
+    assert transform.Percentage(test_value) == expected
+
+
+@pytest.mark.parametrize(
     "test_date_birth, test_date_current, epoch, expected",
     [
         ("1996-02-22", "2023-02-22", 2022, 27.0),

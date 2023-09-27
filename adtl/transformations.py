@@ -102,10 +102,10 @@ def Percentage(value: float):
     "transform a decimal into a percentage"
     try:
         value = float(value)
-    except ValueError:
+    except (ValueError, TypeError):
         return value
 
-    if value > 1 or value is None:
+    if value > 1:
         return value
 
     return value * 100
