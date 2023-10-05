@@ -1,24 +1,43 @@
 """
 Quality Control module for ADTL
 """
-import sys
-import argparse
 import functools
-import importlib
 from typing import List, Union
 from pathlib import Path
-from typing import TypedDict
+from typing import TypedDict, Dict, List, Any
 
-import numpy as np
 import pandas as pd
-
-DEFAULT_PATTERN = "*.csv"
+import numpy as np
 
 
 class Rule(TypedDict):
-    rule: str
+    module: str
+    name: str
     description: str
     pattern: str
+
+
+class WorkUnit(TypedDict):
+    rule: Rule
+    file: str
+    dataset: str
+
+
+class Dataset(TypedDict):
+    dataset: str
+    files: List[str]
+
+
+class WorkUnitResult(TypedDict):
+    rule: str
+    dataset: str
+    file: str
+    rows_success: int
+    rows_fail: int
+    ratio_success: float
+    success: bool
+    mostly: float
+    series: List[Dict[str, Any]]
 
 
 def rules_for(pattern: str, *rules):
@@ -26,7 +45,7 @@ def rules_for(pattern: str, *rules):
         r.pattern = pattern
 
 
-def rule(columns: List[str], mostly: float = 0):
+def rule(columns: List[str], mostly: float = 0, set_missing_columns: bool = True):
     """Decorator that indicates a QC rule
 
     Args:
@@ -37,11 +56,17 @@ def rule(columns: List[str], mostly: float = 0):
         if the ratio of successful rows is greater than this value. If not
         specified all rows have to succeed for the rule to be a considered a
         success.
+
+        set_missing_columns: On by default, this setting assigns NA/null to
+        required columns that are missing in the data
     """
 
     def decorator_rule(func):
         @functools.wraps(func)
         def wrapper(df, **kwargs):
+            if set_missing_columns:
+                for c in set(columns) - set(df.columns):
+                    df[c] = None
             series = func(df, **kwargs)
             if isinstance(series, (pd.Series, np.ndarray)):
                 rows_success: int = series.sum()
@@ -72,42 +97,7 @@ def schema(schema_path: Union[str, Path], pattern: str = "*.csv"):
     pass
 
 
-def collect_rules(root: Path = Path("qc")) -> list[Rule]:
-    rule_files = list(root.glob("*.py"))
-
-    sys.path.append(".")
-    module_name = lambda path: str(path).replace(".py", "").replace("/", ".")
-    for rule_file in rule_files:
-        module = importlib.import_module(module_name(rule_file))
-        rules = [x for x in dir(module) if x.startswith("rule_")]
-        print(module_name(rule_file), ":", [_rule_properties(module, r) for r in rules])
-
-
-def _rule_properties(module, rule_name: str) -> Rule:
-    r = getattr(module, rule_name)
-    return dict(
-        rule=r.__name__,
-        description=r.__doc__,
-        pattern=getattr(r, "pattern", DEFAULT_PATTERN),
-    )
-
-
-def collect_datasets(root: Path = Path("."), file_format="csv") -> list[Path]:
-    data = root.rglob(f"*.{file_format}")
-    print(list(data))
-
-
 def main(args=None):
-    parser = argparse.ArgumentParser(prog="adtl-qc", description="ADTL Quality Control")
-    parser.add_argument("data", help="path to datasets")
-    parser.add_argument("-r", "--rule-root", help="path to rules", default=".")
-    parser.add_argument(
-        "--format", help="file format to include in datasets", default="csv"
-    )
-    args = parser.parse_args(args)
-    collect_rules(Path(args.rule_root))
-    collect_datasets(Path(args.data), args.format)
+    from .runner import _main
 
-
-if __name__ == "__main__":
-    main()
+    _main(args)
