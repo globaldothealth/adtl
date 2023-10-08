@@ -18,7 +18,6 @@ from . import Dataset, Rule, WorkUnit, WorkUnitResult
 DEFAULT_PATTERN = "*.csv"
 
 
-
 def collect_datasets(
     root: Path = Path("."), file_formats: List[str] = ["csv"]
 ) -> List[Dataset]:
@@ -81,7 +80,7 @@ def process_work_unit(unit: WorkUnit) -> WorkUnitResult:
     rule_function = getattr(module, rule["name"])
 
     # TODO: assumes file is CSV, should be a generic reader
-    result = rule_function(pd.read_csv(unit["file"], dtype=str))
+    result = rule_function(pd.read_csv(unit["file"]))
     result.update(
         dict(rule=unit["rule"]["name"], dataset=unit["dataset"], file=unit["file"])
     )

@@ -35,9 +35,10 @@ class WorkUnitResult(TypedDict):
     rows_success: int
     rows_fail: int
     ratio_success: float
+    rows_fail_idx: List[int]
     success: bool
     mostly: float
-    series: List[Dict[str, Any]]
+    fail_data: pd.DataFrame
 
 
 def rules_for(pattern: str, *rules):
@@ -68,6 +69,9 @@ def rule(columns: List[str], mostly: float = 0, set_missing_columns: bool = True
                 for c in set(columns) - set(df.columns):
                     df[c] = None
             series = func(df, **kwargs)
+            assert len(series) == len(df), \
+                "Returned series must have same cardinality as source dataframe"
+            rows_fail_idx = [i for i, val in enumerate(series) if val is False]
             if isinstance(series, (pd.Series, np.ndarray)):
                 rows_success: int = series.sum()
                 rows_fail = len(series) - rows_success
@@ -78,7 +82,8 @@ def rule(columns: List[str], mostly: float = 0, set_missing_columns: bool = True
                     ratio_success=ratio_success,
                     success=ratio_success >= mostly,
                     mostly=mostly,
-                    series=series,
+                    rows_fail_idx=rows_fail_idx,
+                    fail_data=df.loc[rows_fail_idx][columns],
                 )
             elif isinstance(series, bool):
                 return dict(
