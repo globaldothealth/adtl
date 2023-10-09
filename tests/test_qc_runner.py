@@ -12,12 +12,13 @@ from adtl.qc.runner import (
     collect_rules,
     collect_work_units,
     process_work_unit,
+    prepare_result_for_insertion,
 )
 
 
 def test_collect_datasets():
     dataset = collect_datasets(Path(__file__).parent / "data")[0]
-    assert dataset["dataset"] == "dataset"
+    assert dataset["folder"] == "dataset"
     assert str(dataset["files"][0]).endswith("data/dataset/test-subject.csv")
 
 
@@ -46,7 +47,7 @@ def work_unit():
 
 
 def test_collect_work_units(work_unit):
-    assert work_unit["dataset"]["dataset"] == "dataset"
+    assert work_unit["dataset"]["folder"] == "dataset"
     assert str(work_unit["dataset"]["files"][0]).endswith(
         "data/dataset/test-subject.csv"
     )
@@ -61,7 +62,7 @@ def test_collect_work_units(work_unit):
 
 def test_process_work_unit(work_unit):
     result = process_work_unit(work_unit)
-    assert result["dataset"]["dataset"] == "dataset"
+    assert result["dataset"]["folder"] == "dataset"
     assert str(work_unit["dataset"]["files"][0]).endswith(
         "data/dataset/test-subject.csv"
     )
@@ -79,3 +80,30 @@ def test_process_work_unit(work_unit):
     )
     df = pd.DataFrame({"sex_at_birth": ["male"], "sex": [None], "pregnancy": [True]})
     assert df.to_dict(orient="records") == result["fail_data"].to_dict(orient="records")
+
+
+def test_prepare_result_for_insertion():
+    work_unit_result = dict(
+        rule="sample-rule",
+        dataset={"folder": "example", "files": ["example/file1.csv", "example/file2.csv"]},
+        file=Path("example/file1.csv"),
+        rows_success=90,
+        rows_fail=10,
+        ratio_success=0.9,
+        rows_fail_idx=[0, 12, 18, 22, 45, 56, 88, 90, 92, 99],
+        success=True,
+        mostly=0.8,
+        fail_data=pd.DataFrame({"values": range(10)}),
+    )
+    assert prepare_result_for_insertion(work_unit_result) == dict(  # type: ignore
+        rule="sample-rule",
+        dataset="example",
+        file="example/file1.csv",
+        rows_success=90,
+        rows_fail=10,
+        ratio_success=0.9,
+        rows_fail_idx="0,12,18,22,45,56,88,90,92,99",
+        success=True,
+        mostly=0.8,
+        fail_data="""[{"values": 0}, {"values": 1}, {"values": 2}, {"values": 3}, {"values": 4}, {"values": 5}, {"values": 6}, {"values": 7}, {"values": 8}, {"values": 9}]""",
+    )

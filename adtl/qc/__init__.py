@@ -24,7 +24,7 @@ class WorkUnit(TypedDict):
 
 
 class Dataset(TypedDict):
-    dataset: str
+    folder: str
     files: List[str]
 
 
@@ -69,18 +69,19 @@ def rule(columns: List[str], mostly: float = 0, set_missing_columns: bool = True
                 for c in set(columns) - set(df.columns):
                     df[c] = None
             series = func(df, **kwargs)
-            assert len(series) == len(df), \
-                "Returned series must have same cardinality as source dataframe"
+            assert len(series) == len(
+                df
+            ), "Returned series must have same cardinality as source dataframe"
             rows_fail_idx = [i for i, val in enumerate(series) if val is False]
             if isinstance(series, (pd.Series, np.ndarray)):
                 rows_success: int = series.sum()
                 rows_fail = len(series) - rows_success
                 ratio_success = rows_success / len(series)
                 return dict(
-                    rows_success=rows_success,
-                    rows_fail=rows_fail,
+                    rows_success=int(rows_success),
+                    rows_fail=int(rows_fail),
                     ratio_success=ratio_success,
-                    success=ratio_success >= mostly,
+                    success=bool(ratio_success >= mostly),
                     mostly=mostly,
                     rows_fail_idx=rows_fail_idx,
                     fail_data=df.loc[rows_fail_idx][columns],
