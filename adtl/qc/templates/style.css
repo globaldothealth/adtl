@@ -1,0 +1,52 @@
+body {
+    font-family: sans-serif;
+    max-width: 1000px;
+    margin: auto;
+}
+
+main {
+    margin-left: 15px;
+}
+
+nav {
+    padding: 10px;
+    margin-top: 0;
+    background-color: #eee;
+    position: sticky;
+}
+
+p.description {
+    font-size:large;
+}
+nav a {
+    text-decoration: none;
+}
+
+summary {
+    font-size: 14px;
+    margin-top: 8px;
+}
+
+pre {
+    padding: 5px;
+    background-color: #eee;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #111111;
+        color: #fff;
+    }
+
+    a {
+        color: cyan;
+    }
+
+    nav {
+        background-color: #222222;
+    }
+
+    pre {
+        background-color: #333
+    }
+}

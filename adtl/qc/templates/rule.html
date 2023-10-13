@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>✱ rule - {{ rule }}</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+
+    <nav class="breadcrumb">
+        <a class="breadcrumb-item" href="/">✱</a> |
+        updated {{ run_date }}
+    </nav>
+
+    <main>
+        <h1>{{ rule }}</h1>
+        <p class="description">{{ description }}</p>
+        {{#long_description}}
+        <p class="long_description">
+            {{ long_description }}
+        </p>
+        {{/long_description}}
+
+        <h2>Affected datasets</h2>
+        <ul class="datasets">
+            {{#datasets}}
+            <li><tt>[{{ success }} / {{ total }}]</tt> {{ dataset }} / {{ file }}
+
+                {{ #log }}
+                <details>
+                    <summary>Failed rows</summary>
+                    <pre>{{ log }}</p>
+                  </details> 
+                {{ /log }}
+            </li>
+        {{/datasets}}
+        </ul>
+
+
+    </main>
+</body>
+
+</html>

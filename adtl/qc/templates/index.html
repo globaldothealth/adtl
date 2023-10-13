@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>✱ adtl-qc</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+
+    <nav class="breadcrumb">
+        <a class="breadcrumb-item" href="/">✱ adtl-qc</a>
+    </nav>
+
+    <main>
+        <h1>✱ adtl-qc report</h1>
+
+        <p class="runinfo">
+            Run on {{ date }}
+        </p>
+        <h2>Datasets</h2>
+        <ul id="datasets">
+            {{#datasets}}
+            <li><a href="/d/{{ name }}.html">{{ name }}</a></li>
+            {{/datasets}}
+        </ul>
+</body>
+
+</html>
+
+<h2>Rules</h2>
+<ul id="datasets">
+    {{#rules}}
+    <li><a href="/r/{{ rule }}.html">{{ description }}</a></li>
+    {{/rules}}
+</ul>
+
+
+
+
+</main>
+</body>
+
+</html>
