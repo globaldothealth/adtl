@@ -28,6 +28,7 @@ def test_collect_rules():
     rule = collect_rules(Path("qc"))[0]
     assert rule == {
         "description": "Male patients are not pregnant",
+        "long_description": "",
         "module": "qc.pregnancy",
         "name": "rule_male_patients_not_pregnant",
         "pattern": "*-subject.csv",
@@ -54,6 +55,7 @@ def test_collect_work_units(work_unit):
     assert str(work_unit["file"]).endswith("data/dataset/test-subject.csv")
     assert work_unit["rule"] == {
         "description": "Male patients are not pregnant",
+        "long_description": "",
         "module": "qc.pregnancy",
         "name": "rule_male_patients_not_pregnant",
         "pattern": "*-subject.csv",

@@ -33,10 +33,20 @@ DDL_RESULTS = """CREATE TABLE IF NOT EXISTS results (
     fail_data TEXT
 )"""
 
+DDL_RULES = """CREATE TABLE IF NOT EXISTS rules (
+    rule TEXT,
+    description TEXT,
+    long_description TEXT
+)"""
+
 INSERT_RESULTS = """INSERT INTO results VALUES (
     :rule, :dataset, :file, :rows_success,
     :rows_fail, :ratio_success, :rows_fail_idx,
     :success, :mostly, :fail_data
+)"""
+
+INSERT_RULES = """INSERT INTO rules VALUES (
+    :name, :description, :long_description
 )"""
 
 
@@ -68,10 +78,12 @@ def collect_rules(root: Path = Path("qc")) -> List[Rule]:
 
 def make_rule(module, rule_name: str) -> Rule:
     r = getattr(module, rule_name)
+    description, _, long_description = r.__doc__.partition("\n")
     return Rule(
         module=module.__name__,
         name=r.__name__,
-        description=r.__doc__,
+        description=description,
+        long_description=long_description,
         pattern=getattr(r, "pattern", DEFAULT_PATTERN),
     )
 
@@ -113,6 +125,15 @@ def prepare_result_for_insertion(work_unit_result: WorkUnitResult) -> Dict[str, 
     return result
 
 
+def get_result_from_insertion(data: Dict[str, Any]) -> WorkUnitResult:
+    result: Dict[str, Any] = copy.deepcopy(data)  # type: ignore
+    if result["fail_data"]:
+        result["fail_data"] = pd.DataFrame(json.loads(result["fail_data"]))
+    if result["rows_fail_idx"]:
+        result["rows_fail_idx"] = [int(x) for x in result["rows_fail_idx"].split(",")]
+    return result
+
+
 def process_work_unit(unit: WorkUnit, save_db: Optional[str] = None) -> WorkUnitResult:
     rule = unit["rule"]
     module = importlib.import_module(rule["module"])
@@ -141,6 +162,16 @@ def start(
     rules = collect_rules(rules_path)
     datasets = collect_datasets(data_path, data_file_formats)
     work_units = collect_work_units(datasets, rules)
+
+    # Re-create rules list
+    if store_database:
+        conn = sqlite3.connect(store_database)
+        cur = conn.cursor()
+        cur.execute("DROP TABLE IF EXISTS rules")
+        cur.execute(DDL_RULES)
+        cur.executemany(INSERT_RULES, rules)
+        conn.commit()
+
     pool = multiprocessing.Pool()
     process_work_unit_db = functools.partial(process_work_unit, save_db=store_database)
     return pool.map(process_work_unit_db, work_units)

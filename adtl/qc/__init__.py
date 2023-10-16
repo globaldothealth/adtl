@@ -4,7 +4,7 @@ Quality Control module for ADTL
 import functools
 from typing import List, Union
 from pathlib import Path
-from typing import TypedDict, Dict, List, Any
+from typing import TypedDict, Dict, List, Any, Optional
 
 import pandas as pd
 import numpy as np
@@ -14,6 +14,7 @@ class Rule(TypedDict):
     module: str
     name: str
     description: str
+    long_description: Optional[str]
     pattern: str
 
 
