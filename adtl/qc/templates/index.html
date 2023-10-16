@@ -18,23 +18,19 @@
         <h1>✱ adtl-qc report</h1>
 
         <p class="runinfo">
-            Run on {{ date }}
+            Updated on {{ date }}
         </p>
         <h2>Datasets</h2>
         <ul id="datasets">
-            {{#datasets}}
-            <li><a href="/d/{{ name }}.html">{{ name }}</a></li>
-            {{/datasets}}
+        $dataset_index
         </ul>
 </body>
 
 </html>
 
 <h2>Rules</h2>
-<ul id="datasets">
-    {{#rules}}
-    <li><a href="/r/{{ rule }}.html">{{ description }}</a></li>
-    {{/rules}}
+<ul id="rules">
+$rule_index
 </ul>
 
 

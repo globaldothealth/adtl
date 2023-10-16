@@ -1,10 +1,11 @@
 """
 Quality Control module for ADTL
 """
+import copy
+import json
 import functools
-from typing import List, Union
 from pathlib import Path
-from typing import TypedDict, Dict, List, Any, Optional
+from typing import List, Union, TypedDict, Any, Optional, Dict
 
 import pandas as pd
 import numpy as np
@@ -35,6 +36,7 @@ class WorkUnitResult(TypedDict):
     file: str
     rows_success: int
     rows_fail: int
+    rows: int
     ratio_success: float
     rows_fail_idx: List[int]
     success: bool
@@ -81,6 +83,7 @@ def rule(columns: List[str], mostly: float = 0, set_missing_columns: bool = True
                 return dict(
                     rows_success=int(rows_success),
                     rows_fail=int(rows_fail),
+                    rows=int(rows_success) + int(rows_fail),
                     ratio_success=ratio_success,
                     success=bool(ratio_success >= mostly),
                     mostly=mostly,
@@ -102,6 +105,17 @@ def rule(columns: List[str], mostly: float = 0, set_missing_columns: bool = True
 
 def schema(schema_path: Union[str, Path], pattern: str = "*.csv"):
     pass
+
+
+def get_result_from_insertion(data: Dict[str, Any]) -> WorkUnitResult:
+    result: Dict[str, Any] = copy.deepcopy(data)  # type: ignore
+    if result["fail_data"]:
+        result["fail_data"] = pd.DataFrame(json.loads(result["fail_data"]))
+    if result["rows_fail_idx"]:
+        result["rows_fail_idx"] = [
+            int(float(x)) for x in str(result["rows_fail_idx"]).split(",")
+        ]
+    return result
 
 
 def main(args=None):

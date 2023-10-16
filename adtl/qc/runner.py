@@ -17,6 +17,7 @@ from fnmatch import fnmatch
 import pandas as pd
 
 from . import Dataset, Rule, WorkUnit, WorkUnitResult
+from .report import make_report
 
 DEFAULT_PATTERN = "*.csv"
 
@@ -26,6 +27,7 @@ DDL_RESULTS = """CREATE TABLE IF NOT EXISTS results (
     file TEXT,
     rows_success INTEGER,
     rows_fail INTEGER,
+    rows INTEGER,
     ratio_success REAL,
     rows_fail_idx TEXT,
     success INTEGER,
@@ -34,14 +36,14 @@ DDL_RESULTS = """CREATE TABLE IF NOT EXISTS results (
 )"""
 
 DDL_RULES = """CREATE TABLE IF NOT EXISTS rules (
-    rule TEXT,
+    name TEXT,
     description TEXT,
     long_description TEXT
 )"""
 
 INSERT_RESULTS = """INSERT INTO results VALUES (
     :rule, :dataset, :file, :rows_success,
-    :rows_fail, :ratio_success, :rows_fail_idx,
+    :rows_fail, :rows, :ratio_success, :rows_fail_idx,
     :success, :mostly, :fail_data
 )"""
 
@@ -59,7 +61,10 @@ def collect_datasets(
     folders = defaultdict(list)
     for f in files:
         folders[f.parent.stem].append(f)
-    return [Dataset(folder=folder, files=folders[folder]) for folder in folders]
+    return [
+        Dataset(folder=folder if folder else "_unlabelled", files=folders[folder])
+        for folder in folders
+    ]
 
 
 def collect_rules(root: Path = Path("qc")) -> List[Rule]:
@@ -111,26 +116,17 @@ def collect_work_units(datasets: List[Dataset], rules: List[Rule]) -> List[WorkU
 def prepare_result_for_insertion(work_unit_result: WorkUnitResult) -> Dict[str, Any]:
     result: Dict[str, Any] = copy.deepcopy(work_unit_result)  # type: ignore
     result["fail_data"] = (
-        None
+        ""
         if result["fail_data"].empty
         else json.dumps(result["fail_data"].to_dict(orient="records"))
     )
     result["rows_fail_idx"] = (
-        None
+        ""
         if not result["rows_fail_idx"]
         else ",".join(map(str, result["rows_fail_idx"]))
     )
     result["dataset"] = work_unit_result["dataset"]["folder"]
     result["file"] = str(result["file"])
-    return result
-
-
-def get_result_from_insertion(data: Dict[str, Any]) -> WorkUnitResult:
-    result: Dict[str, Any] = copy.deepcopy(data)  # type: ignore
-    if result["fail_data"]:
-        result["fail_data"] = pd.DataFrame(json.loads(result["fail_data"]))
-    if result["rows_fail_idx"]:
-        result["rows_fail_idx"] = [int(x) for x in result["rows_fail_idx"].split(",")]
     return result
 
 
@@ -158,6 +154,7 @@ def start(
     rules_path: Path = Path("qc"),
     data_file_formats: List[str] = ["csv"],
     store_database: Optional[str] = None,
+    disable_report: bool = False,
 ) -> List[WorkUnitResult]:
     rules = collect_rules(rules_path)
     datasets = collect_datasets(data_path, data_file_formats)
@@ -174,7 +171,10 @@ def start(
 
     pool = multiprocessing.Pool()
     process_work_unit_db = functools.partial(process_work_unit, save_db=store_database)
-    return pool.map(process_work_unit_db, work_units)
+    res = pool.map(process_work_unit_db, work_units)
+    if store_database and not disable_report:
+        make_report(store_database)
+    return res
 
 
 def _main(args=None):
@@ -198,4 +198,5 @@ def _main(args=None):
         Path(args.rule_root),
         data_file_formats=args.format.split(","),
         store_database=args.database,
+        disable_report=args.no_report,
     )

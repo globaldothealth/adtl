@@ -3,41 +3,24 @@
 
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>✱ dataset - {{ dataset }}</title>
-    <link rel="stylesheet" href="style.css">
+    <title>✱ dataset - $dataset</title>
+    <link rel="stylesheet" href="../style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body>
 
     <nav class="breadcrumb">
-        <a class="breadcrumb-item" href="/">✱</a> |
+        <a class="breadcrumb-item" href="../index.html">✱</a> |
         updated {{ run_date }}
     </nav>
 
     <main>
-        <h1>{{ dataset }}</h1>
-        <h2>Files</h2>
-        <ul class="files">
-        {{ #files }}
-        <li><tt>{{ hash }}</tt> {{ file }}</li>
-        {{ /files }}
-        </ul>
-
+        <h1>$dataset</h1>
 
         <h2>Triggered rules</h2>
-        <ul class="rules">
-            {{#rules}}
-            <li><tt>[{{ success }} / {{ total }}]</tt> {{  rule }} - {{ file }}
-
-                {{ #log }}
-                <details>
-                    <summary>Failed rows</summary>
-                    <pre>{{ log }}</p>
-                  </details> 
-                {{ /log }}
-            </li>
-        {{/rules}}
+        <ul class="results">
+            $results
         </ul>
 
 
