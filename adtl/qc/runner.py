@@ -131,26 +131,31 @@ def prepare_result_for_insertion(work_unit_result: WorkUnitResult) -> Dict[str, 
     return result
 
 
-def process_work_unit(unit: WorkUnit, save_db: Optional[str] = None) -> WorkUnitResult:
+def process_work_unit(
+    unit: WorkUnit, save_db: Optional[str] = None
+) -> List[WorkUnitResult]:
     rule = unit["rule"]
     module = importlib.import_module(rule["module"])
     rule_function = getattr(module, rule["name"])
 
     # TODO: assumes file is CSV, should be a generic reader
     result = rule_function(pd.read_csv(unit["file"]))
-    result.update(
-        dict(
-            rule=unit["rule"]["name"],
-            dataset=unit["dataset"],
-            file=unit["file"],
-            reason=None,
+    if not isinstance(result, list):
+        result = [result]
+    for res in result:
+        res.update(
+            dict(
+                rule=unit["rule"]["name"],
+                dataset=unit["dataset"],
+                file=unit["file"],
+                reason=res.get("reason"),
+            )
         )
-    )
     if save_db:
         con = sqlite3.connect(save_db)
         cur = con.cursor()
         cur.execute(DDL_RESULTS)
-        cur.execute(INSERT_RESULTS, prepare_result_for_insertion(result))
+        cur.executemany(INSERT_RESULTS, list(map(prepare_result_for_insertion, result)))
         con.commit()
     return result
 
@@ -180,7 +185,7 @@ def start(
     res = pool.map(process_work_unit_db, work_units)
     if store_database and not disable_report:
         make_report(store_database)
-    return res
+    return sum(res, [])
 
 
 def _main(args=None):
