@@ -32,6 +32,7 @@ DDL_RESULTS = """CREATE TABLE IF NOT EXISTS results (
     rows_fail_idx TEXT,
     success INTEGER,
     mostly REAL,
+    reason TEXT,
     fail_data TEXT
 )"""
 
@@ -44,7 +45,7 @@ DDL_RULES = """CREATE TABLE IF NOT EXISTS rules (
 INSERT_RESULTS = """INSERT INTO results VALUES (
     :rule, :dataset, :file, :rows_success,
     :rows_fail, :rows, :ratio_success, :rows_fail_idx,
-    :success, :mostly, :fail_data
+    :success, :mostly, :reason, :fail_data
 )"""
 
 INSERT_RULES = """INSERT INTO rules VALUES (
@@ -138,7 +139,12 @@ def process_work_unit(unit: WorkUnit, save_db: Optional[str] = None) -> WorkUnit
     # TODO: assumes file is CSV, should be a generic reader
     result = rule_function(pd.read_csv(unit["file"]))
     result.update(
-        dict(rule=unit["rule"]["name"], dataset=unit["dataset"], file=unit["file"])
+        dict(
+            rule=unit["rule"]["name"],
+            dataset=unit["dataset"],
+            file=unit["file"],
+            reason=None,
+        )
     )
     if save_db:
         con = sqlite3.connect(save_db)

@@ -34,7 +34,7 @@ def render_result(result: Dict[str, Any], show_rule: bool = False) -> str:
         if result["success"] != 1
         else "<li>✔ {rule_str}{dataset} / {file}</li>".format(**result)
     )
-    if result["fail_data"]:
+    if result.get("fail_data"):
         fail_data = pd.DataFrame(json.loads(result["fail_data"]))
         tmpl += """
   <details>
@@ -142,6 +142,7 @@ def make_report(store_database: str, output_folder: Path = Path("qc_report")):
             "rows_fail_idx",
             "success",
             "mostly",
+            "reason",
             "fail_data",
         ],
     )

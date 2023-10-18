@@ -41,6 +41,7 @@ class WorkUnitResult(TypedDict):
     rows_fail_idx: List[int]
     success: bool
     mostly: float
+    reason: str
     fail_data: pd.DataFrame
 
 
@@ -109,9 +110,9 @@ def schema(schema_path: Union[str, Path], pattern: str = "*.csv"):
 
 def get_result_from_insertion(data: Dict[str, Any]) -> WorkUnitResult:
     result: Dict[str, Any] = copy.deepcopy(data)  # type: ignore
-    if result["fail_data"]:
+    if result.get("fail_data"):
         result["fail_data"] = pd.DataFrame(json.loads(result["fail_data"]))
-    if result["rows_fail_idx"]:
+    if result.get("rows_fail_idx"):
         result["rows_fail_idx"] = [
             int(float(x)) for x in str(result["rows_fail_idx"]).split(",")
         ]
