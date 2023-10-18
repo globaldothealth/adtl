@@ -77,7 +77,7 @@ def collect_rules(root: Path = Path("qc")) -> List[Rule]:
         module = importlib.import_module(
             str(rule_file).replace(".py", "").replace("/", ".")
         )
-        rules = [x for x in dir(module) if x.startswith("rule_")]
+        rules = [x for x in dir(module) if x.startswith("rule_") or x.startswith("schema_")]
         all_rules.extend([make_rule(module, r) for r in rules])
     return all_rules
 
@@ -118,7 +118,7 @@ def prepare_result_for_insertion(work_unit_result: WorkUnitResult) -> Dict[str, 
     result: Dict[str, Any] = copy.deepcopy(work_unit_result)  # type: ignore
     result["fail_data"] = (
         ""
-        if result["fail_data"].empty
+        if result.get("fail_data") is None or result["fail_data"].empty
         else json.dumps(result["fail_data"].to_dict(orient="records"))
     )
     result["rows_fail_idx"] = (

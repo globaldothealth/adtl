@@ -22,17 +22,19 @@ INDEX = "index.html"
 
 def render_result(result: Dict[str, Any], show_rule: bool = False) -> str:
     result = get_result_from_insertion(result)  # type: ignore
+    result["reason"] = result.get("reason", "")
+    result["reason_str"] = f" ({result['reason']}) " if result["reason"] else ""
     result["rule_str"] = (
         f"""<a href="../r/{result["rule"]}.html">{result["rule"]}</a>, """
         if show_rule
         else ""
     )
     tmpl = (
-        "<li><tt>[{rows_fail} / {rows}]</tt> {rule_str}{dataset} / {file}".format(
+        "<li><tt>[{rows_fail} / {rows}]</tt> {rule_str}{reason_str}{dataset} / {file}".format(
             **result
         )
         if result["success"] != 1
-        else "<li>✔ {rule_str}{dataset} / {file}</li>".format(**result)
+        else "<li>✔ {rule_str}{reason_str}{dataset} / {file}</li>".format(**result)
     )
     if result.get("fail_data"):
         fail_data = pd.DataFrame(json.loads(result["fail_data"]))
@@ -51,11 +53,11 @@ def render_result(result: Dict[str, Any], show_rule: bool = False) -> str:
 def render_results_by_rule(
     results: List[WorkUnitResult], rules: List[Rule]
 ) -> Dict[str, str]:
-    result_data = "\n".join(map(render_result, results))
-    rules_in_results = [r["rule"] for r in results]
+    def results_for_rule(rule_name: str) -> str:
+        return "\n".join(render_result(r) for r in results if r["rule"] == rule_name)  # type: ignore
 
     out = {}
-    for rule_name in rules_in_results:
+    for rule_name in set(r["rule"] for r in results):
         rule = [r for r in rules if r["name"] == rule_name][0]
         out[rule_name] = Template((TEMPLATES / "rule.html").read_text()).substitute(
             dict(
@@ -66,7 +68,7 @@ def render_results_by_rule(
                 + "</p>"
                 if rule["long_description"]
                 else "",
-                results=result_data,
+                results=results_for_rule(rule_name),
             )
         )
     return out
