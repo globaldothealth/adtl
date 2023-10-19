@@ -2,14 +2,10 @@
 Quality Control module for ADTL, runner submodule
 """
 import sys
-import copy
-import json
 import argparse
-import functools
 import importlib
-import sqlite3
 import multiprocessing
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 from pathlib import Path
 from collections import defaultdict
 from fnmatch import fnmatch
@@ -20,37 +16,6 @@ from . import Dataset, Rule, WorkUnit, WorkUnitResult
 from .report import make_report
 
 DEFAULT_PATTERN = "*.csv"
-
-DDL_RESULTS = """CREATE TABLE IF NOT EXISTS results (
-    rule TEXT,
-    dataset TEXT,
-    file TEXT,
-    rows_success INTEGER,
-    rows_fail INTEGER,
-    rows INTEGER,
-    ratio_success REAL,
-    rows_fail_idx TEXT,
-    success INTEGER,
-    mostly REAL,
-    reason TEXT,
-    fail_data TEXT
-)"""
-
-DDL_RULES = """CREATE TABLE IF NOT EXISTS rules (
-    name TEXT,
-    description TEXT,
-    long_description TEXT
-)"""
-
-INSERT_RESULTS = """INSERT INTO results VALUES (
-    :rule, :dataset, :file, :rows_success,
-    :rows_fail, :rows, :ratio_success, :rows_fail_idx,
-    :success, :mostly, :reason, :fail_data
-)"""
-
-INSERT_RULES = """INSERT INTO rules VALUES (
-    :name, :description, :long_description
-)"""
 
 
 def collect_datasets(
@@ -77,7 +42,9 @@ def collect_rules(root: Path = Path("qc")) -> List[Rule]:
         module = importlib.import_module(
             str(rule_file).replace(".py", "").replace("/", ".")
         )
-        rules = [x for x in dir(module) if x.startswith("rule_") or x.startswith("schema_")]
+        rules = [
+            x for x in dir(module) if x.startswith("rule_") or x.startswith("schema_")
+        ]
         all_rules.extend([make_rule(module, r) for r in rules])
     return all_rules
 
@@ -114,26 +81,7 @@ def collect_work_units(datasets: List[Dataset], rules: List[Rule]) -> List[WorkU
     return out
 
 
-def prepare_result_for_insertion(work_unit_result: WorkUnitResult) -> Dict[str, Any]:
-    result: Dict[str, Any] = copy.deepcopy(work_unit_result)  # type: ignore
-    result["fail_data"] = (
-        ""
-        if result.get("fail_data") is None or result["fail_data"].empty
-        else json.dumps(result["fail_data"].to_dict(orient="records"))
-    )
-    result["rows_fail_idx"] = (
-        ""
-        if not result["rows_fail_idx"]
-        else ",".join(map(str, result["rows_fail_idx"]))
-    )
-    result["dataset"] = work_unit_result["dataset"]["folder"]
-    result["file"] = str(result["file"])
-    return result
-
-
-def process_work_unit(
-    unit: WorkUnit, save_db: Optional[str] = None
-) -> List[WorkUnitResult]:
+def process_work_unit(unit: WorkUnit) -> List[WorkUnitResult]:
     rule = unit["rule"]
     module = importlib.import_module(rule["module"])
     rule_function = getattr(module, rule["name"])
@@ -146,46 +94,37 @@ def process_work_unit(
         res.update(
             dict(
                 rule=unit["rule"]["name"],
-                dataset=unit["dataset"],
-                file=unit["file"],
-                reason=res.get("reason"),
+                dataset=(
+                    unit["dataset"]["folder"]
+                    if unit["dataset"]["folder"]
+                    else "_unlabelled"
+                ),
+                file=str(unit["file"]),
+                reason=res.get("reason", ""),
+                rows_fail_idx=",".join(map(str, res.get("rows_fail_idx", []))),
             )
         )
-    if save_db:
-        con = sqlite3.connect(save_db)
-        cur = con.cursor()
-        cur.execute(DDL_RESULTS)
-        cur.executemany(INSERT_RESULTS, list(map(prepare_result_for_insertion, result)))
-        con.commit()
     return result
 
 
-def start(
+def invoke_runner(
     data_path: Path,
     rules_path: Path = Path("qc"),
     data_file_formats: List[str] = ["csv"],
     store_database: Optional[str] = None,
     disable_report: bool = False,
-) -> List[WorkUnitResult]:
+) -> pd.DataFrame:
     rules = collect_rules(rules_path)
     datasets = collect_datasets(data_path, data_file_formats)
     work_units = collect_work_units(datasets, rules)
 
-    # Re-create rules list
-    if store_database:
-        conn = sqlite3.connect(store_database)
-        cur = conn.cursor()
-        cur.execute("DROP TABLE IF EXISTS rules")
-        cur.execute(DDL_RULES)
-        cur.executemany(INSERT_RULES, rules)
-        conn.commit()
-
     pool = multiprocessing.Pool()
-    process_work_unit_db = functools.partial(process_work_unit, save_db=store_database)
-    res = pool.map(process_work_unit_db, work_units)
-    if store_database and not disable_report:
-        make_report(store_database)
-    return sum(res, [])
+    res = pool.map(process_work_unit, work_units)
+    results = pd.DataFrame(sum(res, []))
+    results.to_csv(store_database, index=False)
+    if not disable_report:
+        make_report(results, rules)
+    return results
 
 
 def _main(args=None):
@@ -193,7 +132,10 @@ def _main(args=None):
     parser.add_argument("data", help="path to datasets")
     parser.add_argument("-r", "--rule-root", help="path to rules", default="qc")
     parser.add_argument(
-        "-d", "--database", help="Database to store QC results", default="adtl-qc.db"
+        "-d",
+        "--database",
+        help="Data file to store QC results",
+        default="adtl-qc.csv",
     )
     parser.add_argument(
         "--format",
@@ -204,7 +146,7 @@ def _main(args=None):
         "-n", "--no-report", help="do not generate HTML report", action="store_true"
     )
     args = parser.parse_args(args)
-    start(
+    invoke_runner(
         Path(args.data),
         Path(args.rule_root),
         data_file_formats=args.format.split(","),

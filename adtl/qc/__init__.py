@@ -89,15 +89,22 @@ def rule(columns: List[str], mostly: float = 0, set_missing_columns: bool = True
                     ratio_success=ratio_success,
                     success=bool(ratio_success >= mostly),
                     mostly=mostly,
-                    rows_fail_idx=rows_fail_idx,
-                    fail_data=df.loc[rows_fail_idx][columns],
+                    rows_fail_idx=",".join(map(str, rows_fail_idx)),
+                    fail_data=json.dumps(
+                        df.loc[rows_fail_idx][columns].to_dict(orient="records"),
+                        sort_keys=True,
+                    ),
                 )
             elif isinstance(series, bool):
                 return dict(
                     rows_success=None,
                     rows_fail=None,
+                    rows=None,
                     ratio_success=None,
                     success=series,
+                    mostly=mostly,
+                    rows_fail_idx=None,
+                    fail_data=None,
                 )
 
         return wrapper
@@ -108,7 +115,7 @@ def rule(columns: List[str], mostly: float = 0, set_missing_columns: bool = True
 def schema(
     schema_path: str, pattern: str = "*.csv", mostly: float = 0.95
 ) -> Callable[[pd.DataFrame], List[WorkUnitResult]]:
-    schema_path = Path(schema_path)
+    schema_path = Path(schema_path)  # type: ignore
     with schema_path.open() as fp:
         schema = json.load(fp)
         validator = fastjsonschema.compile(schema)
@@ -142,10 +149,10 @@ def schema(
             res.append(
                 dict(
                     rows=count,
-                    rows_success=None,
+                    rows_success=0,
                     rows_fail=count,
                     ratio_success=0,
-                    success=0,
+                    success=False,
                     mostly=0,
                     rows_fail_idx=list(
                         valid_data.loc[valid_data.reason == reason].index
@@ -160,17 +167,6 @@ def schema(
     rule_schema.__name__ = "schema_" + schema_path.stem.split(".")[0]
     rule_schema.pattern = pattern
     return rule_schema
-
-
-def get_result_from_insertion(data: Dict[str, Any]) -> WorkUnitResult:
-    result: Dict[str, Any] = copy.deepcopy(data)  # type: ignore
-    if result.get("fail_data"):
-        result["fail_data"] = pd.DataFrame(json.loads(result["fail_data"]))
-    if result.get("rows_fail_idx"):
-        result["rows_fail_idx"] = [
-            int(float(x)) for x in str(result["rows_fail_idx"]).split(",")
-        ]
-    return result
 
 
 def main(args=None):
