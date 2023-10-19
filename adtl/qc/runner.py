@@ -4,6 +4,7 @@ Quality Control module for ADTL, runner submodule
 import sys
 import argparse
 import importlib
+import itertools
 import multiprocessing
 from typing import List, Optional
 from pathlib import Path
@@ -69,7 +70,7 @@ def collect_work_units(datasets: List[Dataset], rules: List[Rule]) -> List[WorkU
     is used by the work runners to run work units in parallel and save to a DB.
     """
     out = []
-    for dataset, rule in zip(datasets, rules):
+    for dataset, rule in itertools.product(datasets, rules):
         files = dataset["files"]
         out.extend(
             [
