@@ -3,6 +3,7 @@ Quality Control module for ADTL, report submodule
 """
 
 import json
+import datetime
 from string import Template
 from pathlib import Path
 from typing import List, Any, Dict
@@ -21,7 +22,9 @@ INDEX = "index.html"
 
 def render_result(result: Dict[str, Any], show_rule: bool = False) -> str:
     result["reason"] = result.get("reason", "")
-    result["reason_str"] = f" ({result['reason']}) " if result["reason"] else ""
+    result["reason_str"] = (
+        f"<span class=\"reason\">{result['reason']}</span>" if result["reason"] else ""
+    )
     result["rule_str"] = (
         f"""<a href="../r/{result["rule"]}.html">{result["rule"]}</a>, """
         if show_rule
@@ -30,10 +33,10 @@ def render_result(result: Dict[str, Any], show_rule: bool = False) -> str:
     if not result["success"]:
         if result["reason_str"] and result["mostly"] == 0:  # schema reasons
             tmpl = (
-                "<li><tt>[{rows_fail}]</tt> {rule_str} {reason_str}<strong>{dataset}</strong>: {file}"
+                "<li>{rows_fail} fail; {rule_str} <strong>{dataset}</strong>: {file}{reason_str}"
             ).format(**result)
         else:
-            tmpl = "<li><tt>[{rows_fail} / {rows}]</tt> {rule_str}{reason_str}<strong>{dataset}</strong>: {file}".format(
+            tmpl = "<li>{rows_fail} fail / {rows} total; {rule_str}{reason_str}<strong>{dataset}</strong>: {file}".format(
                 **result
             )
     else:
@@ -41,7 +44,10 @@ def render_result(result: Dict[str, Any], show_rule: bool = False) -> str:
             "<li>✔ {rule_str} {reason_str}<strong>{dataset}</strong>: {file}</li>"
         ).format(**result)
 
-    if result.get("fail_data") and json.loads(result["fail_data"]):
+    if (
+        result.get("fail_data")
+        and not (fail_data := pd.DataFrame(json.loads(result["fail_data"]))).empty
+    ):
         fail_data = pd.DataFrame(json.loads(result["fail_data"]))
         tmpl += """
   <details>
@@ -55,7 +61,9 @@ def render_result(result: Dict[str, Any], show_rule: bool = False) -> str:
     return tmpl
 
 
-def render_results_by_rule(results: pd.DataFrame, rules: List[Rule]) -> Dict[str, str]:
+def render_results_by_rule(
+    results: pd.DataFrame, rules: List[Rule], timestamp: datetime.datetime
+) -> Dict[str, str]:
     def results_for_rule(rule_name: str) -> str:
         return "\n".join(
             map(
@@ -77,13 +85,14 @@ def render_results_by_rule(results: pd.DataFrame, rules: List[Rule]) -> Dict[str
                 if rule["long_description"]
                 else "",
                 results=results_for_rule(rule_name),
+                timestamp=timestamp.strftime("%c"),
             )
         )
     return out
 
 
 def render_results_by_dataset(
-    results: pd.DataFrame, datasets: List[str]
+    results: pd.DataFrame, datasets: List[str], timestamp: datetime.datetime
 ) -> Dict[str, str]:
     out = {}
 
@@ -95,12 +104,14 @@ def render_results_by_dataset(
             )
         )  # type: ignore
         out[dataset] = Template((TEMPLATES / "dataset.html").read_text()).substitute(
-            dataset=dataset, results=result_data
+            dataset=dataset, results=result_data, timestamp=timestamp.strftime("%c")
         )
     return out
 
 
-def render_index(rules: List[Rule], datasets: List[str]) -> str:
+def render_index(
+    rules: List[Rule], datasets: List[str], timestamp: datetime.datetime
+) -> str:
     dataset_index = "\n".join(
         f"""<li><a href="d/{dataset}.html">{dataset}</a></li>""" for dataset in datasets
     )
@@ -109,7 +120,11 @@ def render_index(rules: List[Rule], datasets: List[str]) -> str:
         for r in rules
     )
     return Template((TEMPLATES / "index.html").read_text()).substitute(
-        dict(dataset_index=dataset_index, rule_index=rule_index)
+        dict(
+            dataset_index=dataset_index,
+            rule_index=rule_index,
+            timestamp=timestamp.strftime("%c"),
+        )
     )
 
 
@@ -118,16 +133,17 @@ def make_report(
 ):
     "Makes report from results database"
 
+    ts = datetime.datetime.utcnow()
     output_folder.mkdir(exist_ok=True)
     (output_folder / "r").mkdir(exist_ok=True)
     (output_folder / "d").mkdir(exist_ok=True)
 
     datasets = list(results.dataset.unique())
     (output_folder / "style.css").write_text(STYLE.read_text())
-    (output_folder / INDEX).write_text(render_index(rules, datasets))
+    (output_folder / INDEX).write_text(render_index(rules, datasets, ts))
 
-    results_by_rule = render_results_by_rule(results, rules)
-    results_by_dataset = render_results_by_dataset(results, datasets)
+    results_by_rule = render_results_by_rule(results, rules, ts)
+    results_by_dataset = render_results_by_dataset(results, datasets, ts)
     for rule in results_by_rule:
         (output_folder / "r" / (rule + ".html")).write_text(results_by_rule[rule])
         print(f"wrote r/{rule}.html")

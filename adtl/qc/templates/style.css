@@ -23,18 +23,39 @@ p.description {
     font-size: large;
 }
 
+ul {
+    margin-left: -10px;
+}
+
 nav a {
     text-decoration: none;
 }
 
 summary {
     font-size: 14px;
-    margin-top: 8px;
+    margin-top: 6px;
+}
+
+details {
+    margin-left: 10px;
+    margin-bottom: 10px;
 }
 
 pre {
-    padding: 5px;
+    padding: 10px;
     background-color: #eee;
+    display: inline-block;
+}
+
+li {
+    padding: 2px;
+    line-height: 1.2;
+}
+
+span.reason {
+    background-color: cornsilk;
+    margin-left: 5px;
+    padding: 4px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -53,5 +74,9 @@ pre {
 
     pre {
         background-color: #333
+    }
+
+    span.reason {
+        background-color: darkgoldenrod;
     }
 }

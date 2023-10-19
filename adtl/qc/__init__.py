@@ -1,11 +1,10 @@
 """
 Quality Control module for ADTL
 """
-import copy
 import json
 import functools
 from pathlib import Path
-from typing import List, Union, TypedDict, Any, Optional, Dict, Callable, Tuple
+from typing import List, TypedDict, Optional, Callable, Tuple
 
 import pandas as pd
 import numpy as np
@@ -91,7 +90,7 @@ def rule(columns: List[str], mostly: float = 0, set_missing_columns: bool = True
                     mostly=mostly,
                     rows_fail_idx=",".join(map(str, rows_fail_idx)),
                     fail_data=json.dumps(
-                        df.loc[rows_fail_idx][columns].to_dict(orient="records"),
+                        df.loc[rows_fail_idx][columns].to_dict(),
                         sort_keys=True,
                     ),
                 )
@@ -110,6 +109,13 @@ def rule(columns: List[str], mostly: float = 0, set_missing_columns: bool = True
         return wrapper
 
     return decorator_rule
+
+
+def _get_columns_from_valid_data(df: pd.DataFrame) -> List[str]:
+    cols = set()
+    for row in df.itertuples():
+        cols |= set(row.column.split(";"))
+    return sorted(cols - {""})
 
 
 def schema(
@@ -158,7 +164,15 @@ def schema(
                         valid_data.loc[valid_data.reason == reason].index
                     ),
                     reason=reason,
-                    fail_data=None,
+                    fail_data=json.dumps(
+                        df.loc[valid_data.reason == reason][
+                            _get_columns_from_valid_data(
+                                valid_data[valid_data.reason == reason]
+                            )
+                        ]
+                        .head(10)
+                        .to_dict()
+                    ),
                 )
             )
         return res
