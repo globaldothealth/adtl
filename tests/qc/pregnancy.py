@@ -1,6 +1,6 @@
 "Pregnancy related checks"
 
-from adtl.qc import rule, rules_for
+from adtl.qc import rule, rules_for, schema
 import pandas as pd
 
 
@@ -16,3 +16,5 @@ def rule_male_patients_not_pregnant(df: pd.DataFrame) -> pd.Series:
 
 
 rules_for("*-subject.csv", rule_male_patients_not_pregnant)
+
+schema_subject = schema("qc/subject.schema.json", pattern="*-subject.csv")
