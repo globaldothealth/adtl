@@ -1,10 +1,12 @@
 """
 Quality Control module for ADTL
 """
+import math
 import json
 import functools
+import copy
 from pathlib import Path
-from typing import List, TypedDict, Optional, Callable, Tuple
+from typing import List, TypedDict, Optional, Callable, Tuple, Dict, Any
 
 import pandas as pd
 import numpy as np
@@ -118,6 +120,39 @@ def _get_columns_from_valid_data(df: pd.DataFrame) -> List[str]:
     return sorted(cols - {""})
 
 
+def _to_json(row: Dict[str, Any]) -> Dict[str, Any]:
+    """"""
+    nrow = copy.deepcopy(row)
+    for key, val in row.items():
+        if isinstance(val, int):
+            continue
+        elif isinstance(val, float):
+            if math.isnan(val):
+                del nrow[key]
+            continue
+        else:
+            val = str(val).strip()
+        if val.upper() == "TRUE":
+            nrow[key] = True
+            continue
+        elif val.upper() == "FALSE":
+            nrow[key] = False
+            continue
+        elif val.upper() in ["NA", "NK", "N/A", "NAN", "N/K", "NONE", "-", ""]:
+            del nrow[key]
+            continue
+        else:
+            pass
+        try:
+            nrow[key] = int(val)
+        except ValueError:
+            try:
+                nrow[key] = float(val)
+            except ValueError:
+                nrow[key] = str(val)
+    return nrow
+
+
 def schema(
     schema_path: str, pattern: str = "*.csv", mostly: float = 0.95
 ) -> Callable[[pd.DataFrame], List[WorkUnitResult]]:
@@ -128,7 +163,7 @@ def schema(
 
     def rule_schema(df: pd.DataFrame):
         valids: List[Tuple[bool, str, str]] = []
-        for row in df.to_dict(orient="records"):
+        for row in map(_to_json, df.to_dict(orient="records")):
             try:
                 validator(row)
                 valids.append((True, "", ""))
@@ -138,7 +173,7 @@ def schema(
         rows_success = valid_data.is_valid.sum()
         rows_fail = len(valid_data) - rows_success
         ratio_success = rows_success / (rows_success + rows_fail)
-        reason_counts = valid_data.reason.value_counts()
+        reason_counts = valid_data[~valid_data.is_valid].reason.value_counts()
         res = [
             dict(
                 rows_success=rows_success,
