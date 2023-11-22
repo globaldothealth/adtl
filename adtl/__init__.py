@@ -718,8 +718,41 @@ class Parser:
             for attr in self.spec[table]:
                 value = get_value(row, self.spec[table][attr], self.ctx(attr))
                 # Check against all null elements, for combinedType=set/list, null is []
-                if value is not None and value != []:
+                if (
+                    value is not None
+                    and value != []
+                    and attr not in self.data[table][group_key].keys()
+                ):
+                    # if data for this field hasn't already been captured
                     self.data[table][group_key][attr] = value
+                elif value is not None and value != []:
+                    if "combinedType" in self.spec[table][attr]:
+                        combined_type = self.spec[table][attr]["combinedType"]
+                        existing_value = self.data[table][group_key][attr]
+                        if combined_type in ["all", "any", "min", "max"]:
+                            values = [existing_value, value]
+                            # normally calling eval() is a bad idea, but here values are restricted, so okay
+                            self.data[table][group_key][attr] = eval(combined_type)(
+                                values
+                            )
+                        elif combined_type in ["list", "set"]:
+                            if combined_type == "set":
+                                self.data[table][group_key][attr] = list(
+                                    set(existing_value + value)
+                                )
+                            else:
+                                self.data[table][group_key][attr] = (
+                                    existing_value + value
+                                )
+                        elif combined_type == "firstNonNull":
+                            pass
+                        else:
+                            raise ValueError(
+                                f"Could not return value for {combined_type}"
+                            )
+                    else:
+                        # otherwise overwrite?
+                        self.data[table][group_key][attr] = value
         elif kind == "oneToMany":
             for match in self.spec[table]:
                 if "if" not in match:
