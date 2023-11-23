@@ -26,6 +26,13 @@
       { field = "enrolment" },
     ]
 
+  [visit.icu_admission_date]
+    combinedType = "list"
+    excludeWhen = "none"
+    fields = [
+      {field = "icu_admission_date"}
+    ]
+
   [visit.treatment_antiviral_type]
     combinedType = "set"
     excludeWhen = "none"

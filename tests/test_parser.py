@@ -1328,6 +1328,7 @@ OVERWRITE_OUTPUT = [
     {
         "subject_id": 2,
         "start_date": "2022-11-23",
+        "icu_admission_date": unordered(["2020-11-25", "2020-11-30"]),
         "treatment_antiviral_type": ["Lopinavir"],
     },
     {
