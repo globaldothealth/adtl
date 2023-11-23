@@ -1,0 +1,11 @@
+subjid,redcap,first_admit,enrolment,icu_admission_date,daily_antiviral_type___1,daily_antiviral_type___2,daily_antiviral_type___3,overall_antiviral_dc___1,overall_antiviral_dc___2,overall_antiviral_dc___3
+1,admit,2023-11-20,2023-11-23,,0,0,0,0,0,0
+1,discharge,,,,0,0,0,1,0,1
+1,day1,2023-11-19,,,1,0,0,0,0,0
+1,day2,,,,1,0,0,0,0,0
+2,admit,,2022-11-23,,0,0,0,0,0,0
+2,discharge,,2020-11-23,2020-11-25,0,0,0,0,0,0
+2,day1,,,2020-11-30,0,1,0,0,0,0
+3,admit,,2020-02-20,,0,0,0,0,0,0
+3,discharge,,,,0,0,0,0,1,1
+3,day1,,,,1,0,0,0,0,0
