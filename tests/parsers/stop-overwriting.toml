@@ -1,0 +1,40 @@
+[adtl]
+  name = "overwrite"
+  description = "Example using groupBy on data with multiple rows per subject"
+
+[adtl.tables.visit]
+  kind = "groupBy"
+  groupBy = "subject_id"
+  aggregation = "lastNotNull"
+
+[visit]
+
+  [visit.subject_id]
+    field = "subjid"
+    description = "Subject ID"
+  
+  [visit.earliest_admission]
+    combinedType = "min"
+    fields = [
+      { field = "first_admit" },
+    ]
+  
+  [visit.start_date]
+    combinedType = "firstNonNull"
+    fields = [
+      { field = "first_admit" },
+      { field = "enrolment" },
+    ]
+
+  [visit.treatment_antiviral_type]
+    combinedType = "set"
+    excludeWhen = "none"
+    fields = [
+      { field = "daily_antiviral_type___1", values = { 1 = "Ribavirin" } },
+      { field = "daily_antiviral_type___2", values = { 1 = "Lopinavir" } },
+      { field = "daily_antiviral_type___3", values = { 1 = "Interferon" } },
+      { field = "overall_antiviral_dc___1", values = { 1 = "Ribavirin" } },
+      { field = "overall_antiviral_dc___2", values = { 1 = "Lopinavir" } },
+      { field = "overall_antiviral_dc___3", values = { 1 = "Interferon" } },
+      ]
+

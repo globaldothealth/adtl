@@ -745,13 +745,18 @@ class Parser:
                                     existing_value + value
                                 )
                         elif combined_type == "firstNonNull":
+                            # only use the first value found
                             pass
                         else:
                             raise ValueError(
-                                f"Could not return value for {combined_type}"
+                                f"Unrecognised combined type: {combined_type}"
                             )
                     else:
                         # otherwise overwrite?
+                        logging.debug(
+                            f"Multiple rows of data found for {attr} without a"
+                            " combinedType listed. Data being overwritten."
+                        )
                         self.data[table][group_key][attr] = value
         elif kind == "oneToMany":
             for match in self.spec[table]:

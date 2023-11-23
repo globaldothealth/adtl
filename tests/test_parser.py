@@ -1316,3 +1316,32 @@ def test_combinedtype_wordsubstituteset(test_row, test_combination, expected):
     }
 
     assert parser.get_combined_type(test_row, test_rule) == unordered(expected)
+
+
+OVERWRITE_OUTPUT = [
+    {
+        "subject_id": 1,
+        "earliest_admission": "2023-11-19",
+        "start_date": "2023-11-20",
+        "treatment_antiviral_type": unordered(["Ribavirin", "Interferon"]),
+    },
+    {
+        "subject_id": 2,
+        "start_date": "2022-11-23",
+        "treatment_antiviral_type": ["Lopinavir"],
+    },
+    {
+        "subject_id": 3,
+        "start_date": "2020-02-20",
+        "treatment_antiviral_type": unordered(["Ribavirin", "Lopinavir", "Interferon"]),
+    },
+]
+
+
+def test_no_overwriting():
+    overwriting_output = list(
+        parser.Parser(TEST_PARSERS_PATH / "stop-overwriting.toml")
+        .parse(TEST_SOURCES_PATH / "stop-overwriting.csv")
+        .read_table("visit")
+    )
+    assert overwriting_output == OVERWRITE_OUTPUT
