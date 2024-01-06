@@ -7,7 +7,7 @@ packages = ["adtl"]
 
 [project]
 name = "adtl"
-version = "0.5.0"
+version = "0.6.0"
 description = "Another data transformation language"
 authors = [
   {name = "Abhishek Dasgupta", email = "abhishek.dasgupta@dtc.ox.ac.uk"},
@@ -24,6 +24,7 @@ dependencies = [
   "requests>=2.0.0",
   "fastjsonschema==2.16.*",
   "tqdm",
+  "pandas>=2.0.0",
   "python-dateutil",
   "more_itertools"
 ]
@@ -47,3 +48,4 @@ Home = "https://github.com/globaldothealth/adtl"
 
 [project.scripts]
 adtl = "adtl:main"
+adtl-qc = "adtl.qc:main"
