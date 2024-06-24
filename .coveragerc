@@ -3,5 +3,5 @@ omit =
     tests/*
 
 [report]
-exclude_also = 
+exclude_also =
     if __name__ == .__main__.:
