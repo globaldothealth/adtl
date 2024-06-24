@@ -86,12 +86,14 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
                         params.append(row[rule["apply"]["params"][i][1:]])
                     elif isinstance(rule["apply"]["params"][i], list):
                         param = [
-                            row[rule["apply"]["params"][i][j][1:]]
-                            if (
-                                isinstance(rule["apply"]["params"][i][j], str)
-                                and rule["apply"]["params"][i][j].startswith("$")
+                            (
+                                row[rule["apply"]["params"][i][j][1:]]
+                                if (
+                                    isinstance(rule["apply"]["params"][i][j], str)
+                                    and rule["apply"]["params"][i][j].startswith("$")
+                                )
+                                else rule["apply"]["params"][i][j]
                             )
-                            else rule["apply"]["params"][i][j]
                             for j in range(len(rule["apply"]["params"][i]))
                         ]
                         params.append(param)
@@ -590,9 +592,11 @@ class Parser:
             "defaultDateFormat": self.header.get(
                 "defaultDateFormat", DEFAULT_DATE_FORMAT
             ),
-            "skip_pattern": re.compile(self.header.get("skipFieldPattern"))
-            if self.header.get("skipFieldPattern")
-            else False,
+            "skip_pattern": (
+                re.compile(self.header.get("skipFieldPattern"))
+                if self.header.get("skipFieldPattern")
+                else False
+            ),
         }
 
     def validate_spec(self):
@@ -793,12 +797,14 @@ class Parser:
         with open(file, encoding=encoding) as fp:
             reader = csv.DictReader(fp)
             return self.parse_rows(
-                tqdm(
-                    reader,
-                    desc=f"[{self.name}] parsing {Path(file).name}",
-                )
-                if not self.quiet
-                else reader,
+                (
+                    tqdm(
+                        reader,
+                        desc=f"[{self.name}] parsing {Path(file).name}",
+                    )
+                    if not self.quiet
+                    else reader
+                ),
                 skip_validation=skip_validation,
             )
 

@@ -31,5 +31,3 @@ python:
    install:
      - method: pip
        path: .[docs]
-
-
