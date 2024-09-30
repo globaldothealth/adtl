@@ -41,6 +41,9 @@ docs = [
   "myst-parser==2.0.*",
   "furo"
 ]
+parquet = [
+  "polars"
+]
 
 [project.urls]
 Home = "https://github.com/globaldothealth/adtl"
