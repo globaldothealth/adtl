@@ -897,23 +897,26 @@ class Parser:
         # Convert data to Polars DataFrame
         df = pl.DataFrame(data, infer_schema_length=len(data))
 
-        df_valid_at_front = df.select(
-            [
-                "adtl_valid",
-                "adtl_error",
-                *[
-                    col
-                    for col in df.columns
-                    if (col != "adtl_valid" and col != "adtl_error")
-                ],  # All other columns, in their original order
-            ]
-        )
+        if table in self.validators:
+            valid_cols = [c for c in ["adtl_valid", "adtl_error"] if c in df.columns]
+            df_validated = df.select(
+                valid_cols
+                + [
+                    *[
+                        col
+                        for col in df.columns
+                        if (col != "adtl_valid" and col != "adtl_error")
+                    ],  # All other columns, in their original order
+                ]
+            )
+        else:
+            df_validated = df
 
         if output:
-            df_valid_at_front.write_parquet(output)
+            df_validated.write_parquet(output)
         else:
             buf = io.BytesIO()
-            df_valid_at_front.write_parquet(buf)
+            df_validated.write_parquet(buf)
             return buf.getvalue()
 
     def show_report(self):
