@@ -86,12 +86,14 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
                         params.append(row[rule["apply"]["params"][i][1:]])
                     elif isinstance(rule["apply"]["params"][i], list):
                         param = [
-                            row[rule["apply"]["params"][i][j][1:]]
-                            if (
-                                isinstance(rule["apply"]["params"][i][j], str)
-                                and rule["apply"]["params"][i][j].startswith("$")
+                            (
+                                row[rule["apply"]["params"][i][j][1:]]
+                                if (
+                                    isinstance(rule["apply"]["params"][i][j], str)
+                                    and rule["apply"]["params"][i][j].startswith("$")
+                                )
+                                else rule["apply"]["params"][i][j]
                             )
-                            else rule["apply"]["params"][i][j]
                             for j in range(len(rule["apply"]["params"][i]))
                         ]
                         params.append(param)
@@ -590,9 +592,11 @@ class Parser:
             "defaultDateFormat": self.header.get(
                 "defaultDateFormat", DEFAULT_DATE_FORMAT
             ),
-            "skip_pattern": re.compile(self.header.get("skipFieldPattern"))
-            if self.header.get("skipFieldPattern")
-            else False,
+            "skip_pattern": (
+                re.compile(self.header.get("skipFieldPattern"))
+                if self.header.get("skipFieldPattern")
+                else False
+            ),
         }
 
     def validate_spec(self):
@@ -793,12 +797,14 @@ class Parser:
         with open(file, encoding=encoding) as fp:
             reader = csv.DictReader(fp)
             return self.parse_rows(
-                tqdm(
-                    reader,
-                    desc=f"[{self.name}] parsing {Path(file).name}",
-                )
-                if not self.quiet
-                else reader,
+                (
+                    tqdm(
+                        reader,
+                        desc=f"[{self.name}] parsing {Path(file).name}",
+                    )
+                    if not self.quiet
+                    else reader
+                ),
                 skip_validation=skip_validation,
             )
 
@@ -898,6 +904,55 @@ class Parser:
             buf = io.StringIO()
             return writerows(buf, table).getvalue()
 
+    def write_parquet(
+        self,
+        table: str,
+        output: Optional[str] = None,
+    ) -> Optional[str]:
+        """Writes to output as parquet a particular table
+
+        Args:
+            table: Table that should be written to parquet
+            output: (optional) Output file name. If not specified, defaults to parser
+                    name + table name with a parquet suffix.
+        """
+
+        try:
+            import polars as pl
+        except ImportError:
+            raise ImportError(
+                "Parquet output requires the polars library. "
+                "Install with 'pip install polars'"
+            )
+
+        # Read the table data
+        data = list(self.read_table(table))
+
+        # Convert data to Polars DataFrame
+        df = pl.DataFrame(data, infer_schema_length=len(data))
+
+        if table in self.validators:
+            valid_cols = [c for c in ["adtl_valid", "adtl_error"] if c in df.columns]
+            df_validated = df.select(
+                valid_cols
+                + [
+                    *[
+                        col
+                        for col in df.columns
+                        if (col != "adtl_valid" and col != "adtl_error")
+                    ],  # All other columns, in their original order
+                ]
+            )
+        else:
+            df_validated = df
+
+        if output:
+            df_validated.write_parquet(output)
+        else:
+            buf = io.BytesIO()
+            df_validated.write_parquet(buf)
+            return buf.getvalue()
+
     def show_report(self):
         "Shows report with validation errors"
         if self.report_available:
@@ -917,15 +972,20 @@ class Parser:
                     print(f"* {count}: {message}")
                 print()
 
-    def save(self, output: Optional[str] = None):
+    def save(self, output: Optional[str] = None, parquet=False):
         """Saves all tables to CSV
 
         Args:
             output: (optional) Filename prefix that is used for all tables
         """
 
-        for table in self.tables:
-            self.write_csv(table, f"{output}-{table}.csv")
+        if parquet:
+            for table in self.tables:
+                self.write_parquet(table, f"{output}-{table}.parquet")
+
+        else:
+            for table in self.tables:
+                self.write_csv(table, f"{output}-{table}.csv")
 
 
 def main(argv=None):
@@ -943,6 +1003,9 @@ def main(argv=None):
     )
     cmd.add_argument(
         "--encoding", help="encoding input file is in", default="utf-8-sig"
+    )
+    cmd.add_argument(
+        "--parquet", help="output file is in parquet format", action="store_true"
     )
     cmd.add_argument(
         "-q",
@@ -963,7 +1026,7 @@ def main(argv=None):
 
     # run adtl
     adtl_output = spec.parse(args.file, encoding=args.encoding)
-    adtl_output.save(args.output or spec.name)
+    adtl_output.save(args.output or spec.name, args.parquet)
     if args.save_report:
         adtl_output.report.update(
             dict(

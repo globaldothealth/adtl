@@ -1213,6 +1213,12 @@ def test_main(snapshot):
     Path("output-table.csv").unlink()
 
 
+def test_main_parquet():
+    parser.main(ARGV + ["--parquet"])
+    assert Path("output-table.parquet")
+    Path("output-table.parquet").unlink()
+
+
 @responses.activate
 def test_main_web_schema(snapshot):
     # test with schema on the web

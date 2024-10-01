@@ -26,4 +26,3 @@ If you are writing code which depends on adtl (instead of using
 the command-line program), then it is best to add a dependency on
 `git+https://github.com/globaldothealth/adtl` to your Python build tool of
 choice.
-
