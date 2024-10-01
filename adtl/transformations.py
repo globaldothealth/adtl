@@ -95,7 +95,7 @@ def getFloat(
     try:
         return float(value)
     except ValueError:
-        return value
+        return value if value != "" else None
 
 
 def Percentage(value: float):
