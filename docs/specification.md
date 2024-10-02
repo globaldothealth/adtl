@@ -288,7 +288,7 @@ description = "Dementia"
 ```
 
 If the data for this field has a range of different capitalisations and you wish to
-capture them all without specifying each variant, you can add `caseInsensitive = true` 
+capture them all without specifying each variant, you can add `caseInsensitive = true`
 to the rule:
 
 ```toml
