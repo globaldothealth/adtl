@@ -287,6 +287,22 @@ values = { 1 = true, 2 = false }
 description = "Dementia"
 ```
 
+If the data for this field has a range of different capitalisations and you wish to
+capture them all without specifying each variant, you can add `caseInsensitive = true`
+to the rule:
+
+```toml
+[table.sex_at_birth]
+field = "sex"
+values = { homme = "male", femme = "female" }
+caseInsensitive = true
+```
+
+When the parser encounters e.g. `Homme` or `FEMME` in the data it will still match to
+`male` and `female` respectively. The parser will still ignore different spellings, e.g.
+`Home` will return `null`.
+
+
 ### Combined type
 
 Refers to multiple fields in the source format. Requires

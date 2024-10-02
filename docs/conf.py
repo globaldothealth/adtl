@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath("."))
 
 project = "adtl"
 copyright = "2023, Global.health"
-release = "0.5.0"
+release = "0.6.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -38,7 +38,7 @@ manpages_url = "https://manpages.debian.org/{path}"
 
 html_theme = "better"
 html_static_path = ["_static"]
-html_theme_path=[better.better_theme_path]
+html_theme_path = [better.better_theme_path]
 html_short_title = "Home"
 
 html_theme_options = {

@@ -12,13 +12,13 @@
   [visit.subject_id]
     field = "subjid"
     description = "Subject ID"
-  
+
   [visit.earliest_admission]
     combinedType = "min"
     fields = [
       { field = "first_admit" },
     ]
-  
+
   [visit.start_date]
     combinedType = "firstNonNull"
     fields = [
@@ -44,4 +44,3 @@
       { field = "overall_antiviral_dc___2", values = { 1 = "Lopinavir" } },
       { field = "overall_antiviral_dc___3", values = { 1 = "Interferon" } },
       ]
-

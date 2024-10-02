@@ -66,6 +66,12 @@ RULE_IGNOREMISSINGKEY = {
     "ignoreMissingKey": True,
 }
 
+RULE_CASEINSENSITIVE = {
+    "field": "diabetes_mhyn",
+    "values": {"Type 1": "E10", "TYPE 2": "E11"},  # ICD-10 codes
+    "caseInsensitive": True,
+}
+
 ROW_CONDITIONAL = {"outcome_date": "2022-01-01", "outcome_type": 4}
 RULE_CONDITIONAL_OK = {"field": "outcome_date", "if": {"outcome_type": 4}}
 RULE_CONDITIONAL_FAIL = {"field": "outcome_date", "if": {"outcome_type": {"<": 4}}}
@@ -445,6 +451,8 @@ def _subdict(d: Dict, keys: Iterable[Any]) -> Dict[str, Any]:
         (({"first": "", "second": False}, RULE_COMBINED_FIRST_NON_NULL), False),
         (({"diabetes_mhyn": "type 1"}, RULE_IGNOREMISSINGKEY), "E10"),
         (({"diabetes_mhyn": "gestational"}, RULE_IGNOREMISSINGKEY), "gestational"),
+        (({"diabetes_mhyn": "type 2"}, RULE_CASEINSENSITIVE), "E11"),
+        (({"diabetes_mhyn": "TYPE 1"}, RULE_CASEINSENSITIVE), "E10"),
         ((ROW_CONDITIONAL, RULE_CONDITIONAL_OK), "2022-01-01"),
         ((ROW_CONDITIONAL, RULE_CONDITIONAL_FAIL), None),
         ((ROW_UNIT_MONTH, RULE_UNIT), 1.5),

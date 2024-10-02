@@ -104,19 +104,25 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
                     value = getattr(tf, transformation)(value, *params)
                 except AttributeError:
                     raise AttributeError(
-                        f"Error using a data transformation: Function {transformation} has not been defined."
+                        f"Error using a data transformation: Function {transformation} "
+                        "has not been defined."
                     )
             else:
                 try:
                     value = getattr(tf, transformation)(value)
                 except AttributeError:
                     raise AttributeError(
-                        f"Error using a data transformation: Function {transformation} has not been defined."
+                        f"Error using a data transformation: Function {transformation} "
+                        "has not been defined."
                     )
             return value
         if value == "":
             return None
         if "values" in rule:
+            if rule.get("caseInsensitive") and isinstance(value, str):
+                value = value.lower()
+                rule["values"] = {k.lower(): v for k, v in rule["values"].items()}
+
             if rule.get("ignoreMissingKey"):
                 value = rule["values"].get(value, value)
             else:
@@ -127,10 +133,10 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
             assert "source_date" not in rule and "date" not in rule
             source_unit = get_value(row, rule["source_unit"])
             unit = rule["unit"]
-            if type(source_unit) != str:
+            if not isinstance(source_unit, str):
                 logging.debug(
-                    f"Error converting source_unit {source_unit} to {unit!r} with rule: {rule}, "
-                    "defaulting to assume source_unit is {unit}"
+                    f"Error converting source_unit {source_unit} to {unit!r} with "
+                    "rule: {rule}, defaulting to assume source_unit is {unit}"
                 )
                 return float(value)
             try:
@@ -198,7 +204,8 @@ def parse_if(
             cast_value = type(value)(attr_value)
         except ValueError:
             logging.debug(
-                f"Error when casting value {attr_value!r} with rule: {rule}, defaulting to False"
+                f"Error when casting value {attr_value!r} with rule: {rule}, defaulting"
+                " to False"
             )
             return False
         if cmp == ">":
@@ -227,7 +234,8 @@ def parse_if(
             cast_value = type(value)(attr_value)
         except ValueError:
             logging.debug(
-                f"Error when casting value {attr_value!r} with rule: {rule}, defaulting to False"
+                f"Error when casting value {attr_value!r} with rule: {rule}, defaulting"
+                " to False"
             )
             return False
         return cast_value == value
@@ -371,7 +379,8 @@ def expand_for(spec: List[StrDict]) -> List[StrDict]:
         for_expr = match.pop("for")
         if not isinstance(for_expr, dict):
             raise ValueError(
-                f"for expression {for_expr!r} is not a dictionary of variables to list of values or a range"
+                f"for expression {for_expr!r} is not a dictionary of variables to list "
+                "of values or a range"
             )
 
         # Expand ranges when available
@@ -390,7 +399,8 @@ def expand_for(spec: List[StrDict]) -> List[StrDict]:
                 pass
             else:
                 raise ValueError(
-                    f"for expression {for_expr!r} can only have lists or ranges for variables"
+                    f"for expression {for_expr!r} can only have lists or ranges for "
+                    "variables"
                 )
         loop_vars = sorted(for_expr.keys())
         loop_assignments = [
@@ -564,12 +574,14 @@ class Parser:
                         res = requests.get(schema)
                         if res.status_code != 200:
                             logging.warning(
-                                f"Could not fetch schema for table {table!r}, will not validate"
+                                f"Could not fetch schema for table {table!r}, will not "
+                                "validate"
                             )
                             continue
                     except ConnectionError:  # pragma: no cover
                         logging.warning(
-                            f"Could not fetch schema for table {table!r}, will not validate"
+                            f"Could not fetch schema for table {table!r}, will not "
+                            "validate"
                         )
                         continue
                     self.schemas[table] = make_fields_optional(
@@ -618,7 +630,8 @@ class Parser:
                 )
             if group_field is not None and aggregation != "lastNotNull":
                 raise ValueError(
-                    f"groupBy needs aggregation=lastNotNull to be set for table: {table}"
+                    "groupBy needs aggregation=lastNotNull to be set for table: "
+                    f"{table}"
                 )
 
     def _set_field_names(self):
@@ -632,7 +645,8 @@ class Parser:
             else:
                 if table not in self.schemas:
                     print(
-                        f"Warning: no schema found for {table!r}, field names may be incomplete!"
+                        f"Warning: no schema found for {table!r}, field names may be "
+                        "incomplete!"
                     )
                     self.fieldnames[table] = list(
                         self.tables[table].get("common", {}).keys()
@@ -734,7 +748,8 @@ class Parser:
 
                             if combined_type in ["all", "any", "min", "max"]:
                                 values = [existing_value, value]
-                                # normally calling eval() is a bad idea, but here values are restricted, so okay
+                                # normally calling eval() is a bad idea, but here
+                                # values are restricted, so okay
                                 self.data[table][group_key][attr] = eval(combined_type)(
                                     values
                                 )
@@ -812,7 +827,8 @@ class Parser:
         """Transform rows from an iterable according to specification
 
         Args:
-            rows: Iterable of rows, specified as a dictionary of (field name, field value) pairs
+            rows: Iterable of rows, specified as a dictionary of
+                    (field name, field value) pairs
             skip_validation: Whether to skip validation, default off
 
         Returns:
@@ -879,7 +895,8 @@ class Parser:
 
         Args:
             table: Table that should be written to CSV
-            output: (optional) Output file name. If not specified, defaults to parser name + table name
+            output: (optional) Output file name. If not specified, defaults to parser
+                    name + table name
                 with a csv suffix.
         """
 
@@ -960,8 +977,9 @@ class Parser:
             print("|---------------|-------|-------|----------------|")
             for table in self.report["total"]:
                 print(
-                    f"|{table:14s}\t|{self.report['total_valid'][table]}\t|{self.report['total'][table]}\t"
-                    f"|{self.report['total_valid'][table]/self.report['total'][table]:%} |"
+                    f"|{table:14s}\t|{self.report['total_valid'][table]}\t"
+                    f"|{self.report['total'][table]}\t"
+                    f"|{self.report['total_valid'][table]/self.report['total'][table]:%} |"  # noqa:E501
                 )
             print()
             for table in self.report["validation_errors"]:
