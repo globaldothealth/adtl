@@ -61,7 +61,11 @@ def wordSubstituteSet(value: str, *params) -> List[str]:
             if re.search(r"\b" + match + r"\b", value, re.IGNORECASE):
                 out.append(subst)
     if not out and (value not in [None, ""]):
-        warnings.warn(f"No matches found for {value}")
+        warnings.warn(
+            f"No matches found for: '{value}'",
+            AdtlTransformationWarning,
+            stacklevel=2,
+        )
     return sorted(set(out)) if out else None
 
 
@@ -157,7 +161,11 @@ def yearsElapsed(
         days = cd - bd
         return pint.Quantity(days.days, "days").to("years").m
     except ValueError:
-        warnings.warn(f"Failed calculation yearsElapsed: {birthdate}, {currentdate}")
+        warnings.warn(
+            f"Failed calculation yearsElapsed: {birthdate}, {currentdate}",
+            AdtlTransformationWarning,
+            stacklevel=2,
+        )
 
 
 def durationDays(startdate: str, currentdate: str) -> int:
@@ -222,14 +230,18 @@ def makeDate(year: str, month: str, day: str) -> str:
         year, month, day = int(year), int(month), int(day)
     except ValueError:
         warnings.warn(
-            f"Could not construct date from: year={year}, month={month}, day={day}"
+            f"Could not construct date from: year={year}, month={month}, day={day}",
+            AdtlTransformationWarning,
+            stacklevel=2,
         )
         return None
     try:
         return date(year, month, day).isoformat()
     except ValueError:
         warnings.warn(
-            f"Could not construct date from: year={year}, month={month}, day={day}"
+            f"Could not construct date from: year={year}, month={month}, day={day}",
+            AdtlTransformationWarning,
+            stacklevel=2,
         )
         return None
 
@@ -257,7 +269,9 @@ def makeDateTimeFromSeconds(
         )
     except ValueError:
         warnings.warn(
-            f"Could not convert date {date!r} from date format {date_format!r}"
+            f"Could not convert date {date!r} from date format {date_format!r}",
+            AdtlTransformationWarning,
+            stacklevel=2,
         )
         return None
     if time_seconds == "":
@@ -291,7 +305,9 @@ def makeDateTime(
         )
     except ValueError:
         warnings.warn(
-            f"Could not convert date {date!r} from date format {date_format!r}"
+            f"Could not convert date {date!r} from date format {date_format!r}",
+            AdtlTransformationWarning,
+            stacklevel=2,
         )
         return None
 
@@ -326,7 +342,11 @@ def splitDate(
     elif option == "day":
         return sd.day
     else:
-        warnings.warn(f"Invalid option {option!r} for splitDate")
+        warnings.warn(
+            f"Invalid option {option!r} for splitDate",
+            AdtlTransformationWarning,
+            stacklevel=2,
+        )
 
 
 def startYear(
@@ -454,7 +474,11 @@ def correctOldDate(date: str, epoch: float, format: str, return_datetime: bool =
     try:
         cd = datetime.strptime(date, format)
     except ValueError:
-        warnings.warn(f"Could not convert date {date!r} from date format {format!r}")
+        warnings.warn(
+            f"Could not convert date {date!r} from date format {format!r}",
+            AdtlTransformationWarning,
+            stacklevel=2,
+        )
         return None
 
     if cd.year >= epoch and "y" in format:

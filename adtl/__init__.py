@@ -104,11 +104,12 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
                         params.append(rule["apply"]["params"][i])
 
             try:
-                warnings.simplefilter("error", AdtlTransformationWarning)
-                if params:
-                    value = getattr(tf, transformation)(value, *params)
-                else:
-                    value = getattr(tf, transformation)(value)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("error", category=AdtlTransformationWarning)
+                    if params:
+                        value = getattr(tf, transformation)(value, *params)
+                    else:
+                        value = getattr(tf, transformation)(value)
             except AttributeError:
                 raise AttributeError(
                     f"Error using a data transformation: Function {transformation} "
@@ -116,7 +117,7 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
                 )
             except AdtlTransformationWarning as e:
                 if ctx and ctx.get("returnUnmatched"):
-                    return e
+                    return e.args[0]
                 else:
                     warnings.warn(str(e), AdtlTransformationWarning)
                     return None

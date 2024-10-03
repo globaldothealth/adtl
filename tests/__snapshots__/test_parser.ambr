@@ -47,6 +47,13 @@
   
   '''
 # ---
+# name: test_return_unmapped
+  '''
+  age,date_death,date_of_birth,diabetes_type,has_smoking,pregnancy_birth_weight_kg,subject_id
+  fifteen,"Could not construct date from: year=2023, month=11, day=80",2023-11-20,No matches found for: 'no diabetes',today,eight,1
+  
+  '''
+# ---
 # name: test_show_report
   '''
   

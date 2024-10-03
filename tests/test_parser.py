@@ -1360,3 +1360,12 @@ def test_no_overwriting():
         .read_table("visit")
     )
     assert overwriting_output == OVERWRITE_OUTPUT
+
+
+def test_return_unmapped(snapshot):
+    transformed_csv_data = (
+        parser.Parser(TEST_PARSERS_PATH / "return-unmapped.toml")
+        .parse(TEST_SOURCES_PATH / "return-unmapped.csv")
+        .write_csv("subject")
+    )
+    assert transformed_csv_data == snapshot

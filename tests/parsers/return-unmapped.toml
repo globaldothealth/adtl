@@ -1,0 +1,46 @@
+[adtl]
+  name = "test-return-unmapped"
+  description = "Example using returnUnmatched to return unmapped fields"
+  returnUnmatched = true
+
+[adtl.tables.subject]
+  kind = "groupBy"
+  groupBy = "subject_id"
+  aggregation = "lastNotNull"
+
+[subject]
+
+  [subject.subject_id]
+    field = "subjid"
+    description = "Subject ID"
+
+  [subject.date_of_birth]
+    field = "first_admit"
+    source_date = "%m"
+
+  [subject.age]
+    field = "age"
+    apply = {function = "getFloat"}
+
+  [subject.pregnancy_birth_weight_kg]
+    field = "weight"
+    unit = "kg"
+    source_unit = "lbs"
+
+  [subject.has_smoking]
+    field = "smoking"
+    values = { 1 = "current", 2 = "never", 3 = "former" }
+
+  [subject.diabetes_type]
+    field = "diabetes_type"
+
+    apply.function = "wordSubstituteSet"
+    apply.params = [
+      ["type[\\s\\-]?1", "type-1"],
+      ["type[\\s\\-]?2", "type-2"]
+      ]
+
+  [subject.date_death]
+    field = "death_year"
+    apply.function = "makeDate"
+    apply.params = ["$death_month", "$death_day"]

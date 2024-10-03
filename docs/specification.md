@@ -53,6 +53,8 @@ if not present in a datafile, following the same syntax as `fieldPattern` key.
 * **defaultDateFormat**: Default source date format, applied to all fields
   with either "date_" / "_date" in the field name or that have format date
   set in the JSON schema
+* **returnUnmatched**: Returns all values that are not able to be converted
+  according to the provided rules and formats. For fields with [value mappings](#field-with-value-mapping), it is equivalent to using `ignoreMissingKeys`. Fields using [data transformation functions](#data-transformations-(apply)) will return a string describing the failed function and input values.
 
 ## Validation
 
