@@ -20,8 +20,10 @@ import tomli
 import requests
 import fastjsonschema
 from tqdm import tqdm
+import warnings
 
 import adtl.transformations as tf
+from adtl.transformations import AdtlTransformationWarning
 
 SUPPORTED_FORMATS = {"json": json.load, "toml": tomli.load}
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
@@ -77,6 +79,7 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
         if "apply" in rule:
             # apply data transformations.
             transformation = rule["apply"]["function"]
+            params = None
             if "params" in rule["apply"]:
                 params = []
                 for i in range(len(rule["apply"]["params"])):
@@ -100,21 +103,23 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
                     else:
                         params.append(rule["apply"]["params"][i])
 
-                try:
+            try:
+                warnings.simplefilter("error", AdtlTransformationWarning)
+                if params:
                     value = getattr(tf, transformation)(value, *params)
-                except AttributeError:
-                    raise AttributeError(
-                        f"Error using a data transformation: Function {transformation} "
-                        "has not been defined."
-                    )
-            else:
-                try:
+                else:
                     value = getattr(tf, transformation)(value)
-                except AttributeError:
-                    raise AttributeError(
-                        f"Error using a data transformation: Function {transformation} "
-                        "has not been defined."
-                    )
+            except AttributeError:
+                raise AttributeError(
+                    f"Error using a data transformation: Function {transformation} "
+                    "has not been defined."
+                )
+            except AdtlTransformationWarning as e:
+                if ctx and ctx.get("returnUnmatched"):
+                    return e
+                else:
+                    warnings.warn(str(e), AdtlTransformationWarning)
+                    return None
             return value
         if value == "":
             return None
@@ -123,7 +128,7 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
                 value = value.lower()
                 rule["values"] = {k.lower(): v for k, v in rule["values"].items()}
 
-            if rule.get("ignoreMissingKey"):
+            if rule.get("ignoreMissingKey") or (ctx and ctx.get("returnUnmatched")):
                 value = rule["values"].get(value, value)
             else:
                 value = rule["values"].get(value)
@@ -142,6 +147,9 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
             try:
                 value = pint.Quantity(float(value), source_unit).to(unit).m
             except ValueError:
+                if ctx and ctx.get("returnUnmatched"):
+                    logging.debug(f"Could not convert {value} to a floating point")
+                    return value
                 raise ValueError(f"Could not convert {value} to a floating point")
         if "source_date" in rule or (ctx and ctx.get("is_date")):
             assert "source_unit" not in rule and "unit" not in rule
@@ -156,6 +164,8 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
                     value = datetime.strptime(value, source_date).strftime(target_date)
                 except (TypeError, ValueError):
                     logging.info(f"Could not parse date: {value}")
+                    if ctx and ctx.get("returnUnmatched"):
+                        return value
                     return None
         return value
     elif "combinedType" in rule:
@@ -609,6 +619,7 @@ class Parser:
                 if self.header.get("skipFieldPattern")
                 else False
             ),
+            "returnUnmatched": self.header.get("returnUnmatched", False),
         }
 
     def validate_spec(self):

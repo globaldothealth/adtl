@@ -1,6 +1,5 @@
 """ Functions which can be applied to source fields, allowing extensibility """
 
-import logging
 from typing import Any, Optional, List
 from datetime import datetime, timedelta, date
 
@@ -16,6 +15,12 @@ import pint
 import re
 
 from typing import Literal, Union
+
+import warnings
+
+
+class AdtlTransformationWarning(UserWarning):
+    pass
 
 
 def isNotNull(value: Optional[str]) -> bool:
@@ -55,6 +60,8 @@ def wordSubstituteSet(value: str, *params) -> List[str]:
         for match, subst in sub_map.items():
             if re.search(r"\b" + match + r"\b", value, re.IGNORECASE):
                 out.append(subst)
+    if not out and (value not in [None, ""]):
+        warnings.warn(f"No matches found for {value}")
     return sorted(set(out)) if out else None
 
 
@@ -118,7 +125,8 @@ def yearsElapsed(
     bd_format: str = "%Y-%m-%d",
     cd_format: str = "%Y-%m-%d",
 ):
-    """Returns the number of years elapsed between two dates, useful for calculating ages
+    """
+    Returns the number of years elapsed between two dates, useful for calculating ages
 
     Args:
         birthdate: Start date of duration
@@ -126,10 +134,10 @@ def yearsElapsed(
         epoch: Epoch year after which dates will be converted to the last century.
             As an example, if epoch is 2022, then the date 1/1/23 will be converted
             to the January 1, 1923.
-        bd_format: Date format for *birthdate* specified using :manpage:`strftime(3)` conventions.
-            Defaults to ISO format ("%Y-%m-%d")
-        cd_format: Date format for *currentdate* specified using :manpage:`strftime(3)` conventions.
-            Defaults to ISO format ("%Y-%m-%d")
+        bd_format: Date format for *birthdate* specified using :manpage:`strftime(3)`
+            conventions. Defaults to ISO format ("%Y-%m-%d")
+        cd_format: Date format for *currentdate* specified using :manpage:`strftime(3)`
+            conventions. Defaults to ISO format ("%Y-%m-%d")
 
     Returns:
         int | None: Number of years elapsed or None if invalid dates were encountered
@@ -145,8 +153,11 @@ def yearsElapsed(
 
     cd = datetime.strptime(currentdate, cd_format)
 
-    days = cd - bd
-    return pint.Quantity(days.days, "days").to("years").m
+    try:
+        days = cd - bd
+        return pint.Quantity(days.days, "days").to("years").m
+    except ValueError:
+        warnings.warn(f"Failed calculation yearsElapsed: {birthdate}, {currentdate}")
 
 
 def durationDays(startdate: str, currentdate: str) -> int:
@@ -210,14 +221,14 @@ def makeDate(year: str, month: str, day: str) -> str:
     try:
         year, month, day = int(year), int(month), int(day)
     except ValueError:
-        logging.error(
-            f"Error in casting to integer: year={year}, month={month}, day={day}"
+        warnings.warn(
+            f"Could not construct date from: year={year}, month={month}, day={day}"
         )
         return None
     try:
         return date(year, month, day).isoformat()
     except ValueError:
-        logging.error(
+        warnings.warn(
             f"Could not construct date from: year={year}, month={month}, day={day}"
         )
         return None
@@ -245,7 +256,7 @@ def makeDateTimeFromSeconds(
             tzinfo=zoneinfo.ZoneInfo(timezone)
         )
     except ValueError:
-        logging.error(
+        warnings.warn(
             f"Could not convert date {date!r} from date format {date_format!r}"
         )
         return None
@@ -279,7 +290,7 @@ def makeDateTime(
             tzinfo=zoneinfo.ZoneInfo(timezone)
         )
     except ValueError:
-        logging.error(
+        warnings.warn(
             f"Could not convert date {date!r} from date format {date_format!r}"
         )
         return None
@@ -315,7 +326,7 @@ def splitDate(
     elif option == "day":
         return sd.day
     else:
-        return None
+        warnings.warn(f"Invalid option {option!r} for splitDate")
 
 
 def startYear(
@@ -330,7 +341,8 @@ def startYear(
     Use to calculate year e.g. of birth from date (e.g. current date) and
     duration (e.g. age)
 
-    The date can be provided as a list of possible dates (if a hierarchy needs searching through)
+    The date can be provided as a list of possible dates (if a hierarchy needs
+    searching through)
 
     Args:
         duration: Duration value
@@ -442,7 +454,7 @@ def correctOldDate(date: str, epoch: float, format: str, return_datetime: bool =
     try:
         cd = datetime.strptime(date, format)
     except ValueError:
-        logging.error(f"Could not convert date {date!r} from date format {format!r}")
+        warnings.warn(f"Could not convert date {date!r} from date format {format!r}")
         return None
 
     if cd.year >= epoch and "y" in format:
