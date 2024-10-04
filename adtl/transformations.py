@@ -347,6 +347,7 @@ def splitDate(
             AdtlTransformationWarning,
             stacklevel=2,
         )
+        return None
 
 
 def startYear(

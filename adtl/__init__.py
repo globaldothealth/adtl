@@ -117,9 +117,10 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
                 )
             except AdtlTransformationWarning as e:
                 if ctx and ctx.get("returnUnmatched"):
-                    return e.args[0]
-                else:
                     warnings.warn(str(e), AdtlTransformationWarning)
+                    return value
+                else:
+                    logging.error(str(e))
                     return None
             return value
         if value == "":
