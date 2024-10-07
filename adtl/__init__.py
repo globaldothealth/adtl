@@ -134,6 +134,10 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
                 value = rule["values"].get(value, value)
             else:
                 value = rule["values"].get(value)
+
+            # recheck if value is empty after mapping (use to map values to None)
+            if value == "":
+                return None
         # Either source_unit / unit OR source_date / date triggers conversion
         # do not parse units if value is empty
         if "source_unit" in rule and "unit" in rule:
@@ -1054,6 +1058,10 @@ def main(argv=None):
     args = cmd.parse_args(argv)
     include_defs = args.include_def or []
     spec = Parser(args.spec, include_defs=include_defs, quiet=args.quiet)
+
+    # check for incompatible options
+    if spec.header.get("returnUnmatched") and args.parquet:
+        raise ValueError("returnUnmatched and parquet options are incompatible")
 
     # run adtl
     adtl_output = spec.parse(args.file, encoding=args.encoding)

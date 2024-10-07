@@ -58,8 +58,8 @@ if not present in a datafile, following the same syntax as `fieldPattern` key.
   terminal describing the error in the transformation. Transformations requiring multiple
   parameters will only return the current field value that was not transformed.
   > :warning: This is likely to return columns with non-matching datatypes. External json
-  validation may fail, as will attempting to use the `--parquet` option to save outputs as
-  parquet files (which required a consistent type down each column).
+  validation may fail. This option is incompatible with the `--parquet` option to save
+  outputs as parquet files (which required a consistent type down each column).
 
 ## Validation
 
