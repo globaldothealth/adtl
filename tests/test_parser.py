@@ -1228,7 +1228,6 @@ def test_main_parquet():
 
 
 def test_main_parquet_error():
-
     ARG = [
         str(TEST_PARSERS_PATH / "return-unmapped.toml"),
         str(TEST_SOURCES_PATH / "return-unmapped.csv"),
