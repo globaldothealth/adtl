@@ -1227,6 +1227,22 @@ def test_main_parquet():
     Path("output-table.parquet").unlink()
 
 
+def test_main_parquet_error():
+    ARG = [
+        str(TEST_PARSERS_PATH / "return-unmapped.toml"),
+        str(TEST_SOURCES_PATH / "return-unmapped.csv"),
+        "-o",
+        "output",
+        "--encoding",
+        "utf-8",
+    ]
+
+    with pytest.raises(
+        ValueError, match="returnUnmatched and parquet options are incompatible"
+    ):
+        parser.main(ARG + ["--parquet"])
+
+
 @responses.activate
 def test_main_web_schema(snapshot):
     # test with schema on the web
@@ -1360,3 +1376,12 @@ def test_no_overwriting():
         .read_table("visit")
     )
     assert overwriting_output == OVERWRITE_OUTPUT
+
+
+def test_return_unmapped(snapshot):
+    transformed_csv_data = (
+        parser.Parser(TEST_PARSERS_PATH / "return-unmapped.toml")
+        .parse(TEST_SOURCES_PATH / "return-unmapped.csv")
+        .write_csv("subject")
+    )
+    assert transformed_csv_data == snapshot

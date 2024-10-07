@@ -20,8 +20,10 @@ import tomli
 import requests
 import fastjsonschema
 from tqdm import tqdm
+import warnings
 
 import adtl.transformations as tf
+from adtl.transformations import AdtlTransformationWarning
 
 SUPPORTED_FORMATS = {"json": json.load, "toml": tomli.load}
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
@@ -77,6 +79,7 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
         if "apply" in rule:
             # apply data transformations.
             transformation = rule["apply"]["function"]
+            params = None
             if "params" in rule["apply"]:
                 params = []
                 for i in range(len(rule["apply"]["params"])):
@@ -100,21 +103,25 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
                     else:
                         params.append(rule["apply"]["params"][i])
 
-                try:
-                    value = getattr(tf, transformation)(value, *params)
-                except AttributeError:
-                    raise AttributeError(
-                        f"Error using a data transformation: Function {transformation} "
-                        "has not been defined."
-                    )
-            else:
-                try:
-                    value = getattr(tf, transformation)(value)
-                except AttributeError:
-                    raise AttributeError(
-                        f"Error using a data transformation: Function {transformation} "
-                        "has not been defined."
-                    )
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("error", category=AdtlTransformationWarning)
+                    if params:
+                        value = getattr(tf, transformation)(value, *params)
+                    else:
+                        value = getattr(tf, transformation)(value)
+            except AttributeError:
+                raise AttributeError(
+                    f"Error using a data transformation: Function {transformation} "
+                    "has not been defined."
+                )
+            except AdtlTransformationWarning as e:
+                if ctx and ctx.get("returnUnmatched"):
+                    warnings.warn(str(e), AdtlTransformationWarning)
+                    return value
+                else:
+                    logging.error(str(e))
+                    return None
             return value
         if value == "":
             return None
@@ -123,10 +130,14 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
                 value = value.lower()
                 rule["values"] = {k.lower(): v for k, v in rule["values"].items()}
 
-            if rule.get("ignoreMissingKey"):
+            if rule.get("ignoreMissingKey") or (ctx and ctx.get("returnUnmatched")):
                 value = rule["values"].get(value, value)
             else:
                 value = rule["values"].get(value)
+
+            # recheck if value is empty after mapping (use to map values to None)
+            if value == "":
+                return None
         # Either source_unit / unit OR source_date / date triggers conversion
         # do not parse units if value is empty
         if "source_unit" in rule and "unit" in rule:
@@ -142,6 +153,9 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
             try:
                 value = pint.Quantity(float(value), source_unit).to(unit).m
             except ValueError:
+                if ctx and ctx.get("returnUnmatched"):
+                    logging.debug(f"Could not convert {value} to a floating point")
+                    return value
                 raise ValueError(f"Could not convert {value} to a floating point")
         if "source_date" in rule or (ctx and ctx.get("is_date")):
             assert "source_unit" not in rule and "unit" not in rule
@@ -156,6 +170,8 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
                     value = datetime.strptime(value, source_date).strftime(target_date)
                 except (TypeError, ValueError):
                     logging.info(f"Could not parse date: {value}")
+                    if ctx and ctx.get("returnUnmatched"):
+                        return value
                     return None
         return value
     elif "combinedType" in rule:
@@ -609,6 +625,7 @@ class Parser:
                 if self.header.get("skipFieldPattern")
                 else False
             ),
+            "returnUnmatched": self.header.get("returnUnmatched", False),
         }
 
     def validate_spec(self):
@@ -1041,6 +1058,10 @@ def main(argv=None):
     args = cmd.parse_args(argv)
     include_defs = args.include_def or []
     spec = Parser(args.spec, include_defs=include_defs, quiet=args.quiet)
+
+    # check for incompatible options
+    if spec.header.get("returnUnmatched") and args.parquet:
+        raise ValueError("returnUnmatched and parquet options are incompatible")
 
     # run adtl
     adtl_output = spec.parse(args.file, encoding=args.encoding)
