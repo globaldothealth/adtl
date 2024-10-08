@@ -127,7 +127,7 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
             return None
         if "values" in rule:
             if rule.get("caseInsensitive") and isinstance(value, str):
-                value = value.lower()
+                value = value.lower().lstrip(" ").rstrip(" ")
                 rule["values"] = {k.lower(): v for k, v in rule["values"].items()}
 
             if rule.get("ignoreMissingKey") or (ctx and ctx.get("returnUnmatched")):

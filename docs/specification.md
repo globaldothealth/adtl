@@ -307,7 +307,8 @@ caseInsensitive = true
 
 When the parser encounters e.g. `Homme` or `FEMME` in the data it will still match to
 `male` and `female` respectively. The parser will still ignore different spellings, e.g.
-`Home` will return `null`.
+`Home` will return `null`, but strips and leading or trailing whitespace so `"  FEMME  "`
+will also match to `female`.
 
 
 ### Combined type
