@@ -14,7 +14,7 @@ authors = [
   {name = "Pip Liggins", email = "philippa.liggins@dtc.ox.ac.uk"}
 ]
 license = {file = "LICENSE"}
-requires-python = ">=3.8"
+requires-python = ">=3.8, <3.13" # 3.13 not supported by pint, so temporary upper bound
 readme = "README.md"
 classifiers = ["License :: OSI Approved :: MIT License"]
 dependencies = [
