@@ -10,9 +10,10 @@
 
 adtl is a data transformation language (DTL) used by some applications in
 [Global.health](https://global.health), notably for the ISARIC clinical data pipeline at
-[globaldothealth/isaric](https://github.com/globaldothealth/isaric). This package
-was previously within the isaric repository and has been split out to enable
-easier use in other applications.
+[globaldothealth/isaric](https://github.com/globaldothealth/isaric) and the InsightBoard
+project dashboard at [globaldothealth/InsightBoard](https://github.com/globaldothealth/InsightBoard)
+
+Documentation: [ReadTheDocs](https://adtl.readthedocs.io/en/latest/index.html)
 
 ## Installation
 
