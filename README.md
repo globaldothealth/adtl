@@ -26,19 +26,24 @@ can interfere with other packages on your system.
 * Installation via `pipx`:
 
   ```shell
-  pipx install git+https://github.com/globaldothealth/adtl
+  pipx install adtl
   ```
 
 * Installation via `pip`:
 
   ```shell
-  python3 -m pip install git+https://github.com/globaldothealth/adtl
+  python3 -m pip install adtl
   ```
 
-If you are writing code which depends on adtl (instead of using
-the command-line program), then it is best to add a dependency on
-`git+https://github.com/globaldothealth/adtl` to your Python build tool of
-choice.
+If you are writing code which depends on adtl (instead of using the
+command-line program), then it is best to add a dependency on `adtl` to your
+Python build tool of choice.
+
+To use the development version, replace `adtl` with the full GitHub URL:
+
+```shell
+pip install git+https://github.com/globaldothealth/adtl
+```
 
 ## Rationale
 
@@ -85,4 +90,5 @@ table names in the current working directory.
 
 ## Development
 
-Install [pre-commit](https://pre-commit.com) and setup pre-commit hooks (`pre-commit install`) which will do linting checks before commit.
+Install [pre-commit](https://pre-commit.com) and setup pre-commit hooks
+(`pre-commit install`) which will do linting checks before commit.
