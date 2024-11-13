@@ -13,13 +13,13 @@ can interfere with other packages on your system.
 * **Installation via `pipx`** (recommended):
 
   ```shell
-  pipx install git+https://github.com/globaldothealth/adtl
+  pipx install adtl
   ```
 
 * **Installation via `pip`**:
 
   ```shell
-  python3 -m pip install git+https://github.com/globaldothealth/adtl
+  python3 -m pip install adtl
   ```
 
 If you are writing code which depends on adtl (instead of using
