@@ -14,13 +14,13 @@ authors = [
   {name = "Pip Liggins", email = "philippa.liggins@dtc.ox.ac.uk"}
 ]
 license = {file = "LICENSE"}
-requires-python = ">=3.8, <3.13" # 3.13 not supported by pint, so temporary upper bound
+requires-python = ">=3.9"
 readme = "README.md"
 classifiers = ["License :: OSI Approved :: MIT License"]
 dependencies = [
   "backports.zoneinfo;python_version<'3.9'",
   "tomli>=2.0.0",
-  "pint>=0.20",
+  "pint>=0.24.4",
   "requests>=2.0.0",
   "fastjsonschema==2.16.*",
   "tqdm",
