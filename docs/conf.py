@@ -9,15 +9,14 @@
 import os
 import sys
 
-import better
-
 # Add root dir so that adtl module is visible to Sphinx
 sys.path.insert(0, os.path.abspath(".."))
 sys.path.insert(0, os.path.abspath("."))
 
 project = "adtl"
 copyright = "2023, Global.health"
-release = "0.6.0"
+release = "0.6.1"
+author = ""
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -27,6 +26,7 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx.ext.napoleon",
     "myst_parser",
+    "sphinx_book_theme",
 ]
 
 templates_path = ["_templates"]
@@ -36,14 +36,6 @@ manpages_url = "https://manpages.debian.org/{path}"
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "better"
+html_theme = "sphinx_book_theme"
 html_static_path = ["_static"]
-html_theme_path = [better.better_theme_path]
 html_short_title = "Home"
-
-html_theme_options = {
-    "rightsidebar": True,
-    "sidebarwidth": "25rem",
-    "cssfiles": ["_static/style.css"],
-    "showheader": False,
-}
