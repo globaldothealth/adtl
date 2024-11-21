@@ -10,8 +10,8 @@ name = "adtl"
 version = "0.6.1"
 description = "Another data transformation language"
 authors = [
-  {name = "Abhishek Dasgupta", email = "abhishek.dasgupta@dtc.ox.ac.uk"},
-  {name = "Pip Liggins", email = "philippa.liggins@dtc.ox.ac.uk"}
+  {name = "Abhishek Dasgupta" },
+  {name = "Pip Liggins" }
 ]
 license = {file = "LICENSE"}
 requires-python = ">=3.9"
