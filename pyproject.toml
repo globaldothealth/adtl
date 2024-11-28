@@ -23,7 +23,7 @@ dependencies = [
   "tqdm",
   "python-dateutil",
   "more_itertools",
-  "pandas",
+  "pandas==2.*",
   ]
 
 [project.optional-dependencies]
