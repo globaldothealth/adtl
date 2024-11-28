@@ -9,7 +9,8 @@ import pytest
 import responses
 from pytest_unordered import unordered
 
-import adtl as parser
+import adtl.parser as parser
+import adtl
 
 RULE_SINGLE_FIELD = {"field": "diabetes_mhyn"}
 RULE_SINGLE_FIELD_WITH_MAPPING = {
@@ -1216,13 +1217,13 @@ def test_skip_field_pattern_absent(snapshot):
 
 
 def test_main(snapshot):
-    parser.main(ARGV)
+    adtl.main(ARGV)
     assert Path("output-table.csv").read_text() == snapshot
     Path("output-table.csv").unlink()
 
 
 def test_main_parquet():
-    parser.main(ARGV + ["--parquet"])
+    adtl.main(ARGV + ["--parquet"])
     assert Path("output-table.parquet")
     Path("output-table.parquet").unlink()
 
@@ -1240,7 +1241,7 @@ def test_main_parquet_error():
     with pytest.raises(
         ValueError, match="returnUnmatched and parquet options are incompatible"
     ):
-        parser.main(ARG + ["--parquet"])
+        adtl.main(ARG + ["--parquet"])
 
 
 @responses.activate
@@ -1255,7 +1256,7 @@ def test_main_web_schema(snapshot):
         json=epoch_schema,
         status=200,
     )
-    parser.main([str(TEST_PARSERS_PATH / "epoch-web-schema.json")] + ARGV[1:])
+    adtl.main([str(TEST_PARSERS_PATH / "epoch-web-schema.json")] + ARGV[1:])
     assert Path("output-table.csv").read_text() == snapshot
     Path("output-table.csv").unlink()
 
@@ -1268,13 +1269,13 @@ def test_main_web_schema_missing(snapshot):
         json={"error": "not found"},
         status=404,
     )
-    parser.main([str(TEST_PARSERS_PATH / "epoch-web-schema.json")] + ARGV[1:])
+    adtl.main([str(TEST_PARSERS_PATH / "epoch-web-schema.json")] + ARGV[1:])
     assert Path("output-table.csv").read_text() == snapshot
     Path("output-table.csv").unlink()
 
 
 def test_main_save_report():
-    parser.main(ARGV + ["--save-report", "epoch-report.json"])
+    adtl.main(ARGV + ["--save-report", "epoch-report.json"])
     report = json.loads(Path("epoch-report.json").read_text())
     assert report["file"].endswith("tests/sources/epoch.csv")
     assert report["parser"].endswith("tests/parsers/epoch.json")
