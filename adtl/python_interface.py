@@ -1,3 +1,4 @@
+from __future__ import annotations
 from adtl import Parser
 import pandas as pd
 from typing import Literal
