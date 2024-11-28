@@ -1,16 +1,16 @@
+import collections
+import contextlib
 import io
 import json
-import contextlib
-import collections
 from pathlib import Path
-from typing import Dict, Iterable, Any
+from typing import Any, Dict, Iterable
 
 import pytest
 import responses
 from pytest_unordered import unordered
 
-import adtl.parser as parser
 import adtl
+import adtl.parser as parser
 
 RULE_SINGLE_FIELD = {"field": "diabetes_mhyn"}
 RULE_SINGLE_FIELD_WITH_MAPPING = {

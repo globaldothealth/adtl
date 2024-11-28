@@ -1,5 +1,6 @@
-import adtl
 from pathlib import Path
+
+import adtl
 
 
 def test_parse(snapshot):

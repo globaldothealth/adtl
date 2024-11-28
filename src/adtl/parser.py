@@ -1,25 +1,26 @@
+from __future__ import annotations
+
+import copy
 import csv
 import hashlib
 import io
+import itertools
 import json
 import logging
-import itertools
-import copy
 import re
-from collections import defaultdict, Counter
-from datetime import datetime
-from pathlib import Path
-from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Union, Callable, Literal
-from more_itertools import unique_everseen
-
-import pint
-import tomli
-import requests
-import fastjsonschema
-
-from tqdm.autonotebook import tqdm
 import warnings
+from collections import Counter, defaultdict
+from datetime import datetime
+from functools import lru_cache
+from pathlib import Path
+from typing import Any, Callable, Iterable, Literal
+
+import fastjsonschema
+import pint
+import requests
+import tomli
+from more_itertools import unique_everseen
+from tqdm.autonotebook import tqdm
 
 import adtl.transformations as tf
 from adtl.transformations import AdtlTransformationWarning
@@ -27,9 +28,9 @@ from adtl.transformations import AdtlTransformationWarning
 SUPPORTED_FORMATS = {"json": json.load, "toml": tomli.load}
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
-StrDict = Dict[str, Any]
-Rule = Union[str, StrDict]
-Context = Optional[Dict[str, Union[bool, int, str, List[str]]]]
+StrDict = dict[str, Any]
+Rule = str | StrDict
+Context = dict[str, bool | int | str | list[str]] | None
 
 
 def get_value(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
@@ -177,7 +178,7 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
         raise ValueError(f"Could not return value for {rule}")
 
 
-def matching_fields(fields: List[str], pattern: str) -> List[str]:
+def matching_fields(fields: list[str], pattern: str) -> list[str]:
     "Returns fields matching pattern"
     compiled_pattern = re.compile(pattern)
     return [f for f in fields if compiled_pattern.match(f)]
@@ -340,7 +341,7 @@ def flatten(xs):
             yield x
 
 
-def expand_refs(spec_fragment: StrDict, defs: StrDict) -> Union[StrDict, List[StrDict]]:
+def expand_refs(spec_fragment: StrDict, defs: StrDict) -> StrDict | list[StrDict]:
     "Expand all references (ref) with definitions (defs)"
 
     if spec_fragment == {}:
@@ -357,14 +358,14 @@ def expand_refs(spec_fragment: StrDict, defs: StrDict) -> Union[StrDict, List[St
         return spec_fragment
 
 
-def expand_for(spec: List[StrDict]) -> List[StrDict]:
+def expand_for(spec: list[StrDict]) -> list[StrDict]:
     "Expands for expressions in oneToMany table blocks"
 
     out = []
 
     def replace_val(
-        item: Union[str, float, Dict[str, Any]], replace: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        item: str | float | dict[str, Any], replace: dict[str, Any]
+    ) -> dict[str, Any]:
         block = {}
         if isinstance(item, str):
             return item.format(**replace)
@@ -432,12 +433,12 @@ def hash_sensitive(value: str) -> str:
     return hashlib.sha256(str(value).encode("utf-8")).hexdigest()
 
 
-def remove_null_keys(d: Dict[str, Any]) -> Dict[str, Any]:
+def remove_null_keys(d: dict[str, Any]) -> dict[str, Any]:
     "Removes keys which map to null - but not empty strings or 'unknown' etc types"
     return {k: v for k, v in d.items() if v is not None}
 
 
-def get_date_fields(schema: Dict[str, Any]) -> List[str]:
+def get_date_fields(schema: dict[str, Any]) -> list[str]:
     "Returns list of date fields from schema"
     fields = [
         field
@@ -453,8 +454,8 @@ def get_date_fields(schema: Dict[str, Any]) -> List[str]:
 
 
 def make_fields_optional(
-    schema: Dict[str, Any], optional_fields: List[str]
-) -> Dict[str, Any]:
+    schema: dict[str, Any], optional_fields: list[str]
+) -> dict[str, Any]:
     "Returns JSON schema with required fields modified to drop optional fields"
     if optional_fields is None:
         return schema
@@ -481,7 +482,7 @@ def relative_path(source_file, target_file):
     return Path(source_file).parent / target_file
 
 
-def read_definition(file: Path) -> Dict[str, Any]:
+def read_definition(file: Path) -> dict[str, Any]:
     "Reads definition from file into a dictionary"
     if isinstance(file, str):
         file = Path(file)
@@ -520,8 +521,8 @@ class Parser:
 
     def __init__(
         self,
-        spec: Union[str, Path, StrDict],
-        include_defs: List[str] = [],
+        spec: str | Path | StrDict,
+        include_defs: list[str] = [],
         quiet: bool = False,
     ):
         """Loads specification from spec in format (default json)
@@ -536,7 +537,7 @@ class Parser:
 
         self.data: StrDict = {}
         self.defs: StrDict = {}
-        self.fieldnames: Dict[str, List[str]] = {}
+        self.fieldnames: dict[str, list[str]] = {}
         self.specfile = None
         self.include_defs = include_defs
         self.validators: StrDict = {}
@@ -900,11 +901,7 @@ class Parser:
             for row in self.data[table]:
                 yield row
 
-    def write_csv(
-        self,
-        table: str,
-        output: Optional[str] = None,
-    ) -> Optional[str]:
+    def write_csv(self, table: str, output: str | None = None) -> str | None:
         """Writes to output as CSV a particular table
 
         Args:
@@ -935,11 +932,7 @@ class Parser:
             buf = io.StringIO()
             return writerows(buf, table).getvalue()
 
-    def write_parquet(
-        self,
-        table: str,
-        output: Optional[str] = None,
-    ) -> Optional[str]:
+    def write_parquet(self, table: str, output: str | None = None) -> str | None:
         """Writes to output as parquet a particular table
 
         Args:
@@ -1005,7 +998,7 @@ class Parser:
                 print()
 
     def save(
-        self, output: Optional[str] = None, format: Literal["csv", "parquet"] = "csv"
+        self, output: str | None = None, format: Literal["csv", "parquet"] = "csv"
     ):
         """Saves all tables to CSV
 

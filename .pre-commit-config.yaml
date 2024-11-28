@@ -11,5 +11,9 @@ repos:
     rev: v0.8.0
     hooks:
       - id: ruff
-        args: [ --fix ]
+        args: [ "--select", "I", "--fix" ]
       - id: ruff-format
+#   - repo: https://github.com/asottile/reorder-python-imports
+#     rev: v3.13.0
+#     hooks:
+#       - id: reorder-python-imports

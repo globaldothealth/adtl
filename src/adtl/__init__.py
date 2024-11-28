@@ -1,6 +1,5 @@
 import argparse
 import importlib.metadata
-
 import json
 
 from adtl.parser import Parser

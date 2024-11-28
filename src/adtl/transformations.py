@@ -1,29 +1,29 @@
 """Functions which can be applied to source fields, allowing extensibility"""
 
-from typing import Any, Optional, List
-from datetime import datetime, timedelta, date
+from __future__ import annotations
+
+from datetime import date, datetime, timedelta
+from math import floor
+from typing import Any, Literal
 
 from dateutil.relativedelta import relativedelta
-from math import floor
 
 try:
     import zoneinfo
 except ImportError:  # pragma: no cover
     from backports import zoneinfo  # noqa
 
-import pint
 import re
-
-from typing import Literal, Union
-
 import warnings
+
+import pint
 
 
 class AdtlTransformationWarning(UserWarning):
     pass
 
 
-def isNotNull(value: Optional[str]) -> bool:
+def isNotNull(value: str | None) -> bool:
     "Returns whether value is not null or an empty string"
     return value not in [None, ""]
 
@@ -33,7 +33,7 @@ def textIfNotNull(field: str, return_val: Any) -> Any:
     return return_val if field not in [None, ""] else None
 
 
-def wordSubstituteSet(value: str, *params) -> List[str]:
+def wordSubstituteSet(value: str, *params) -> list[str]:
     """
     For a value that can have multiple words, use substitutions from params.
 
@@ -69,9 +69,7 @@ def wordSubstituteSet(value: str, *params) -> List[str]:
     return sorted(set(out)) if out else None
 
 
-def getFloat(
-    value: str, set_decimal: Optional[str] = None, separator: Optional[str] = None
-):
+def getFloat(value: str, set_decimal: str | None = None, separator: str | None = None):
     """Returns value transformed into a float.
 
     Args:
@@ -351,13 +349,13 @@ def splitDate(
 
 
 def startYear(
-    duration: Union[str, float],
-    currentdate: Union[list, str],
+    duration: str | float,
+    currentdate: list | str,
     epoch: float,
     dateformat: str = "%Y-%m-%d",
     duration_type: Literal["years", "months", "days"] = "years",
-    provide_month_day: Union[bool, list] = False,
-) -> Union[int, float]:
+    provide_month_day: bool | list = False,
+) -> int | float:
     """
     Use to calculate year e.g. of birth from date (e.g. current date) and
     duration (e.g. age)
@@ -407,12 +405,12 @@ def startYear(
 
 
 def startMonth(
-    duration: Union[str, float],
-    currentdate: Union[list, str],
+    duration: str | float,
+    currentdate: list | str,
     epoch: float,
     dateformat: str = "%Y-%m-%d",
     duration_type: Literal["years", "months", "days"] = "years",
-    provide_month_day: Union[bool, list] = False,
+    provide_month_day: bool | list = False,
 ):
     """
     Use to calculate month e.g. of birth from date (e.g. current date) and
