@@ -13,7 +13,7 @@ from collections import Counter, defaultdict
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable, Iterable, Literal
+from typing import Any, Callable, Iterable, Literal, Union
 
 import fastjsonschema
 import pint
@@ -29,8 +29,8 @@ SUPPORTED_FORMATS = {"json": json.load, "toml": tomli.load}
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
 StrDict = dict[str, Any]
-Rule = str | StrDict
-Context = dict[str, bool | int | str | list[str]] | None
+Rule = Union[str, StrDict]
+Context = Union[dict[str, Union[bool, int, str, list[str]]], None]
 
 
 def get_value(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
@@ -341,7 +341,7 @@ def flatten(xs):
             yield x
 
 
-def expand_refs(spec_fragment: StrDict, defs: StrDict) -> StrDict | list[StrDict]:
+def expand_refs(spec_fragment: StrDict, defs: StrDict) -> Union[StrDict, list[StrDict]]:
     "Expand all references (ref) with definitions (defs)"
 
     if spec_fragment == {}:
@@ -364,7 +364,7 @@ def expand_for(spec: list[StrDict]) -> list[StrDict]:
     out = []
 
     def replace_val(
-        item: str | float | dict[str, Any], replace: dict[str, Any]
+        item: Union[str, float, dict[str, Any]], replace: dict[str, Any]
     ) -> dict[str, Any]:
         block = {}
         if isinstance(item, str):
@@ -521,7 +521,7 @@ class Parser:
 
     def __init__(
         self,
-        spec: str | Path | StrDict,
+        spec: Union[str, Path, StrDict],
         include_defs: list[str] = [],
         quiet: bool = False,
     ):
