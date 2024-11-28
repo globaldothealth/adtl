@@ -1279,8 +1279,8 @@ def test_main_web_schema_missing(snapshot):
 def test_main_save_report():
     adtl.main(ARGV + ["--save-report", "epoch-report.json"])
     report = json.loads(Path("epoch-report.json").read_text())
-    assert report["file"].endswith("tests/sources/epoch.csv")
-    assert report["parser"].endswith("tests/parsers/epoch.json")
+    assert report["file"].endswith("tests/test_adtl/sources/epoch.csv")
+    assert report["parser"].endswith("tests/test_adtl/parsers/epoch.json")
     assert _subdict(
         report,
         ["encoding", "include_defs", "total", "total_valid", "validation_errors"],

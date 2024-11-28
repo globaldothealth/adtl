@@ -1,4 +1,4 @@
-exclude: 'tests/__snapshots__/.*ambr'  # syrupy snapshots
+exclude: 'tests/test_adtl/__snapshots__/.*ambr'  # syrupy snapshots
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
