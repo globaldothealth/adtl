@@ -1,4 +1,4 @@
-""" Functions which can be applied to source fields, allowing extensibility """
+"""Functions which can be applied to source fields, allowing extensibility"""
 
 from typing import Any, Optional, List
 from datetime import datetime, timedelta, date

@@ -6,7 +6,6 @@ import logging
 import itertools
 import copy
 import re
-import importlib.metadata
 from collections import defaultdict, Counter
 from datetime import datetime
 from pathlib import Path
