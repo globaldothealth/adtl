@@ -24,30 +24,35 @@ dependencies = [
   "more_itertools",
   "pandas==2.*",
   ]
+  scripts = { adtl = "adtl:main" }
+  urls = { Home = "https://github.com/globaldothealth/adtl" }
+
+[tool.uv]
+package = true
+dev-dependencies = [
+    "adtl[all]"
+]
 
 [project.optional-dependencies]
 test = [
-  "pytest",
-  "pytest-cov",
+  "pytest>=8.3.3",
+  "pytest-cov>=5.0.0",
   "syrupy==4.*",
   "responses",
   "pytest-unordered",
   "adtl[parquet]"
 ]
 docs = [
-  "sphinx==8.*",
-  "myst-parser==4.*",
+  "sphinx==8.*; python_version >= '3.10'",
+  "myst-parser==4.*; python_version >= '3.10'",
   "sphinx-book-theme"
 ]
 parquet = [
   "polars"
 ]
-
-[project.urls]
-Home = "https://github.com/globaldothealth/adtl"
-
-[project.scripts]
-adtl = "adtl:main"
+all = [
+  "adtl[test,docs]"
+]
 
 [tool.coverage.run]
 omit = ["tests/*"]
