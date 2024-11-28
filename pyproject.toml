@@ -49,3 +49,6 @@ Home = "https://github.com/globaldothealth/adtl"
 
 [project.scripts]
 adtl = "adtl:main"
+
+[tool.coverage.run]
+omit = ["tests/*", "adtl/__main__.py"]
