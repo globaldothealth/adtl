@@ -2,9 +2,6 @@
 requires = ['setuptools>=40.8.0']
 build-backend = 'setuptools.build_meta'
 
-[tool.setuptools]
-packages = ["adtl"]
-
 [project]
 name = "adtl"
 version = "0.6.1"
@@ -24,8 +21,9 @@ dependencies = [
   "fastjsonschema==2.16.*",
   "tqdm",
   "python-dateutil",
-  "more_itertools"
-]
+  "more_itertools",
+  "pandas==2.*",
+  ]
 
 [project.optional-dependencies]
 test = [
@@ -50,3 +48,6 @@ Home = "https://github.com/globaldothealth/adtl"
 
 [project.scripts]
 adtl = "adtl:main"
+
+[tool.coverage.run]
+omit = ["tests/*"]
