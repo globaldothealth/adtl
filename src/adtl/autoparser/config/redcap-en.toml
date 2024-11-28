@@ -1,0 +1,32 @@
+
+name = "redcap-en"
+description = "Autoparser config for generating CSV mappings and TOML from REDCap dictionaries"
+
+# Used by parse_choices() to generate values mapping
+# Using the delimiters below, we can parse this:
+#   1, yes | 2, always | 3, sometimes
+# to this TOML:
+#  { 1 = "yes", 2 = "always", 3 = "sometimes" }
+
+choice_delimiter = "|"
+choice_delimiter_map = ","
+
+# max number of references to use in the parser file
+num_refs = 3
+
+# number of unique values below which a column is considered having 'common values'
+# which might need to be mapped in the parser. e.g. a column with only
+# 'oui, non, inconnu' as unique values would be considered to have common values,
+# while a column with 50 unique values (perhaps because they are dates, or IDs) would not.
+num_choices = 25
+
+# Path to the target schemas, one per table
+[schemas]
+  linelist = "schemas/linelist.schema.json"
+
+# Column mappings to standardise column names across data dictionaries
+[column_mappings]
+  source_field = "Variable / Field Name"
+  source_type = "Field Type"
+  source_description = "Field Label"
+  choices = "Choices, Calculations, OR Slider Labels"

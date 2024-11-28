@@ -1,0 +1,18 @@
+source_field,source_description,source_type,common_values
+Identité,Identity,string,
+Province,Province,choice,"Equateur, Orientale, Katanga, Kinshasa"
+DateNotification,Notification Date,string,
+Classicfication ,Classification,choice,"FISH, amphibie, oiseau, Mammifère, poisson, REPT, OISEAU"
+Nom complet ,Full Name,string,
+Date de naissance,Date of Birth,string,
+AgeAns,Age in Years,number,
+AgeMois         ,Age in Months,number,
+Sexe,Gender,choice,"F, M,   f, m, f, m     , inconnu"
+StatusCas,Case Status,choice,"Vivant, Décédé"
+DateDec,Date of Death,string,
+ContSoins ,Care Contact,choice,"Oui, Non"
+ContHumain Autre,Other Human Contact,choice,"Non, Oui"
+AutreContHumain,Other Human Contact,choice,"Non, Voyage, Autres, Voyage , Oui"
+ContactAnimal,Animal Contact,choice,"Oui, Non"
+Micropucé,Microchipped,choice,"Oui, NON, OUI, oui"
+AnimalDeCompagnie,Pet Animal,choice,"Oui, Non, non"

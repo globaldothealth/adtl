@@ -1,0 +1,32 @@
+
+name = "config file for testing"
+description = "Autoparser config for generating CSV mappings and TOML"
+
+# Used by parse_choices() to generate values mapping
+# Using the delimiters below, we can parse this string:
+#   oui=True, non=False
+# to this TOML:
+#  { "oui" = True, "non" = False}
+
+choice_delimiter = ","
+choice_delimiter_map = "="
+
+# max number of references to use in the parser file
+num_refs = 3
+
+# number of unique values below which a column is considered having 'common values'
+# which might need to be mapped in the parser. e.g. a column with only
+# 'oui, non, inconnu' as unique values would be considered to have common values,
+# while a column with 50 unique values (perhaps because they are dates, or IDs) would not.
+num_choices = 10
+
+# Path to the target schemas, one per table
+[schemas]
+  animals = "animals.schema.json"
+
+# Column mappings to standardise column names across data dictionaries
+[column_mappings]
+  source_field = "Field Name"
+  source_type = "Field Type"
+  source_description = "Description"
+  common_values = "Common Values"

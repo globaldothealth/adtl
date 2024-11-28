@@ -1,0 +1,15 @@
+target_field,source_description,source_field,common_values,target_values,value_mapping
+identity,Identity,Identité,,,
+name,Full Name,Nom complet ,,,
+loc_admin_1,Province,Province,"Equateur, Orientale, Katanga, Kinshasa",,
+country_iso3,,,,,
+notification_date,Notification Date,DateNotification,,,
+classification,Classification,Classicfication ,"FISH, amphibie, poisson, Mammifère, oiseau, OISEAU, REPT","mammal, bird, reptile, amphibian, fish, invertebrate, None","mammifère=mammal, fish=fish, poisson=fish, amphibie=amphibian, oiseau=bird, autre=None, rept=reptile"
+case_status,Case Status,StatusCas,"Vivant, Décédé","alive, dead, unknown, None","vivant=alive, décédé=dead"
+date_of_death,Death Date,,,,
+age_years,Age in Years,AgeAns,,,
+age_months,Age in Months,AgeMois         ,,,
+sex,Gender,Sexe,"F, M,   f, f, m, m     , F  , f  , m  , inconnu","male, female, other, unknown, None","m=male, f=female, inconnu=None"
+pet,Pet Animal,AnimalDeCompagnie,"Oui, Non, non","True, False, None","oui=True, non=False"
+chipped,Microchipped,Micropucé,"Oui, NON, OUI, oui","True, False, None","oui=True, non=False"
+owner,,,,,
