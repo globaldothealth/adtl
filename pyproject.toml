@@ -48,6 +48,7 @@ autoparser = [
     "openai>=1.52.2",
     "openpyxl>=3.1.5",
     "pydantic>=2.9.2",
+    "eval_type_backport; python_version < '3.10'",
     "google-generativeai>=0.8.3"
     ]
 test = [
