@@ -2,6 +2,8 @@
 Generate TOML parser from intermediate CSV file
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import logging

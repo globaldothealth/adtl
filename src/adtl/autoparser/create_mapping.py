@@ -2,6 +2,8 @@
 Create draft intermediate mapping in CSV from source dataset to target dataset
 """
 
+from __future__ import annotations
+
 import argparse
 import warnings
 from pathlib import Path
