@@ -1,5 +1,7 @@
 """Contains functions which override LLM calls with dummy data for testing purposes."""
 
+from __future__ import annotations
+
 from adtl.autoparser.util import (
     ColumnDescriptionRequest,
     FieldMapping,
