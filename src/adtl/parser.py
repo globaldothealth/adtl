@@ -907,8 +907,7 @@ class Parser:
         Args:
             table: Table that should be written to CSV
             output: (optional) Output file name. If not specified, defaults to parser
-                    name + table name
-                with a csv suffix.
+                    name + table name with a csv suffix.
         """
 
         def writerows(fp, table):

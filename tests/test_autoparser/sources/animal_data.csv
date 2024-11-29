@@ -1,0 +1,31 @@
+Identité,Province,DateNotification,Classicfication ,Nom complet ,Date de naissance,AgeAns,AgeMois         ,Sexe,StatusCas,DateDec,ContSoins ,ContHumain Autre,AutreContHumain,ContactAnimal,Micropucé,AnimalDeCompagnie
+A001,Equateur,2024-01-01,Mammifère,Luna,15/03/2022,2,10,f,Vivant,,Oui,Non,Non,Oui,Oui,Oui
+B002,Equateur,2024-15-02,FISH,Max,21/07/2021,3,4,m,Décédé,2024-06-01,Non,Oui,Voyage,Non,NON,Oui
+C003,Equateur,2024-03-10,oiseau,Coco,10/02/2023,1,11,F,Vivant,,Oui,Non,Non,Oui,Oui,Non
+D004,,2024-04-22,amphibie,Bella,05/11/2020,4,5,m,Vivant,,Oui,,Autres,Non,NON,Non
+E005,,2024-05-30,poisson,Charlie,18/05/2019,5,3,F,Décédé,2024-07-01,,,Voyage,Oui,Oui,Oui
+A101,Equateur,2024-01-05,Mammifère,,10/03/2022,2,10,F,Vivant,,,Non,Non,Oui,OUI,Oui
+B102,Equateur,2024-06-15,FISH,Bilbo,21/06/2021,3,4,M,Décédé,2024-06-30,,Oui,Voyage ,Non,NON,Oui
+C103,Equateur,2024-07-10,oiseau,Badger,10/02/2022,1,11,F,Vivant,,Oui,Non,Non,Oui,OUI,Non
+D104,Orientale,2024-04-10,amphibie,Freddie,07/11/2020,4,5,M,Vivant,,Oui,Oui,,Non,NON,Non
+E105,Equateur,2023-12-30,REPT,Dodger,18/05/2023,5,3,f,Décédé,2024-01-15,Non,Non,Voyage,Oui,Oui,Oui
+A201,Equateur,2022-01-01,Mammifère,Boris,15/03/2018,2,10,F,Vivant,,Oui,,Non,Oui,Oui,Oui
+B202,Equateur,2023-02-15,FISH,Strider,21/03/2021,3,4,m     ,Décédé,2024-06-05,,,Voyage,Non,NON,Oui
+C203,Katanga,2020-03-10,oiseau,Baggins,10/11/2023,1,11,  f,Vivant,,,,Non,Oui,Oui,non
+D204,Orientale,2021-04-22,amphibie,Pickwick,13/11/2020,4,5,M,Vivant,,Oui,,,Non,NON,Non
+E205,Equateur,2024-05-31,FISH,Spike,01/05/2019,5,3,M,Décédé,2024-07-15,Non,Non,Voyage,Oui,Oui,Oui
+A301,Equateur,2024-01-08,Mammifère,Wilber,08/03/2022,2,10,F,Vivant,,Oui,Non,Oui,Oui,Oui,Oui
+B302,Kinshasa,2024-02-25,FISH,Tinker,21/04/2021,3,4,m,Décédé,2024-06-01,Non,Oui,Voyage ,Non,NON,Oui
+C303,Katanga,2024-06-10,amphibie,Zorro,15/05/2023,1,11,F,Vivant,,Oui,Non,Non,Oui,Oui,Non
+D304,Orientale,2024-11-22,amphibie,Flubber,05/08/2020,4,5,M,Vivant,,Oui,Oui,Autres,Non,NON,Non
+E305,Equateur,2024-02-30,FISH,Charlie,14/07/2019,5,3,  f,Décédé,2024-03-15,,Non,Voyage,Oui,OUI,Oui
+C403,Equateur,2024-03-13,oiseau,Coco,13/01/2023,1,11,  f,Vivant,,,Non,Non,Oui,Oui,Non
+D404,,2024-04-17,amphibie,Dougal,09/10/2020,4,5,M,Vivant,,,,Autres,Non,NON,Non
+E405,,2024-05-20,poisson,David,28/05/2019,5,3,F,Décédé,2024-06-11,Non,,,Oui,Oui,Oui
+A501,Equateur,2024-11-01,OISEAU,Luna,13/07/2022,2,10,m,Vivant,,Oui,,Non,Oui,oui,Oui
+B502,Equateur,2024-02-05,FISH,Ian,11/07/2021,3,4,f,Décédé,2024-03-01,Non,,Voyage,Non,NON,Oui
+C503,Equateur,2024-12-10,oiseau,Kate,10/03/2023,1,11,F,Vivant,,Oui,Non,Non,Oui,Oui,Non
+D504,,2024-04-29,amphibie,Bobby,05/11/2017,4,5,m     ,Vivant,,Oui,Oui,Autres,Non,NON,non
+E505,,2024-09-30,poisson,Toothless,18/12/2019,5,3,  f,Décédé,2024-04-30,Non,Non,,Oui,Oui,Oui
+A601,Equateur,2024-02-01,REPT,,13/03/2022,2,10,  f,Vivant,,Oui,Non,Non,Oui,oui,Oui
+B602,Equateur,2024-02-12,FISH,Millie,21/12/2021,3,4,inconnu,Décédé,2024-02-25,Non,Oui,Voyage,Non,NON,Oui

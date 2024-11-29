@@ -1,0 +1,18 @@
+Field Name,Description,Field Type,Common Values
+Identité,,string,
+Province,,choice,"Equateur, Orientale, Katanga, Kinshasa"
+DateNotification,,string,
+Classicfication ,,choice,"FISH, amphibie, oiseau, Mammifère, poisson, REPT, OISEAU"
+Nom complet ,,string,
+Date de naissance,,string,
+AgeAns,,number,
+AgeMois         ,,number,
+Sexe,,choice,"F, M,   f, m, f, m     , inconnu"
+StatusCas,,choice,"Vivant, Décédé"
+DateDec,,string,
+ContSoins ,,choice,"Oui, Non"
+ContHumain Autre,,choice,"Non, Oui"
+AutreContHumain,,choice,"Non, Voyage, Autres, Voyage , Oui"
+ContactAnimal,,choice,"Oui, Non"
+Micropucé,,choice,"Oui, NON, OUI, oui"
+AnimalDeCompagnie,,choice,"Oui, Non, non"

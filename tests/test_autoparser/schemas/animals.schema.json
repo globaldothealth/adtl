@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "$id": "https://github.com/globaldothealth/autoparser/tree/main/tests/schemas/animals.schema.json",
+  "title": "Animal schema for testing",
+  "description": "",
+  "required": [
+    "identity",
+    "country_iso3"
+  ],
+  "properties": {
+    "identity": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "description": "Unique ID of animal",
+      "category": "metadata",
+      "PrimaryKey": true
+    },
+    "name": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Name of animal"
+    },
+    "loc_admin_1": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "country_iso3": {
+      "type": [
+        "string"
+      ]
+    },
+    "notification_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "classification": {
+      "enum": [
+        "mammal",
+        "bird",
+        "reptile",
+        "amphibian",
+        "fish",
+        "invertebrate",
+        null
+      ]
+    },
+    "case_status": {
+      "enum": [
+        "alive",
+        "dead",
+        "unknown",
+        null
+      ],
+      "description": "Case status (alive or dead)"
+    },
+    "date_of_death": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "age_years": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Age in years",
+      "category": "demographics",
+      "minimum": 0,
+      "maximum": 120
+    },
+    "age_months": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Age in months if less than 1 year",
+      "category": "demographics",
+      "minimum": 0,
+      "maximum": 12
+    },
+    "sex": {
+      "enum": [
+        "male",
+        "female",
+        "other",
+        "unknown",
+        null
+      ]
+    },
+    "pet": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "chipped": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "is the animal microchipped?"
+    },
+    "owner": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

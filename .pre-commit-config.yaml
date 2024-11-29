@@ -1,4 +1,4 @@
-exclude: 'tests/__snapshots__/.*ambr'  # syrupy snapshots
+exclude: 'tests/test_adtl/__snapshots__/.*ambr|tests/test_autoparser/__snapshots__/.*ambr|src/adtl/autoparser/toml_writer.py'  # syrupy snapshots
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
@@ -13,7 +13,3 @@ repos:
       - id: ruff
         args: [ "--select", "I", "--fix" ]
       - id: ruff-format
-#   - repo: https://github.com/asottile/reorder-python-imports
-#     rev: v3.13.0
-#     hooks:
-#       - id: reorder-python-imports

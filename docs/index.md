@@ -43,10 +43,19 @@ specification
 
 ```{toctree}
 ---
+caption: autoparser
+maxdepth: 1
+---
+autoparser/index
+```
+
+```{toctree}
+---
 caption: Module reference
 maxdepth: 1
 ---
 
-adtl
-transformations
+api/adtl
+api/transformations
+api/autoparser/index
 ```

@@ -1,0 +1,4 @@
+Field Name,Description,Field Type,Common Values
+Identité,Identity,string,
+Province,Province,choice,Equateur
+DateNotification,Notification Date,date,
