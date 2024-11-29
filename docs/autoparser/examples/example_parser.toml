@@ -1,0 +1,50 @@
+[adtl]
+name = "example"
+description = "example"
+returnUnmatched = true
+defs = { "Y/N/NK" = { caseInsensitive = true, values = { oui = true, non = false } } }
+
+[adtl.tables]
+animals = { kind = "oneToOne", schema = "../../../tests/test_autoparser/schemas/animals.schema.json" }
+
+[animals]
+age_months = { field = "AgeMois         ", description = "Age (Months)" }
+age_years = { field = "AgeAns", description = "Age (Years)" }
+chipped = { field = "Micropucé", description = "Microchipped", ref = "Y/N/NK" }
+date_of_death = { field = "DateDec", description = "Died Date" }
+identity = { field = "Identité", description = "Identity" }
+name = { field = "Nom complet ", description = "Full Name" }
+notification_date = { field = "DateNotification", description = "Notification Date" }
+pet = { field = "AnimalDeCompagnie", description = "Pet Animal", ref = "Y/N/NK" }
+country_iso3 = ""
+
+[animals.case_status]
+field = "StatusCas"
+description = "Case Status"
+values = { "décédé" = "dead", vivant = "alive" }
+caseInsensitive = true
+
+[animals.classification]
+field = "Classicfication "
+description = "Classification"
+caseInsensitive = true
+
+[animals.classification.values]
+oiseau = "bird"
+"mammifère" = "mammal"
+poisson = "fish"
+rept = "reptile"
+amphibie = "amphibian"
+fish = "invertebrate"
+
+[animals.loc_admin_1]
+field = "Province"
+description = "Province"
+values = { equateur = "", katanga = "", kinshasa = "", orientale = "" }
+caseInsensitive = true
+
+[animals.sex]
+field = "Sexe"
+description = "Sex"
+values = { m = "male", inconnu = "unknown", f = "female" }
+caseInsensitive = true

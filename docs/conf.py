@@ -6,13 +6,6 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-import os
-import sys
-
-# Add root dir so that adtl module is visible to Sphinx
-sys.path.insert(0, os.path.abspath(".."))
-sys.path.insert(0, os.path.abspath("."))
-
 project = "adtl"
 copyright = "2023, Global.health"
 release = "0.6.1"
@@ -23,15 +16,16 @@ author = ""
 
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.coverage",
     "sphinx.ext.napoleon",
-    "myst_parser",
+    "sphinx.ext.coverage",
+    "sphinx.ext.graphviz",
     "sphinx_book_theme",
+    "sphinxcontrib.mermaid",
+    "myst_nb",
 ]
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "venv"]
-manpages_url = "https://manpages.debian.org/{path}"
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "venv" "README.md"]
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -39,3 +33,8 @@ manpages_url = "https://manpages.debian.org/{path}"
 html_theme = "sphinx_book_theme"
 html_static_path = ["_static"]
 html_short_title = "Home"
+
+html_theme_options = {
+    "repository_url": "https://github.com/globaldothealth/adtl",
+    "use_repository_button": True,
+}
