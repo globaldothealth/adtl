@@ -1,5 +1,7 @@
 "Contains all functions that call OpenAI's API."
 
+from __future__ import annotations
+
 from openai import OpenAI
 
 from .util import ColumnDescriptionRequest, MappingRequest, ValuesRequest

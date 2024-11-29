@@ -1,5 +1,7 @@
 "Contains all functions that call Google's Gemini API."
 
+from __future__ import annotations
+
 import json
 
 import google.generativeai as gemini
