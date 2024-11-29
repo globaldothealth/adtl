@@ -76,9 +76,7 @@ class ParserGenerator:
     ):
         self.mappings = read_data(mappings, "A mapping file")
 
-        self.schema_path = (
-            schema_path if isinstance(schema_path, Path) else Path(schema_path)
-        )
+        self.schema_path = Path(schema_path)
         self.parser_name = parser_name
         self.parser_description = description or parser_name
 

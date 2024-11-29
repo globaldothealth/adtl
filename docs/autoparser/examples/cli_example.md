@@ -14,7 +14,8 @@ In this example, we will generate a data dictionary with descriptions already ad
 ```bash
 autoparser create-dict data language [-d] [-k api_key] [-l llm_choice] [-c config_file] [-o output_name]
 ```
-so for the `animal_data.csv` data we will run this command to generate a data dictionary
+where the `-d` flag is used to request the LLM-generated descriptions. For the
+`animal_data.csv` data we will run this command to generate a data dictionary
 with descriptions
 
 ```bash

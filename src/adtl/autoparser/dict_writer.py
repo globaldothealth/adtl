@@ -19,7 +19,7 @@ from .util import DEFAULT_CONFIG, load_data_dict, read_config_schema, read_data
 
 class DictWriter:
     """
-    Class for infering a data dictionary based on a dataset. Will not store the data,
+    Class for inferring a data dictionary based on a dataset. Will not store the data,
     only the created data dictionary.
 
     Use `create_dict()` to create a data dictionary, as the function equivalent
@@ -48,7 +48,7 @@ class DictWriter:
         """
         Setup the LLM to use to generate descriptions.
 
-        Seperate from the __init__ method to allow for extra barrier between raw data &
+        Separate from the __init__ method to allow for extra barrier between raw data &
         LLM.
 
         Parameters
