@@ -38,3 +38,5 @@ html_theme_options = {
     "repository_url": "https://github.com/globaldothealth/adtl",
     "use_repository_button": True,
 }
+
+myst_heading_anchors = 3
