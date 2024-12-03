@@ -77,7 +77,7 @@ class OpenAILanguageModel(LLMBase):
 
     def map_values(
         self,
-        values: list[tuple[set[str], set[str], list[str]]],
+        values: list[tuple[str, set[str], list[str | None] | None]],
         language: str,
     ) -> ValuesRequest:
         """
