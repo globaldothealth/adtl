@@ -9,15 +9,11 @@ import warnings
 from pathlib import Path
 from typing import Literal
 
-import google.generativeai as gemini
 import numpy as np
 import pandas as pd
-from openai import OpenAI
 
-from .gemini_calls import _map_fields as _map_fields_gemini
-from .gemini_calls import _map_values as _map_values_gemini
-from .openai_calls import _map_fields as _map_fields_openai
-from .openai_calls import _map_values as _map_values_openai
+from .language_models.gemini import GeminiLanguageModel
+from .language_models.openai import OpenAILanguageModel
 from .util import DEFAULT_CONFIG, load_data_dict, read_config_schema, read_json
 
 
@@ -57,18 +53,12 @@ class Mapper:
         self.schema = read_json(schema)
         self.schema_properties = self.schema["properties"]
         self.language = language
-        self.api_key = api_key
         if llm is None:
-            self.client = None
+            self.model = None
         elif llm == "openai":  # pragma: no cover
-            self.client = OpenAI(api_key=self.api_key)
-            self.map_fields = _map_fields_openai
-            self.map_values = _map_values_openai
+            self.model = OpenAILanguageModel(api_key)
         elif llm == "gemini":  # pragma: no cover
-            gemini.configure(api_key=self.api_key)
-            self.client = gemini.GenerativeModel("gemini-1.5-flash")
-            self.map_fields = _map_fields_gemini
-            self.map_values = _map_values_gemini
+            self.model = GeminiLanguageModel(api_key)
         else:
             raise ValueError(f"Unsupported LLM: {llm}")
 
@@ -192,7 +182,7 @@ class Mapper:
         # english translated descriptions rather than names.
         source_fields = list(self.data_dictionary.source_description)
 
-        mappings = self.map_fields(source_fields, self.target_fields, self.client)
+        mappings = self.model.map_fields(source_fields, self.target_fields)
 
         mapping_dict = pd.DataFrame(
             {
@@ -229,7 +219,7 @@ class Mapper:
                 values_tuples.append((f, s, t))
 
         # to LLM
-        value_pairs = self.map_values(values_tuples, self.language, self.client)
+        value_pairs = self.model.map_values(values_tuples, self.language)
 
         value_mapping = {}
 

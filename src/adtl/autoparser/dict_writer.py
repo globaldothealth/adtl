@@ -7,13 +7,11 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-import google.generativeai as gemini
 import numpy as np
 import pandas as pd
-from openai import OpenAI
 
-from .gemini_calls import _get_definitions as _get_definitions_gemini
-from .openai_calls import _get_definitions as _get_definitions_openai
+from .language_models.gemini import GeminiLanguageModel
+from .language_models.openai import OpenAILanguageModel
 from .util import DEFAULT_CONFIG, load_data_dict, read_config_schema, read_data
 
 
@@ -37,12 +35,19 @@ class DictWriter:
     def __init__(
         self,
         config: Path | str | None = None,
+        llm: str | None = None,
+        api_key: str | None = None,
     ):
         if isinstance(config, str):
             config = Path(config)
         self.config = read_config_schema(
             config or Path(Path(__file__).parent, DEFAULT_CONFIG)
         )
+
+        if llm and api_key:
+            self._setup_llm(api_key, llm)
+        else:
+            self.model = None
 
     def _setup_llm(self, key: str, name: str):
         """
@@ -60,18 +65,11 @@ class DictWriter:
         """
         if key is None:
             raise ValueError("API key required for generating descriptions")
-        else:
-            self.key = key
 
         if name == "openai":  # pragma: no cover
-            self.client = OpenAI(api_key=key)
-            self._get_descriptions = _get_definitions_openai
-
+            self.model = OpenAILanguageModel(api_key=key)
         elif name == "gemini":  # pragma: no cover
-            gemini.configure(api_key=key)
-            self.client = gemini.GenerativeModel("gemini-1.5-flash")
-            self._get_descriptions = _get_definitions_gemini
-
+            self.model = GeminiLanguageModel(api_key=key)
         else:
             raise ValueError(f"Unsupported LLM: {name}")
 
@@ -183,11 +181,12 @@ class DictWriter:
 
         df = load_data_dict(self.config, data_dict)
 
-        self._setup_llm(key, llm)
+        if not self.model:
+            self._setup_llm(key, llm)
 
         headers = df.source_field
 
-        descriptions = self._get_descriptions(list(headers), language, self.client)
+        descriptions = self.model.get_definitions(list(headers), language)
 
         descriptions = {d.field_name: d.translation for d in descriptions}
         df_descriptions = pd.DataFrame(

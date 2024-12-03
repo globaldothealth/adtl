@@ -7,7 +7,7 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 import pytest
-from testing_data_animals import map_fields, map_values
+from testing_data_animals import TestLLM
 
 from adtl.autoparser.create_mapping import Mapper
 
@@ -29,9 +29,7 @@ class MapperTest(Mapper):
             None,
         )
 
-        # overwrite the LLM API's with dummy functions containing base data
-        self.map_fields = map_fields
-        self.map_values = map_values
+        self.model = TestLLM()
 
 
 ANIMAL_MAPPER = MapperTest(
@@ -235,7 +233,7 @@ def test_mapper_class_init():
     )
 
     assert mapper.language == "fr"
-    assert mapper.client is None
+    assert mapper.model is None
     npt.assert_array_equal(
         mapper.data_dictionary.columns,
         ["source_field", "source_description", "source_type", "common_values"],

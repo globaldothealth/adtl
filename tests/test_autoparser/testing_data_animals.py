@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from adtl.autoparser.language_models.base_llm import LLMBase
 from adtl.autoparser.util import (
     ColumnDescriptionRequest,
     FieldMapping,
@@ -116,3 +117,30 @@ def map_values(*args):
 
     mapping = ValuesRequest(values=vm)
     return mapping
+
+
+class TestLLM(LLMBase):
+    def __init__(self):
+        self.client = None
+        self.model = None
+
+    def get_definitions(self, headers, language):
+        """
+        Get the definitions of the columns in the dataset.
+        """
+        translated_fields = get_definitions(headers, language)
+        return translated_fields
+
+    def map_fields(self, source_fields, target_fields):
+        """
+        Calls the OpenAI API to generate a draft mapping between two datasets.
+        """
+        mapping = map_fields(source_fields, target_fields)
+        return mapping
+
+    def map_values(self, values, language):
+        """
+        Calls the OpenAI API to generate a set of value mappings for the fields.
+        """
+        value_mapping = map_values(values, language)
+        return value_mapping
