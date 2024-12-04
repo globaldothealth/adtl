@@ -10,6 +10,7 @@ import pytest
 from testing_data_animals import TestLLM
 
 from adtl.autoparser.create_mapping import Mapper
+from adtl.autoparser.language_models.openai import OpenAILanguageModel
 
 
 class MapperTest(Mapper):
@@ -239,6 +240,17 @@ def test_mapper_class_init():
         mapper.data_dictionary.columns,
         ["source_field", "source_description", "source_type", "common_values"],
     )
+
+
+def test_mapper_class_init_with_llm():
+    mapper = Mapper(
+        Path("tests/test_autoparser/schemas/animals.schema.json"),
+        "tests/test_autoparser/sources/animals_dd_described.csv",
+        "fr",
+        api_key="abcd",
+    )
+
+    assert isinstance(mapper.model, OpenAILanguageModel)
 
 
 def test_match_fields_to_schema_dummy_data():
