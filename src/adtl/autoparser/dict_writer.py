@@ -10,9 +10,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .language_models.gemini import GeminiLanguageModel
-from .language_models.openai import OpenAILanguageModel
-from .util import DEFAULT_CONFIG, load_data_dict, read_config_schema, read_data
+from .util import (
+    DEFAULT_CONFIG,
+    load_data_dict,
+    read_config_schema,
+    read_data,
+    setup_llm,
+)
 
 
 class DictWriter:
@@ -45,33 +49,9 @@ class DictWriter:
         )
 
         if llm and api_key:
-            self._setup_llm(api_key, llm)
+            self.model = setup_llm(llm, api_key)
         else:
             self.model = None
-
-    def _setup_llm(self, key: str, name: str):
-        """
-        Setup the LLM to use to generate descriptions.
-
-        Separate from the __init__ method to allow for extra barrier between raw data &
-        LLM.
-
-        Parameters
-        ----------
-        key
-            API key
-        name
-            Name of the LLM to use (currently only OpenAI and Gemini are supported)
-        """
-        if key is None:
-            raise ValueError("API key required for generating descriptions")
-
-        if name == "openai":  # pragma: no cover
-            self.model = OpenAILanguageModel(api_key=key)
-        elif name == "gemini":  # pragma: no cover
-            self.model = GeminiLanguageModel(api_key=key)
-        else:
-            raise ValueError(f"Unsupported LLM: {name}")
 
     def create_dict(self, data: pd.DataFrame | str) -> pd.DataFrame:
         """
@@ -182,7 +162,7 @@ class DictWriter:
         df = load_data_dict(self.config, data_dict)
 
         if not self.model:
-            self._setup_llm(key, llm)
+            self.model = setup_llm(llm, key)
 
         headers = df.source_field
 

@@ -4,9 +4,8 @@ from __future__ import annotations
 
 from openai import OpenAI
 
-from adtl.autoparser.util import ColumnDescriptionRequest, MappingRequest, ValuesRequest
-
 from .base_llm import LLMBase
+from .data_structures import ColumnDescriptionRequest, MappingRequest, ValuesRequest
 
 
 class OpenAILanguageModel(LLMBase):

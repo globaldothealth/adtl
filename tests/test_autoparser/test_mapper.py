@@ -215,11 +215,12 @@ def test_common_values_mapped_fields_error():
 
 
 def test_mapper_class_init_raises():
-    with pytest.raises(ValueError, match="Unsupported LLM: fish"):
+    with pytest.raises(ValueError, match="Unsupported LLM provider: fish"):
         Mapper(
             Path("tests/test_autoparser/schemas/animals.schema.json"),
             "tests/test_autoparser/sources/animals_dd_described.csv",
             "fr",
+            api_key="1234",
             llm="fish",
         )
 

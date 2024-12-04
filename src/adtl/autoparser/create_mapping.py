@@ -12,9 +12,13 @@ from typing import Literal
 import numpy as np
 import pandas as pd
 
-from .language_models.gemini import GeminiLanguageModel
-from .language_models.openai import OpenAILanguageModel
-from .util import DEFAULT_CONFIG, load_data_dict, read_config_schema, read_json
+from .util import (
+    DEFAULT_CONFIG,
+    load_data_dict,
+    read_config_schema,
+    read_json,
+    setup_llm,
+)
 
 
 class Mapper:
@@ -55,12 +59,8 @@ class Mapper:
         self.language = language
         if llm is None:
             self.model = None
-        elif llm == "openai":  # pragma: no cover
-            self.model = OpenAILanguageModel(api_key)
-        elif llm == "gemini":  # pragma: no cover
-            self.model = GeminiLanguageModel(api_key)
         else:
-            raise ValueError(f"Unsupported LLM: {llm}")
+            self.model = setup_llm(llm, api_key)
 
         self.config = read_config_schema(
             config or Path(Path(__file__).parent, DEFAULT_CONFIG)

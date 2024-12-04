@@ -9,8 +9,8 @@ from openai.types.chat.parsed_chat_completion import (
 )
 from testing_data_animals import get_definitions, map_fields, map_values
 
+from adtl.autoparser.language_models.data_structures import ColumnDescriptionRequest
 from adtl.autoparser.language_models.openai import OpenAILanguageModel
-from adtl.autoparser.util import ColumnDescriptionRequest
 
 
 def test_init():

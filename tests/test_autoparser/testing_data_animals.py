@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from adtl.autoparser.language_models.base_llm import LLMBase
-from adtl.autoparser.util import (
+from adtl.autoparser.language_models.data_structures import (
     ColumnDescriptionRequest,
     FieldMapping,
     MappingRequest,

@@ -81,7 +81,7 @@ def test_missing_key_error():
 
 
 def test_wrong_llm_error():
-    with pytest.raises(ValueError, match="Unsupported LLM: fish"):
+    with pytest.raises(ValueError, match="Unsupported LLM provider: fish"):
         DictWriter(config=Path(CONFIG_PATH)).generate_descriptions(
             "fr", SOURCES + "animals_dd.csv", key="a12b3c", llm="fish"
         )
