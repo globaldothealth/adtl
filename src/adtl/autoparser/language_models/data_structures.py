@@ -1,5 +1,7 @@
 """Stores the data structures for using with LLM API's"""
 
+from __future__ import annotations
+
 from pydantic import BaseModel
 
 # target classes for generating descriptions
