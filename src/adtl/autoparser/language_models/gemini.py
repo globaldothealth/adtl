@@ -19,7 +19,7 @@ class GeminiLanguageModel(LLMBase):
 
     def get_definitions(self, headers: list[str], language: str) -> dict[str, str]:
         """
-        Get the definitions of the columns in the dataset.
+        Get the definitions of the columns in the dataset using the Gemini API.
         """
         result = self.client.generate_content(
             [
@@ -74,7 +74,7 @@ class GeminiLanguageModel(LLMBase):
         return MappingRequest.model_validate(json.loads(result.text))
 
     def map_values(
-        self, values: list[tuple[set[str], set[str], list[str]]], language: str
+        self, values: list[tuple[str, set[str], list[str | None] | None]], language: str
     ) -> ValuesRequest:
         """
         Calls the Gemini API to generate a set of value mappings for the fields.

@@ -76,9 +76,7 @@ class OpenAILanguageModel(LLMBase):
         return mappings
 
     def map_values(
-        self,
-        values: list[tuple[str, set[str], list[str | None] | None]],
-        language: str,
+        self, values: list[tuple[str, set[str], list[str | None] | None]], language: str
     ) -> ValuesRequest:
         """
         Calls the OpenAI API to generate a set of value mappings for the fields.
