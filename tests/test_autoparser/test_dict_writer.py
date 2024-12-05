@@ -9,6 +9,7 @@ from testing_data_animals import TestLLM
 
 import adtl.autoparser as autoparser
 from adtl.autoparser.dict_writer import DictWriter
+from adtl.autoparser.language_models.openai import OpenAILanguageModel
 
 CONFIG_PATH = "tests/test_autoparser/test_config.toml"
 SOURCES = "tests/test_autoparser/sources/"
@@ -85,3 +86,9 @@ def test_wrong_llm_error():
         DictWriter(config=Path(CONFIG_PATH)).generate_descriptions(
             "fr", SOURCES + "animals_dd.csv", key="a12b3c", llm="fish"
         )
+
+
+def test_init_with_llm():
+    # test no errors occur
+    writer = DictWriter(config=Path(CONFIG_PATH), api_key="1234", llm="openai")
+    assert isinstance(writer.model, OpenAILanguageModel)
