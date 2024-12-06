@@ -10,7 +10,9 @@ from typing import Any, Dict
 
 import pandas as pd
 import tomli
-from pydantic import BaseModel
+
+from adtl.autoparser.language_models.gemini import GeminiLanguageModel
+from adtl.autoparser.language_models.openai import OpenAILanguageModel
 
 DEFAULT_CONFIG = "config/autoparser.toml"
 
@@ -106,40 +108,26 @@ def load_data_dict(
     return data_dict
 
 
-# Data structures for llm calls --------------------------
+def setup_llm(provider, api_key):
+    """
+    Setup the LLM to use to generate descriptions.
 
-# target classes for generating descriptions
+    Separate from the __init__ method to allow for extra barrier between raw data &
+    LLM.
 
+    Parameters
+    ----------
+    key
+        API key
+    name
+        Name of the LLM to use (currently only OpenAI and Gemini are supported)
+    """
+    if api_key is None:
+        raise ValueError("API key required to set up an LLM")
 
-class SingleField(BaseModel):
-    field_name: str
-    translation: str | None
-
-
-class ColumnDescriptionRequest(BaseModel):
-    field_descriptions: list[SingleField]
-
-
-# target classes for matching fields
-class SingleMapping(BaseModel):
-    target_field: str
-    source_description: str | None
-
-
-class MappingRequest(BaseModel):
-    targets_descriptions: list[SingleMapping]
-
-
-# target classes for matching values to enum/boolean options
-class ValueMapping(BaseModel):
-    source_value: str
-    target_value: str | None
-
-
-class FieldMapping(BaseModel):
-    field_name: str
-    mapped_values: list[ValueMapping]
-
-
-class ValuesRequest(BaseModel):
-    values: list[FieldMapping]
+    if provider == "openai":  # pragma: no cover
+        return OpenAILanguageModel(api_key=api_key)
+    elif provider == "gemini":  # pragma: no cover
+        return GeminiLanguageModel(api_key=api_key)
+    else:
+        raise ValueError(f"Unsupported LLM provider: {provider}")

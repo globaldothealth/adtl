@@ -6,7 +6,12 @@ import numpy.testing as npt
 import pandas as pd
 import pytest
 
-from adtl.autoparser.util import load_data_dict, parse_choices, read_config_schema
+from adtl.autoparser.util import (
+    load_data_dict,
+    parse_choices,
+    read_config_schema,
+    setup_llm,
+)
 
 CONFIG = read_config_schema(Path("tests/test_autoparser/test_config.toml"))
 
@@ -86,3 +91,13 @@ def test_load_data_dict():
 
     with pytest.raises(ValueError, match="Unsupported format"):
         load_data_dict(CONFIG, "tests/test_autoparser/sources/animals.txt")
+
+
+def test_setup_llm_no_key():
+    with pytest.raises(ValueError, match="API key required to set up an LLM"):
+        setup_llm("openai", None)
+
+
+def test_setup_llm_bad_provider():
+    with pytest.raises(ValueError, match="Unsupported LLM provider: fish"):
+        setup_llm("fish", "abcd")
