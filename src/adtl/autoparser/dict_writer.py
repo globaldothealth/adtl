@@ -306,7 +306,7 @@ def api_descriptions_only():
     df.to_csv(f"{args.output}.csv", index=False)
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Generate a basic data dictionary from a dataset",
         prog="autoparser create-dict",
@@ -335,7 +335,7 @@ def main():
         "-o", "--output", help="Name to use for output files", default="datadict"
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if args.descriptions and not args.api_key:
         raise ValueError("API key required for generating descriptions")

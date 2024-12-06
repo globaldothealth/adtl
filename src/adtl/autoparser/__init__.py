@@ -1,8 +1,13 @@
 import sys
 
-from .create_mapping import Mapper, create_mapping
-from .dict_writer import DictWriter, create_dict, generate_descriptions
-from .make_toml import ParserGenerator, create_parser
+try:
+    from .create_mapping import Mapper, create_mapping
+    from .dict_writer import DictWriter, create_dict, generate_descriptions
+    from .make_toml import ParserGenerator, create_parser
+except ImportError:
+    raise ImportError(
+        "autoparser is not available. Import as 'adtl[autoparser]' to use."
+    )
 
 __all__ = [
     "DictWriter",
@@ -24,7 +29,7 @@ def main():
     if len(sys.argv) < 2:
         print(
             """
-            autoparser: specify subcommand to run
+            adtl-autoparser: specify subcommand to run
 
             Available subcommands:
             create-dict - Create a data dictionary from a dataset
@@ -35,22 +40,16 @@ def main():
         )
         sys.exit(1)
     subcommand = sys.argv[1]
-    if subcommand not in [
-        "create-parser",
-        "create-mapping",
-        "add-descriptions",
-        "create-dict",
-    ]:
-        print("autoparser: unrecognised subcommand", subcommand)
+
+    subcommands = {
+        "create-parser": make_toml_main,
+        "create-mapping": csv_mapping_main,
+        "add-descriptions": add_descriptions_main,
+        "create-dict": make_dd_main,
+    }
+
+    if subcommand not in subcommands:
+        print("adtl-autoparser: unrecognised subcommand", subcommand)
         sys.exit(1)
     sys.argv = sys.argv[1:]
-    if subcommand == "create-parser":
-        make_toml_main()
-    if subcommand == "create-mapping":
-        csv_mapping_main()
-    elif subcommand == "create-dict":
-        make_dd_main()
-    elif subcommand == "add-descriptions":
-        add_descriptions_main()
-    else:
-        pass
+    subcommands[subcommand]()

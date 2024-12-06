@@ -285,7 +285,7 @@ def create_parser(
     ).create_parser(parser_name)
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Make TOML from intermediate CSV file created by create_mapping.py",
         prog="autoparser create-parser",
@@ -305,9 +305,9 @@ def main():
         help=f"Configuration file to use (default={DEFAULT_CONFIG})",
         type=Path,
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
-    schema_path = Path(args.schema)
+    schema_path = Path(args.schema_path)
 
     ParserGenerator(
         args.mappings,

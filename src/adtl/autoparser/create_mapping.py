@@ -347,7 +347,7 @@ def create_mapping(
     return df
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(
         description=(
             "Generate intermediate CSV used by make_toml.py (create-parser) "
@@ -369,7 +369,7 @@ def main():
     parser.add_argument(
         "-o", "--output", help="Name to use for output files", default="mapping_file"
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     Mapper(
         Path(args.schema),
         args.dictionary,
