@@ -112,11 +112,7 @@ class ParserGenerator:
         try:
             return self._parsed_choices
         except AttributeError:
-
-            def _parse_choices(s: str):
-                return parse_choices(self.config, s)
-
-            self._parsed_choices = self.mappings.value_mapping.map(_parse_choices)
+            self._parsed_choices = self.mappings.value_mapping.map(parse_choices)
             self._parsed_choices.index = self.mappings.target_field
             return self._parsed_choices
 

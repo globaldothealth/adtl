@@ -60,7 +60,7 @@ def read_data(file: str | Path | pd.DataFrame, file_type: str):
         )
 
 
-def parse_choices(config, s: str) -> Dict[str, Any] | str:
+def parse_choices(s: str) -> Dict[str, Any] | None:
     """
     Takes the choices from llm as a string and turns into pairs.
 

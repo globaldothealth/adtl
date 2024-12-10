@@ -61,18 +61,18 @@ def test_read_config_schema():
     ],
 )
 def test_parse_choices(s, expected):
-    choices = parse_choices(CONFIG, s)
+    choices = parse_choices(s)
     assert choices == expected
 
 
 def test_parse_choices_error():
     # dictionary printed without stringification
     with pytest.raises(ValueError, match="Invalid choices list"):
-        parse_choices(CONFIG, '{"oui":"True", "non":"False", "blah":"None"}')
+        parse_choices('{"oui":"True", "non":"False", "blah":"None"}')
 
     # different choice_delimeter_map
     with pytest.raises(ValueError, match="Invalid choices list"):
-        parse_choices(CONFIG, "oui:True, non:False, blah:None")
+        parse_choices("oui:True, non:False, blah:None")
 
 
 def test_load_data_dict():
