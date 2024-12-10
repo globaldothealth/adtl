@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 class SingleField(BaseModel):
     field_name: str
-    translation: str | None
+    translation: str
 
 
 class ColumnDescriptionRequest(BaseModel):

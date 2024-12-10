@@ -108,15 +108,11 @@ class ParserGenerator:
 
     @property
     def parsed_choices(self) -> pd.Series:
-        """Returns the mapped values for each taget field"""
+        """Returns the mapped values for each target field"""
         try:
             return self._parsed_choices
         except AttributeError:
-
-            def _parse_choices(s: str):
-                return parse_choices(self.config, s)
-
-            self._parsed_choices = self.mappings.value_mapping.map(_parse_choices)
+            self._parsed_choices = self.mappings.value_mapping.map(parse_choices)
             self._parsed_choices.index = self.mappings.target_field
             return self._parsed_choices
 
@@ -307,7 +303,7 @@ def main():
     )
     args = parser.parse_args()
 
-    schema_path = Path(args.schema)
+    schema_path = Path(args.schema_path)
 
     ParserGenerator(
         args.mappings,
