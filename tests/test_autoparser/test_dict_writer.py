@@ -5,26 +5,15 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-from testing_data_animals import get_definitions
+from testing_data_animals import TestLLM
 
 import adtl.autoparser as autoparser
 from adtl.autoparser.dict_writer import DictWriter
+from adtl.autoparser.language_models.openai import OpenAILanguageModel
 
 CONFIG_PATH = "tests/test_autoparser/test_config.toml"
 SOURCES = "tests/test_autoparser/sources/"
 SCHEMAS = "tests/test_autoparser/schemas/"
-
-
-class DictWriterTest(DictWriter):
-    def __init__(
-        self,
-        config: Path | None = None,
-    ):
-        super().__init__(config)
-
-    def _setup_llm(self, key, name):
-        self.client = None
-        self._get_descriptions = get_definitions
 
 
 def test_unsupported_data_format_txt():
@@ -71,7 +60,8 @@ def test_dictionary_creation_no_descrip_excel_dataframe():
 
 
 def test_dictionary_description():
-    writer = DictWriterTest(config=Path(CONFIG_PATH))
+    writer = DictWriter(config=Path(CONFIG_PATH))
+    writer.model = TestLLM()
 
     # check descriptions aren't generated without a dictionary
     with pytest.raises(ValueError, match="No data dictionary found"):
@@ -92,7 +82,13 @@ def test_missing_key_error():
 
 
 def test_wrong_llm_error():
-    with pytest.raises(ValueError, match="Unsupported LLM: fish"):
+    with pytest.raises(ValueError, match="Unsupported LLM provider: fish"):
         DictWriter(config=Path(CONFIG_PATH)).generate_descriptions(
             "fr", SOURCES + "animals_dd.csv", key="a12b3c", llm="fish"
         )
+
+
+def test_init_with_llm():
+    # test no errors occur
+    writer = DictWriter(config=Path(CONFIG_PATH), api_key="1234", llm="openai")
+    assert isinstance(writer.model, OpenAILanguageModel)

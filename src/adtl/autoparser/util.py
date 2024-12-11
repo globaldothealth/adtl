@@ -5,12 +5,15 @@ Common utility functions for autoparser
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any, Dict
 
 import pandas as pd
 import tomli
-from pydantic import BaseModel
+
+from adtl.autoparser.language_models.gemini import GeminiLanguageModel
+from adtl.autoparser.language_models.openai import OpenAILanguageModel
 
 DEFAULT_CONFIG = "config/autoparser.toml"
 
@@ -57,35 +60,42 @@ def read_data(file: str | Path | pd.DataFrame, file_type: str):
         )
 
 
-def parse_choices(config, s: str) -> Dict[str, Any]:
-    delimiter = config["choice_delimiter"]
-    delimiter_map = config["choice_delimiter_map"]
+def parse_choices(s: str) -> Dict[str, Any] | None:
+    """
+    Takes the choices from llm as a string and turns into pairs.
 
-    lower_string = lambda s: s.strip().lower()  # NOQA
+    "oui=True, non=False, blah=None" -> {"oui": True, "non": False, "blah": ""}
+    "vivant=alive, décédé=dead, " "=None" -> {"vivant": "alive", "décédé": "dead"}
+    {2: True} -> None
+    "" " = " ", poisson=fish" -> {"poisson": "fish"}
+    ecouvillon+croûte=[swab, crust], ecouvillon=[swab]" ->
+            {"ecouvillon+croûte": ["swab", "crust"], "ecouvillon": ["swab"]}
+
+    """
+
     if not isinstance(s, str):
         return None
 
-    choices_list = [
-        tuple(map(lower_string, x.split(delimiter_map)[:2])) for x in s.split(delimiter)
-    ]
+    split_str = re.split(r",(?!(?:[^\[]*\])|(?:[^\[]*\[[^\]]*$))", s)
+    choices_list = [tuple(x.strip().split("=")) for x in split_str]
     if any(len(c) != 2 for c in choices_list):
         raise ValueError(f"Invalid choices list {choices_list!r}")
-    choices = dict(
-        tuple(map(lower_string, x.split(delimiter_map)[:2])) for x in s.split(delimiter)
-    )
+    choices = dict(choices_list)
 
     for k, v in choices.copy().items():
-        if v == "true":
+        if v.lower() == "true":
             choices[k] = True
-        if v == "false":
+        if v.lower() == "false":
             choices[k] = False
-        if v == "none":
+        if v.lower() == "none":
             if k == "":
                 choices.pop(k)
             else:
                 choices[k] = ""
         if v == "" and k == "":
             choices.pop(k)
+        if "[" and "]" in v:
+            choices[k] = [i for i in v.strip("[]").replace(" ", "").split(",")]
     return choices
 
 
@@ -106,40 +116,26 @@ def load_data_dict(
     return data_dict
 
 
-# Data structures for llm calls --------------------------
+def setup_llm(provider, api_key):
+    """
+    Setup the LLM to use to generate descriptions.
 
-# target classes for generating descriptions
+    Separate from the __init__ method to allow for extra barrier between raw data &
+    LLM.
 
+    Parameters
+    ----------
+    key
+        API key
+    name
+        Name of the LLM to use (currently only OpenAI and Gemini are supported)
+    """
+    if api_key is None:
+        raise ValueError("API key required to set up an LLM")
 
-class SingleField(BaseModel):
-    field_name: str
-    translation: str | None
-
-
-class ColumnDescriptionRequest(BaseModel):
-    field_descriptions: list[SingleField]
-
-
-# target classes for matching fields
-class SingleMapping(BaseModel):
-    target_field: str
-    source_description: str | None
-
-
-class MappingRequest(BaseModel):
-    targets_descriptions: list[SingleMapping]
-
-
-# target classes for matching values to enum/boolean options
-class ValueMapping(BaseModel):
-    source_value: str
-    target_value: str | None
-
-
-class FieldMapping(BaseModel):
-    field_name: str
-    mapped_values: list[ValueMapping]
-
-
-class ValuesRequest(BaseModel):
-    values: list[FieldMapping]
+    if provider == "openai":  # pragma: no cover
+        return OpenAILanguageModel(api_key=api_key)
+    elif provider == "gemini":  # pragma: no cover
+        return GeminiLanguageModel(api_key=api_key)
+    else:
+        raise ValueError(f"Unsupported LLM provider: {provider}")

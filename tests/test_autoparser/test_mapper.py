@@ -7,9 +7,10 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 import pytest
-from testing_data_animals import map_fields, map_values
+from testing_data_animals import TestLLM
 
 from adtl.autoparser.create_mapping import Mapper
+from adtl.autoparser.language_models.openai import OpenAILanguageModel
 
 
 class MapperTest(Mapper):
@@ -29,9 +30,7 @@ class MapperTest(Mapper):
             None,
         )
 
-        # overwrite the LLM API's with dummy functions containing base data
-        self.map_fields = map_fields
-        self.map_values = map_values
+        self.model = TestLLM()
 
 
 ANIMAL_MAPPER = MapperTest(
@@ -217,11 +216,12 @@ def test_common_values_mapped_fields_error():
 
 
 def test_mapper_class_init_raises():
-    with pytest.raises(ValueError, match="Unsupported LLM: fish"):
+    with pytest.raises(ValueError, match="Unsupported LLM provider: fish"):
         Mapper(
             Path("tests/test_autoparser/schemas/animals.schema.json"),
             "tests/test_autoparser/sources/animals_dd_described.csv",
             "fr",
+            api_key="1234",
             llm="fish",
         )
 
@@ -235,11 +235,22 @@ def test_mapper_class_init():
     )
 
     assert mapper.language == "fr"
-    assert mapper.client is None
+    assert mapper.model is None
     npt.assert_array_equal(
         mapper.data_dictionary.columns,
         ["source_field", "source_description", "source_type", "common_values"],
     )
+
+
+def test_mapper_class_init_with_llm():
+    mapper = Mapper(
+        Path("tests/test_autoparser/schemas/animals.schema.json"),
+        "tests/test_autoparser/sources/animals_dd_described.csv",
+        "fr",
+        api_key="abcd",
+    )
+
+    assert isinstance(mapper.model, OpenAILanguageModel)
 
 
 def test_match_fields_to_schema_dummy_data():

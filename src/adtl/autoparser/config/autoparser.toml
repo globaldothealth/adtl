@@ -2,6 +2,7 @@
 name = "autoparser"
 description = "Autoparser config for generating CSV mappings and TOML from autoparser-generated dictionaries"
 
+# NOTE: currently unused as only autoparser-generated data dicts are supported ---
 # Used by parse_choices() to generate values mapping
 # Using the delimiters below, we can parse this string:
 #   oui=True, non=False
@@ -10,6 +11,7 @@ description = "Autoparser config for generating CSV mappings and TOML from autop
 
 choice_delimiter = ","
 choice_delimiter_map = "="
+# -------------------------------------------------------------------------------
 
 # max number of references to use in the parser file
 num_refs = 3

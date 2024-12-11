@@ -6,7 +6,12 @@ import numpy.testing as npt
 import pandas as pd
 import pytest
 
-from adtl.autoparser.util import load_data_dict, parse_choices, read_config_schema
+from adtl.autoparser.util import (
+    load_data_dict,
+    parse_choices,
+    read_config_schema,
+    setup_llm,
+)
 
 CONFIG = read_config_schema(Path("tests/test_autoparser/test_config.toml"))
 
@@ -48,21 +53,26 @@ def test_read_config_schema():
         ("vivant=alive, décédé=dead, " "=None", {"vivant": "alive", "décédé": "dead"}),
         ({2: True}, None),
         ("" " = " ", poisson=fish", {"poisson": "fish"}),
+        (
+            "" "=None, ecouvillon+croûte=[swab, crust], ecouvillon=[swab]",
+            {"ecouvillon+croûte": ["swab", "crust"], "ecouvillon": ["swab"]},
+        ),
+        ("pos=Y, neg=N", {"pos": "Y", "neg": "N"}),
     ],
 )
 def test_parse_choices(s, expected):
-    choices = parse_choices(CONFIG, s)
+    choices = parse_choices(s)
     assert choices == expected
 
 
 def test_parse_choices_error():
     # dictionary printed without stringification
     with pytest.raises(ValueError, match="Invalid choices list"):
-        parse_choices(CONFIG, '{"oui":"True", "non":"False", "blah":"None"}')
+        parse_choices('{"oui":"True", "non":"False", "blah":"None"}')
 
     # different choice_delimeter_map
     with pytest.raises(ValueError, match="Invalid choices list"):
-        parse_choices(CONFIG, "oui:True, non:False, blah:None")
+        parse_choices("oui:True, non:False, blah:None")
 
 
 def test_load_data_dict():
@@ -86,3 +96,13 @@ def test_load_data_dict():
 
     with pytest.raises(ValueError, match="Unsupported format"):
         load_data_dict(CONFIG, "tests/test_autoparser/sources/animals.txt")
+
+
+def test_setup_llm_no_key():
+    with pytest.raises(ValueError, match="API key required to set up an LLM"):
+        setup_llm("openai", None)
+
+
+def test_setup_llm_bad_provider():
+    with pytest.raises(ValueError, match="Unsupported LLM provider: fish"):
+        setup_llm("fish", "abcd")
