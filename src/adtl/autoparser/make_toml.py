@@ -41,6 +41,33 @@ def adtl_header(
     }
 
 
+def refs_defs(choices, num_refs):
+    references = {}
+    definitions = {}
+
+    top_mappings = choices[choices > 1][:num_refs].index
+
+    # only add one boolean map for simplicity
+    boolean_map_found = False
+    for mapping in top_mappings:
+        if boolean_map_found and True in mapping.values():
+            continue
+        if True in mapping.values():
+            references[json.dumps(mapping, sort_keys=True)] = "Y/N/NK"
+            definitions["Y/N/NK"] = {
+                "caseInsensitive": True,
+                "values": mapping,
+            }
+            boolean_map_found = True
+            continue
+        c = mapping
+        name = "/".join(map(str, c.values()))
+        references[json.dumps(mapping, sort_keys=True)] = name
+        definitions[name] = {"values": c, "caseInsensitive": True}
+
+    return references, definitions
+
+
 class ParserGenerator:
     """
     Class for creating a TOML parser from an intermediate CSV file.
@@ -122,33 +149,12 @@ class ParserGenerator:
         try:
             return self._references_definitions
         except AttributeError:
-            references = {}
-            definitions = {}
-
             # use value_counts() on parsed_choices normalise various flavours of Y/N/NK
             value_counts = self.parsed_choices.value_counts()
-            top_mappings = value_counts[value_counts > 1][
-                : self.config["num_refs"]
-            ].index
 
-            # only add one boolean map for simplicity
-            boolean_map_found = False
-            for mapping in top_mappings:
-                if boolean_map_found and True in mapping.values():
-                    continue
-                if True in mapping.values():
-                    references[json.dumps(mapping, sort_keys=True)] = "Y/N/NK"
-                    definitions["Y/N/NK"] = {
-                        "caseInsensitive": True,
-                        "values": mapping,
-                    }
-                    boolean_map_found = True
-                    continue
-                c = mapping
-                name = "/".join(map(str, c.values()))
-                references[json.dumps(mapping, sort_keys=True)] = name
-                definitions[name] = {"values": c, "caseInsensitive": True}
-            self._references_definitions = references, definitions
+            self._references_definitions = refs_defs(
+                value_counts, self.config["num_refs"]
+            )
             return self._references_definitions
 
     def schema_fields(self, table: str):

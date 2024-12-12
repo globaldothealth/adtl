@@ -19,7 +19,7 @@ where the `-d` flag is used to request the LLM-generated descriptions. For the
 with descriptions
 
 ```bash
-adtl-autoparser create-dict tests/sources/animal_data.csv "fr" -d -k $OPENAI_API_KEY -c tests/test_config.toml -o "animal_dd"
+adtl-autoparser create-dict tests/test_autoparser/sources/animal_data.csv "fr" -d -k $OPENAI_API_KEY -c tests/test_autoparser/test_config.toml -o "animal_dd"
 ```
 This creates an `animals_dd.csv` data dictionary to use in the next step.
 
@@ -31,7 +31,7 @@ adtl-autoparser create-mapping dictionary schema language api_key [-l llm_choice
 ```
 so we can run
 ```bash
-adtl-autoparser create-mapping animal_dd.csv tests/schemas/animals.schema.json "fr" $OPENAI_API_KEY -c tests/test_config.toml -o animal_mapping
+adtl-autoparser create-mapping animal_dd.csv tests/test_autoparser/schemas/animals.schema.json "fr" $OPENAI_API_KEY -c tests/test_autoparser/test_config.toml -o animal_mapping
 ```
 to create the intermediate mapping file `animal_mapping.csv` for you to inspect for any errors.
 
@@ -43,6 +43,6 @@ adtl-autoparser create-parser mapping schema_path [-n parser_name] [--descriptio
 ```
 as
 ```bash
-adtl-autoparser create-parser animal_mapping.csv tests/schemas -n animal_parser -c tests/test_config.toml
+adtl-autoparser create-parser animal_mapping.csv tests/test_autoparser/schemas -n animal_parser -c tests/test_autoparser/test_config.toml
 ```
 which writes out the TOML parser as `animal_parser.toml` ready for use in ADTL.

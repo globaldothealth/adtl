@@ -9,6 +9,8 @@ import tomli
 
 import adtl.autoparser as autoparser
 from adtl.autoparser import ParserGenerator
+from adtl.autoparser import make_toml_main as main
+from adtl.autoparser.make_toml import refs_defs
 
 CONFIG_PATH = "tests/test_autoparser/test_config.toml"
 ANIMAL_PARSER = ParserGenerator(
@@ -92,6 +94,55 @@ def test_references_definitions():
     )
 
     assert parser.references_definitions == ref_def
+
+
+s1 = pd.Series(
+    {
+        "classification": {
+            "mammifère": "mammal",
+            "fish": "fish",
+            "amphibie": "amphibian",
+        },
+        "case_status": {"vivant": "alive", "decede": "dead"},
+        "another_status": {"vivant": "alive", "decede": "dead"},
+        "pet": {"oui": True, "non": False},
+        "chipped": {"oui": True, "non": False},
+        "vaccinated": {"oui": True, "non": "pending"},
+        "spayed": {"oui": True, "non": "pending"},
+    }
+)
+
+
+@pytest.mark.parametrize(
+    "source, expected",
+    [
+        (
+            s1,
+            (
+                {
+                    '{"decede": "dead", "vivant": "alive"}': "alive/dead",
+                    '{"non": false, "oui": true}': "Y/N/NK",
+                },
+                {
+                    "alive/dead": {
+                        "caseInsensitive": True,
+                        "values": {"decede": "dead", "vivant": "alive"},
+                    },
+                    "Y/N/NK": {
+                        "caseInsensitive": True,
+                        "values": {"oui": True, "non": False},
+                    },
+                },
+            ),
+        )
+    ],
+)
+def test_ref_def(source, expected):
+    choices = source.value_counts()
+
+    answer = refs_defs(choices, 3)
+
+    assert answer == expected
 
 
 def test_schema_fields(snapshot):
@@ -205,3 +256,18 @@ def test_create_parser_ap_access(tmp_path, snapshot):
 
     # check body of parser file
     assert parser_file["animals"] == snapshot
+
+
+def test_main_cli(tmp_path):
+    ARGV = [
+        "tests/test_autoparser/sources/animals_mapping.csv",
+        "tests/test_autoparser/schemas",
+        "-n",
+        str(tmp_path / "animals"),
+        "-c",
+        CONFIG_PATH,
+    ]
+
+    main(ARGV)
+
+    assert (tmp_path / "animals.toml").exists()

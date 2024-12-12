@@ -1,10 +1,11 @@
+import argparse
 import sys
 
 try:
-    from .create_mapping import Mapper, create_mapping
     from .dict_writer import DictWriter, create_dict, generate_descriptions
     from .make_toml import ParserGenerator, create_parser
-except ImportError:
+    from .mapping import Mapper, create_mapping
+except ImportError:  # pragma: no cover
     raise ImportError(
         "autoparser is not available. Import as 'adtl[autoparser]' to use."
     )
@@ -19,37 +20,44 @@ __all__ = [
     "create_parser",
 ]
 
-from .create_mapping import main as csv_mapping_main
-from .dict_writer import api_descriptions_only as add_descriptions_main
 from .dict_writer import main as make_dd_main
 from .make_toml import main as make_toml_main
+from .mapping import main as csv_mapping_main
 
 
 def main():
-    if len(sys.argv) < 2:
-        print(
-            """
-            adtl-autoparser: specify subcommand to run
+    parser = argparse.ArgumentParser(
+        description="adtl-autoparser: A tool for creating data dictionaries and parsers"
+    )
 
-            Available subcommands:
-            create-dict - Create a data dictionary from a dataset
-            add-descriptions - Add descriptions to a data dictionary (LLM key required)
-            create-mapping - Create initial CSV mapping from data dictionary (LLM key required) # noqa
-            create-parser - Generate TOML parser from CSV mapping file
-            """
-        )
+    subparsers = parser.add_subparsers(title="subcommands", dest="subcommand")
+
+    # Subcommand: create-dict
+    parser_create_dict = subparsers.add_parser(
+        "create-dict",
+        help="Create a data dictionary from a dataset",
+    )
+    parser_create_dict.set_defaults(func=make_dd_main)
+
+    # Subcommand: create-mapping
+    parser_create_mapping = subparsers.add_parser(
+        "create-mapping",
+        help="Create initial CSV mapping from data dictionary (LLM key required)",
+    )
+    parser_create_mapping.set_defaults(func=csv_mapping_main)
+
+    # Subcommand: create-parser
+    parser_create_parser = subparsers.add_parser(
+        "create-parser",
+        help="Generate TOML parser from CSV mapping file",
+    )
+    parser_create_parser.set_defaults(func=make_toml_main)
+
+    args, unknown_args = parser.parse_known_args()
+
+    if args.subcommand is None:
+        parser.print_help()
         sys.exit(1)
-    subcommand = sys.argv[1]
 
-    subcommands = {
-        "create-parser": make_toml_main,
-        "create-mapping": csv_mapping_main,
-        "add-descriptions": add_descriptions_main,
-        "create-dict": make_dd_main,
-    }
-
-    if subcommand not in subcommands:
-        print("adtl-autoparser: unrecognised subcommand", subcommand)
-        sys.exit(1)
-    sys.argv = sys.argv[1:]
-    subcommands[subcommand]()
+    # Call the appropriate function with remaining arguments
+    args.func(unknown_args)

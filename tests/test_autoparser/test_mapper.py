@@ -9,18 +9,15 @@ import pandas as pd
 import pytest
 from testing_data_animals import TestLLM
 
-from adtl.autoparser.create_mapping import Mapper
 from adtl.autoparser.language_models.openai import OpenAILanguageModel
+from adtl.autoparser.mapping import Mapper, main
 
 
 class MapperTest(Mapper):
     # override the __init__ method to avoid calling any LLM API's, and fill with dummy
     # data from testing_data.py
     def __init__(
-        self,
-        schema,
-        data_dictionary,
-        language,
+        self, schema, data_dictionary, language, api_key=None, llm=None, config=None
     ):
         super().__init__(
             schema,
@@ -379,3 +376,21 @@ def test_class_create_mapping_save(tmp_path):
 
     loaded_file = pd.read_csv(file_name, index_col=0)
     pd.testing.assert_frame_equal(loaded_file, df)
+
+
+@pytest.mark.filterwarnings("ignore:The following schema fields have not been mapped")
+def test_main_cli(monkeypatch, tmp_path):
+    ARGV = [
+        "tests/test_autoparser/sources/animals_dd_described.csv",
+        "tests/test_autoparser/schemas/animals.schema.json",
+        "fr",
+        "1a2b3c4d",
+        "-o",
+        str(tmp_path / "test_animals_mapping.csv"),
+    ]
+
+    monkeypatch.setattr("adtl.autoparser.mapping.Mapper", MapperTest)
+
+    main(ARGV)
+
+    assert (tmp_path / "test_animals_mapping.csv").exists()
