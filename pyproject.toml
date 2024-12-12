@@ -34,7 +34,11 @@ dependencies = [
   "pandas==2.*",
   ]
   scripts = { adtl = "adtl:main", adtl-autoparser = "adtl.autoparser:main" }
-  urls = { Home = "https://github.com/globaldothealth/adtl" }
+
+[project.urls]
+homepage = "https://adtl.readthedocs.io"
+github = "https://github.com/globaldothealth/adtl"
+releasenotes = "https://github.com/globaldothealth/adtl/releases"
 
 [tool.uv]
 package = true
