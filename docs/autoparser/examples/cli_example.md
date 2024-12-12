@@ -39,10 +39,10 @@ to create the intermediate mapping file `animal_mapping.csv` for you to inspect 
 Finally, the parser file for ADTL should be written out based on the contents of `animal_mapping.csv`. Once you've mande any changes to the mapping you want, we can use the `create_parser` command
 
 ```bash
-adtl-autoparser create-parser mapping schema_path [-n parser_name] [--description parser_description] [-c config_file]
+adtl-autoparser create-parser mapping schema_path [-o output_parser_name] [--description parser_description] [-c config_file]
 ```
 as
 ```bash
-adtl-autoparser create-parser animal_mapping.csv tests/test_autoparser/schemas -n animal_parser -c tests/test_autoparser/test_config.toml
+adtl-autoparser create-parser animal_mapping.csv tests/test_autoparser/schemas -o animal_parser -c tests/test_autoparser/test_config.toml
 ```
 which writes out the TOML parser as `animal_parser.toml` ready for use in ADTL.

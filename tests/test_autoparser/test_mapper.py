@@ -17,11 +17,11 @@ class MapperTest(Mapper):
     # override the __init__ method to avoid calling any LLM API's, and fill with dummy
     # data from testing_data.py
     def __init__(
-        self, schema, data_dictionary, language, api_key=None, llm=None, config=None
+        self, data_dictionary, schema, language, api_key=None, llm=None, config=None
     ):
         super().__init__(
-            schema,
             data_dictionary,
+            schema,
             language,
             None,
             None,
@@ -31,8 +31,8 @@ class MapperTest(Mapper):
 
 
 ANIMAL_MAPPER = MapperTest(
-    Path("tests/test_autoparser/schemas/animals.schema.json"),
     "tests/test_autoparser/sources/animals_dd_described.csv",
+    Path("tests/test_autoparser/schemas/animals.schema.json"),
     "fr",
 )
 
@@ -178,8 +178,8 @@ def test_missing_common_values():
 
     with pytest.raises(ValueError, match="No common values or choices"):
         MapperTest(
-            Path("tests/test_autoparser/schemas/animals.schema.json"),
             df,
+            Path("tests/test_autoparser/schemas/animals.schema.json"),
             "fr",
         ).common_values
 
@@ -196,8 +196,8 @@ def test_choices_present():
 
     with pytest.raises(NotImplementedError, match="choices column not yet supported"):
         MapperTest(
-            Path("tests/test_autoparser/schemas/animals.schema.json"),
             df,
+            Path("tests/test_autoparser/schemas/animals.schema.json"),
             "fr",
         ).common_values
 
@@ -215,8 +215,8 @@ def test_common_values_mapped_fields_error():
 def test_mapper_class_init_raises():
     with pytest.raises(ValueError, match="Unsupported LLM provider: fish"):
         Mapper(
-            Path("tests/test_autoparser/schemas/animals.schema.json"),
             "tests/test_autoparser/sources/animals_dd_described.csv",
+            Path("tests/test_autoparser/schemas/animals.schema.json"),
             "fr",
             api_key="1234",
             llm="fish",
@@ -225,8 +225,8 @@ def test_mapper_class_init_raises():
 
 def test_mapper_class_init():
     mapper = Mapper(
-        Path("tests/test_autoparser/schemas/animals.schema.json"),
         "tests/test_autoparser/sources/animals_dd_described.csv",
+        Path("tests/test_autoparser/schemas/animals.schema.json"),
         "fr",
         llm=None,
     )
@@ -241,8 +241,8 @@ def test_mapper_class_init():
 
 def test_mapper_class_init_with_llm():
     mapper = Mapper(
-        Path("tests/test_autoparser/schemas/animals.schema.json"),
         "tests/test_autoparser/sources/animals_dd_described.csv",
+        Path("tests/test_autoparser/schemas/animals.schema.json"),
         "fr",
         api_key="abcd",
     )

@@ -295,9 +295,9 @@ def main(argv=None):
     parser.add_argument("mappings", help="Mapping file to create TOML from", type=str)
     parser.add_argument("schema_path", help="Path where schemas are located")
     parser.add_argument(
-        "-n",
-        "--name",
-        help="Name of the parser (default=globalhealth)",
+        "-o",
+        "--output",
+        help="Name of the parser to output (default=globalhealth)",
         default="globalhealth",
     )
     parser.add_argument("--description", help="Description of the parser")
@@ -314,7 +314,7 @@ def main(argv=None):
     ParserGenerator(
         args.mappings,
         schema_path,
-        args.name,
+        args.output,
         args.description or None,
         args.config or None,
     ).create_parser()

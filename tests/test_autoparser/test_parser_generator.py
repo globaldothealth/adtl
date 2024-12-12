@@ -262,7 +262,7 @@ def test_main_cli(tmp_path):
     ARGV = [
         "tests/test_autoparser/sources/animals_mapping.csv",
         "tests/test_autoparser/schemas",
-        "-n",
+        "-o",
         str(tmp_path / "animals"),
         "-c",
         CONFIG_PATH,

@@ -31,10 +31,10 @@ class Mapper:
 
     Parameters
     ----------
-    schema
-        The path to the schema file to map to
     data_dictionary
         The data dictionary to use
+    schema
+        The path to the schema file to map to
     language
         The language of the raw data (e.g. 'fr', 'en', 'es')
     api_key
@@ -47,8 +47,8 @@ class Mapper:
 
     def __init__(
         self,
-        schema: Path,
         data_dictionary: str | pd.DataFrame,
+        schema: Path,
         language: str,
         api_key: str | None = None,
         llm: Literal["openai", "gemini"] | None = "openai",
@@ -312,10 +312,10 @@ def create_mapping(
 
     Parameters
     ----------
-    schema
-        Path to a JSON schema file.
     data_dictionary
         Path to a CSV or XLSX file, or a DataFrame, containing the data dictionary.
+    schema
+        Path to a JSON schema file.
     language
         Language of the source data (e.g. french, english, spanish).
     api_key
@@ -330,7 +330,7 @@ def create_mapping(
     pd.DataFrame
         Dataframe containing the mapping between the data dictionary and the schema.
     """
-    df = Mapper(schema, data_dictionary, language, api_key, llm, config).create_mapping(
+    df = Mapper(data_dictionary, schema, language, api_key, llm, config).create_mapping(
         save=save, file_name=file_name
     )
 
@@ -361,8 +361,8 @@ def main(argv=None):
     )
     args = parser.parse_args(argv)
     Mapper(
-        Path(args.schema),
         args.dictionary,
+        Path(args.schema),
         args.language,
         args.api_key,
         args.llm,
