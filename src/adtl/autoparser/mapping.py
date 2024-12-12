@@ -294,8 +294,8 @@ class Mapper:
 
 
 def create_mapping(
-    schema: Path,
     data_dictionary: str | pd.DataFrame,
+    schema: Path,
     language: str,
     api_key: str,
     llm: str | None = "openai",
