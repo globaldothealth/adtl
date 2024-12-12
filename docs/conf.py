@@ -8,7 +8,7 @@
 
 project = "adtl"
 copyright = "2023, Global.health"
-release = "0.6.1"
+release = "0.7.0"
 author = ""
 
 # -- General configuration ---------------------------------------------------
