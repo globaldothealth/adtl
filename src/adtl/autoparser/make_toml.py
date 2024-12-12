@@ -41,6 +41,33 @@ def adtl_header(
     }
 
 
+def refs_defs(choices, num_refs):
+    references = {}
+    definitions = {}
+
+    top_mappings = choices[choices > 1][:num_refs].index
+
+    # only add one boolean map for simplicity
+    boolean_map_found = False
+    for mapping in top_mappings:
+        if boolean_map_found and True in mapping.values():
+            continue
+        if True in mapping.values():
+            references[json.dumps(mapping, sort_keys=True)] = "Y/N/NK"
+            definitions["Y/N/NK"] = {
+                "caseInsensitive": True,
+                "values": mapping,
+            }
+            boolean_map_found = True
+            continue
+        c = mapping
+        name = "/".join(map(str, c.values()))
+        references[json.dumps(mapping, sort_keys=True)] = name
+        definitions[name] = {"values": c, "caseInsensitive": True}
+
+    return references, definitions
+
+
 class ParserGenerator:
     """
     Class for creating a TOML parser from an intermediate CSV file.
@@ -122,33 +149,12 @@ class ParserGenerator:
         try:
             return self._references_definitions
         except AttributeError:
-            references = {}
-            definitions = {}
-
             # use value_counts() on parsed_choices normalise various flavours of Y/N/NK
             value_counts = self.parsed_choices.value_counts()
-            top_mappings = value_counts[value_counts > 1][
-                : self.config["num_refs"]
-            ].index
 
-            # only add one boolean map for simplicity
-            boolean_map_found = False
-            for mapping in top_mappings:
-                if boolean_map_found and True in mapping.values():
-                    continue
-                if True in mapping.values():
-                    references[json.dumps(mapping, sort_keys=True)] = "Y/N/NK"
-                    definitions["Y/N/NK"] = {
-                        "caseInsensitive": True,
-                        "values": mapping,
-                    }
-                    boolean_map_found = True
-                    continue
-                c = mapping
-                name = "/".join(map(str, c.values()))
-                references[json.dumps(mapping, sort_keys=True)] = name
-                definitions[name] = {"values": c, "caseInsensitive": True}
-            self._references_definitions = references, definitions
+            self._references_definitions = refs_defs(
+                value_counts, self.config["num_refs"]
+            )
             return self._references_definitions
 
     def schema_fields(self, table: str):
@@ -281,7 +287,7 @@ def create_parser(
     ).create_parser(parser_name)
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Make TOML from intermediate CSV file created by create_mapping.py",
         prog="autoparser create-parser",
@@ -289,9 +295,9 @@ def main():
     parser.add_argument("mappings", help="Mapping file to create TOML from", type=str)
     parser.add_argument("schema_path", help="Path where schemas are located")
     parser.add_argument(
-        "-n",
-        "--name",
-        help="Name of the parser (default=globalhealth)",
+        "-o",
+        "--output",
+        help="Name of the parser to output (default=globalhealth)",
         default="globalhealth",
     )
     parser.add_argument("--description", help="Description of the parser")
@@ -301,14 +307,14 @@ def main():
         help=f"Configuration file to use (default={DEFAULT_CONFIG})",
         type=Path,
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     schema_path = Path(args.schema_path)
 
     ParserGenerator(
         args.mappings,
         schema_path,
-        args.name,
+        args.output,
         args.description or None,
         args.config or None,
     ).create_parser()

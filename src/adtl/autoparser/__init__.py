@@ -1,8 +1,14 @@
+import argparse
 import sys
 
-from .create_mapping import Mapper, create_mapping
-from .dict_writer import DictWriter, create_dict, generate_descriptions
-from .make_toml import ParserGenerator, create_parser
+try:
+    from .dict_writer import DictWriter, create_dict, generate_descriptions
+    from .make_toml import ParserGenerator, create_parser
+    from .mapping import Mapper, create_mapping
+except ImportError:  # pragma: no cover
+    raise ImportError(
+        "autoparser is not available. Import as 'adtl[autoparser]' to use."
+    )
 
 __all__ = [
     "DictWriter",
@@ -14,43 +20,44 @@ __all__ = [
     "create_parser",
 ]
 
-from .create_mapping import main as csv_mapping_main
-from .dict_writer import api_descriptions_only as add_descriptions_main
 from .dict_writer import main as make_dd_main
 from .make_toml import main as make_toml_main
+from .mapping import main as csv_mapping_main
 
 
 def main():
-    if len(sys.argv) < 2:
-        print(
-            """
-            autoparser: specify subcommand to run
+    parser = argparse.ArgumentParser(
+        description="adtl-autoparser: A tool for creating data dictionaries and parsers"
+    )
 
-            Available subcommands:
-            create-dict - Create a data dictionary from a dataset
-            add-descriptions - Add descriptions to a data dictionary (LLM key required)
-            create-mapping - Create initial CSV mapping from data dictionary (LLM key required) # noqa
-            create-parser - Generate TOML parser from CSV mapping file
-            """
-        )
-        sys.exit(1)
-    subcommand = sys.argv[1]
-    if subcommand not in [
-        "create-parser",
-        "create-mapping",
-        "add-descriptions",
+    subparsers = parser.add_subparsers(title="subcommands", dest="subcommand")
+
+    # Subcommand: create-dict
+    parser_create_dict = subparsers.add_parser(
         "create-dict",
-    ]:
-        print("autoparser: unrecognised subcommand", subcommand)
+        help="Create a data dictionary from a dataset",
+    )
+    parser_create_dict.set_defaults(func=make_dd_main)
+
+    # Subcommand: create-mapping
+    parser_create_mapping = subparsers.add_parser(
+        "create-mapping",
+        help="Create initial CSV mapping from data dictionary (LLM key required)",
+    )
+    parser_create_mapping.set_defaults(func=csv_mapping_main)
+
+    # Subcommand: create-parser
+    parser_create_parser = subparsers.add_parser(
+        "create-parser",
+        help="Generate TOML parser from CSV mapping file",
+    )
+    parser_create_parser.set_defaults(func=make_toml_main)
+
+    args, unknown_args = parser.parse_known_args()
+
+    if args.subcommand is None:
+        parser.print_help()
         sys.exit(1)
-    sys.argv = sys.argv[1:]
-    if subcommand == "create-parser":
-        make_toml_main()
-    if subcommand == "create-mapping":
-        csv_mapping_main()
-    elif subcommand == "create-dict":
-        make_dd_main()
-    elif subcommand == "add-descriptions":
-        add_descriptions_main()
-    else:
-        pass
+
+    # Call the appropriate function with remaining arguments
+    args.func(unknown_args)

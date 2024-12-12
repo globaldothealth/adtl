@@ -254,38 +254,7 @@ def generate_descriptions(
     return dd
 
 
-def api_descriptions_only():
-    parser = argparse.ArgumentParser(
-        description="Auto-generate descriptions for a data dictionary",
-        prog="autoparser add-descriptions",
-    )
-    parser.add_argument("data_dict", help="Data dictionary")
-    parser.add_argument("language", help="Language to translate to")
-    parser.add_argument("api_key", help="OpenAI API key to generate descriptions")
-    parser.add_argument("-l", "--llm", help="LLM API to use", default="openai")
-    parser.add_argument(
-        "-c",
-        "--config",
-        help=f"Configuration file to use (default={DEFAULT_CONFIG})",
-        type=Path,
-    )
-    parser.add_argument(
-        "-o",
-        "--output",
-        help="Name to use for output files",
-        default="datadict_described",
-    )
-
-    args = parser.parse_args()
-
-    df = generate_descriptions(
-        args.data_dict, args.language, args.api_key, args.llm, args.config
-    )
-
-    df.to_csv(f"{args.output}.csv", index=False)
-
-
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Generate a basic data dictionary from a dataset",
         prog="autoparser create-dict",
@@ -314,7 +283,7 @@ def main():
         "-o", "--output", help="Name to use for output files", default="datadict"
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if args.descriptions and not args.api_key:
         raise ValueError("API key required for generating descriptions")

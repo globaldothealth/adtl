@@ -16,7 +16,7 @@ uv sync
 . .venv/bin/activate
 ```
 
-To view and use the CLI, you can type `autoparser` into the command line to view the
+To view and use the CLI, you can type `adtl-autoparser` into the command line to view the
 options available.
 
 ## Other requirements

@@ -8,7 +8,7 @@ import pytest
 from testing_data_animals import TestLLM
 
 import adtl.autoparser as autoparser
-from adtl.autoparser.dict_writer import DictWriter
+from adtl.autoparser.dict_writer import DictWriter, main
 from adtl.autoparser.language_models.openai import OpenAILanguageModel
 
 CONFIG_PATH = "tests/test_autoparser/test_config.toml"
@@ -92,3 +92,66 @@ def test_init_with_llm():
     # test no errors occur
     writer = DictWriter(config=Path(CONFIG_PATH), api_key="1234", llm="openai")
     assert isinstance(writer.model, OpenAILanguageModel)
+
+
+def test_main_cli(tmp_path):
+    ARGV = [
+        SOURCES + "animal_data.csv",
+        "fr",
+        "-c",
+        CONFIG_PATH,
+        "-o",
+        str(tmp_path / "test_animals_dd"),
+    ]
+
+    main(ARGV)
+
+    assert (tmp_path / "test_animals_dd.csv").exists()
+
+
+def test_main_cli_error_descrip_no_apikey(tmp_path):
+    ARGV = [
+        SOURCES + "animal_data.csv",
+        "fr",
+        "-d",
+        "-c",
+        CONFIG_PATH,
+        "-o",
+        str(tmp_path / "test_animals_dd"),
+    ]
+
+    with pytest.raises(ValueError, match="API key required"):
+        main(ARGV)
+
+
+class DictTest(DictWriter):
+    # override the __init__ method to avoid calling any LLM API's, and fill with dummy
+    # data from testing_data.py
+    def __init__(self, config, llm=None, api_key=None):
+        super().__init__(
+            config,
+            llm,
+            api_key,
+        )
+
+        self.model = TestLLM()
+
+
+def test_main_cli_with_descrip(monkeypatch, tmp_path):
+    ARGV = [
+        SOURCES + "animal_data.csv",
+        "fr",
+        "-d",
+        "-k",
+        "1a2s3c4d",
+        "-c",
+        CONFIG_PATH,
+        "-o",
+        str(tmp_path / "test_animals_dd"),
+    ]
+
+    monkeypatch.setattr("adtl.autoparser.dict_writer.DictWriter", DictTest)
+
+    main(ARGV)
+
+    assert (tmp_path / "test_animals_dd.csv").exists()
