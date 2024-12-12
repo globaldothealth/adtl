@@ -43,7 +43,7 @@ specification
 
 ```{toctree}
 ---
-caption: autoparser
+caption: AutoParser
 maxdepth: 1
 ---
 autoparser/index

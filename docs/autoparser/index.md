@@ -39,12 +39,4 @@ examples/cli_example
 
 ## API reference
 
-Documents the full API
-
-```{toctree}
----
-maxdepth: 2
-caption: API
----
-../api/autoparser/index
-```
+<project:../api/autoparser/index.md>
