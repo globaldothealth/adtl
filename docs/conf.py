@@ -6,9 +6,11 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import adtl
+
 project = "adtl"
 copyright = "2023, Global.health"
-release = "0.6.1"
+release = adtl.__version__
 author = ""
 
 # -- General configuration ---------------------------------------------------
