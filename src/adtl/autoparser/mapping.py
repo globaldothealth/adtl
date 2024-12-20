@@ -213,7 +213,7 @@ class Mapper:
 
         values_tuples = []
         for f in self.target_fields:
-            s = self.common_values_mapped[f]
+            s = self.common_values_mapped.get(f)
             t = self.target_values[f]
             if s and t:
                 values_tuples.append((f, s, t))
@@ -260,6 +260,10 @@ class Mapper:
         mapped_vals = self.match_values_to_schema()
 
         mapping_dict.drop(columns=["source_type"], inplace=True)
+
+        # reindex to add in any schema fields that weren't returned by the LLM
+        mapping_dict = mapping_dict.reindex(self.target_fields)
+
         mapping_dict["target_values"] = mapping_dict.index.map(self.target_values)
         mapping_dict["value_mapping"] = mapping_dict.index.map(mapped_vals)
 
@@ -269,23 +273,22 @@ class Mapper:
                 f"The following schema fields have not been mapped: {list(unmapped)}",
                 UserWarning,
             )
+
+        # turn lists & dicts into strings for consistancy with saved CSV
+        mapping_dict["target_values"] = mapping_dict["target_values"].apply(
+            lambda x: (", ".join(str(item) for item in x) if isinstance(x, list) else x)
+        )
+        mapping_dict["value_mapping"] = mapping_dict["value_mapping"].apply(
+            lambda x: (
+                ", ".join(f"{k}={v}" for k, v in x.items())
+                if isinstance(x, dict)
+                else x
+            )
+        )
+
         if save is False:
             return mapping_dict
         else:
-            # turn lists & dicts into strings to save to CSV
-            mapping_dict["target_values"] = mapping_dict["target_values"].apply(
-                lambda x: (
-                    ", ".join(str(item) for item in x) if isinstance(x, list) else x
-                )
-            )
-            mapping_dict["value_mapping"] = mapping_dict["value_mapping"].apply(
-                lambda x: (
-                    ", ".join(f"{k}={v}" for k, v in x.items())
-                    if isinstance(x, dict)
-                    else x
-                )
-            )
-
             # Write to CSV
             if not file_name.endswith(".csv"):
                 file_name += ".csv"
@@ -324,6 +327,10 @@ def create_mapping(
         Which LLM to use, currently only 'openai' is supported.
     config
         Path to a JSON file containing the configuration for autoparser.
+    save
+        Whether to save the mapping to a CSV file.
+    file_name
+        Name of the file to save the mapping to.
 
     Returns
     -------

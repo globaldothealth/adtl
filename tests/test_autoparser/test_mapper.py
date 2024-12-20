@@ -344,11 +344,8 @@ def test_class_create_mapping_no_save():
             "source_description": "Pet Animal",
             "source_field": "AnimalDeCompagnie",
             "common_values": "Oui, Non, non",
-            "target_values": ["True", "False", "None"],
-            "value_mapping": {
-                "oui": "True",
-                "non": "False",
-            },
+            "target_values": "True, False, None",
+            "value_mapping": "oui=True, non=False",
         },
         name="pet",
     )
