@@ -50,11 +50,11 @@ def test_read_config_schema():
     "s, expected",
     [
         ("oui=True, non=False, blah=None", {"oui": True, "non": False, "blah": ""}),
-        ("vivant=alive, décédé=dead, " "=None", {"vivant": "alive", "décédé": "dead"}),
+        ("vivant=alive, décédé=dead, =None", {"vivant": "alive", "décédé": "dead"}),
         ({2: True}, None),
-        ("" " = " ", poisson=fish", {"poisson": "fish"}),
+        (" = , poisson=fish", {"poisson": "fish"}),
         (
-            "" "=None, ecouvillon+croûte=[swab, crust], ecouvillon=[swab]",
+            "=None, ecouvillon+croûte=[swab, crust], ecouvillon=[swab]",
             {"ecouvillon+croûte": ["swab", "crust"], "ecouvillon": ["swab"]},
         ),
         ("pos=Y, neg=N", {"pos": "Y", "neg": "N"}),
