@@ -985,7 +985,7 @@ class Parser:
                 print(
                     f"|{table:14s}\t|{self.report['total_valid'][table]}\t"
                     f"|{self.report['total'][table]}\t"
-                    f"|{self.report['total_valid'][table]/self.report['total'][table]:%} |"  # noqa:E501
+                    f"|{self.report['total_valid'][table] / self.report['total'][table]:%} |"  # noqa:E501
                 )
             print()
             for table in self.report["validation_errors"]:
