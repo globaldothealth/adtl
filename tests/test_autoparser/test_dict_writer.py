@@ -53,6 +53,7 @@ def test_create_dict_no_descrip():
     pd.testing.assert_frame_equal(df, df_desired)
 
 
+@pytest.mark.filterwarnings("ignore:Small Dataset")
 def test_dictionary_creation_no_descrip_excel_dataframe():
     writer = DictWriter(config=CONFIG_PATH)
 

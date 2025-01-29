@@ -92,12 +92,14 @@ class DictWriter:
         # check the max count isn't > than 30% of the dataset
         calced_max_common_count = min(max_common_count, len(df) * 0.3)
         if calced_max_common_count < max_common_count:
-            max_common_count = calced_max_common_count
             warnings.warn(
-                "Small Dataset Warning: Common count threshold is too high, reducing "
-                f"to {max_common_count} to avoid data identification issues.\n"
+                f"Small Dataset: max_common_count of '{max_common_count}' is"
+                f" too high for a dataset with {len(df)} rows.\n"
+                f"Reducing to {calced_max_common_count} to avoid data "
+                "identification issues.\n"
                 "Setting the minimum frequency to 5% of the dataset."
             )
+            max_common_count = calced_max_common_count
             min_common_freq = 0.05
 
         for i in df.columns:
