@@ -26,7 +26,7 @@ def test_read_config_schema():
             "choice_delimiter",
             "choice_delimiter_map",
             "num_refs",
-            "num_choices",
+            "max_common_count",
             "schemas",
             "column_mappings",
         ],

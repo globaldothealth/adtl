@@ -5,6 +5,7 @@ Infer a data dictionary from a dataset.
 from __future__ import annotations
 
 import argparse
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -79,17 +80,40 @@ class DictWriter:
         types = [str(t) for t in df.dtypes]
         value_opts = {}
 
+        # Get common value thresholds
+        try:
+            max_common_count = self.config["max_common_count"]
+        except KeyError:
+            raise ValueError("'max_common_count' not found in config file.")
+        min_common_freq = self.config.get("min_common_freq")
+
+        # check the max count isn't > than 30% of the dataset
+        calced_max_common_count = min(max_common_count, len(df) * 0.3)
+        if calced_max_common_count < max_common_count:
+            max_common_count = calced_max_common_count
+            warnings.warn(
+                "Small Dataset Warning: Common count threshold is too high, reducing "
+                f"to {max_common_count} to avoid data identification issues.\n"
+                "Setting the minimum frequency to 5% of the dataset."
+            )
+            min_common_freq = 0.05
+
         for i in df.columns:
             values = df[i].value_counts()
-            if len(values) <= self.config["num_choices"]:
-                try:
-                    value_opts[i] = f"{self.config['choice_delimiter']} ".join(
-                        list(values.index.values)
-                    )
-                except TypeError:
-                    value_opts[i] = np.nan
-            else:
-                value_opts[i] = np.nan
+            if min_common_freq:
+                values = values[values > max(1, len(df) * min_common_freq)]
+            value_opts[i] = np.nan
+            if not values.empty and len(values) <= max_common_count:
+                # drop any values with a frequency of 1
+                values = values[values > 1]
+                if not values.empty:
+                    try:
+                        value_opts[i] = f"{self.config['choice_delimiter']} ".join(
+                            list(values.index.values)
+                        )
+                    except TypeError:
+                        # This stops float values being given as 'common values'.
+                        continue
 
         dd = pd.DataFrame(
             {
