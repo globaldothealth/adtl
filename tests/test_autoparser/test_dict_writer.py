@@ -30,6 +30,11 @@ def test_data_not_df_or_path():
         writer.create_dict(None)
 
 
+def test_error_config_missing_max_common_count():
+    with pytest.raises(ValueError, match="'max_common_count' not found in config file"):
+        DictWriter(config=SOURCES + "config_missing_common_count.toml")
+
+
 def test_dictionary_creation_no_descrip():
     writer = DictWriter(config=CONFIG_PATH)
 

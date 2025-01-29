@@ -49,6 +49,11 @@ class DictWriter:
             config or Path(Path(__file__).parent, DEFAULT_CONFIG)
         )
 
+        try:
+            self.config["max_common_count"]
+        except KeyError:
+            raise ValueError("'max_common_count' not found in config file.")
+
         if llm and api_key:
             self.model = setup_llm(llm, api_key)
         else:
@@ -81,10 +86,7 @@ class DictWriter:
         value_opts = {}
 
         # Get common value thresholds
-        try:
-            max_common_count = self.config["max_common_count"]
-        except KeyError:
-            raise ValueError("'max_common_count' not found in config file.")
+        max_common_count = self.config["max_common_count"]
         min_common_freq = self.config.get("min_common_freq")
 
         # check the max count isn't > than 30% of the dataset
