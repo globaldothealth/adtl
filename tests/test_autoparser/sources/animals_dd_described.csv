@@ -1,4 +1,4 @@
-source_field,source_description,source_type,common_values
+Field Name,Description,Field Type,Common Values
 Identité,Identity,string,
 Province,Province,choice,"Equateur, Orientale, Katanga, Kinshasa"
 DateNotification,Notification Date,string,

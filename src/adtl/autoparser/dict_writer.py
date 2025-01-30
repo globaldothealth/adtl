@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -52,6 +53,27 @@ class DictWriter:
             self.model = setup_llm(llm, api_key)
         else:
             self.model = None
+
+    def _reset_dict_headers(
+        self, config: dict[str:Any], data_dict: pd.DataFrame
+    ) -> pd.DataFrame:
+        """
+        Reset the headers of a data dictionary to those provided.
+
+        Parameters
+        ----------
+        config
+            Loaded configuration
+
+        Returns
+        -------
+        pd.DataFrame
+            Data dictionary with the headers reset
+        """
+
+        column_mappings = config["column_mappings"]
+        data_dict.rename(columns=column_mappings, inplace=True)
+        return data_dict
 
     def create_dict(self, data: pd.DataFrame | str) -> pd.DataFrame:
         """
@@ -186,6 +208,8 @@ class DictWriter:
         new_dd = pd.merge(df, descrip, on="source_field")
         new_dd["source_description"] = new_dd["description"]
         new_dd.drop(columns=["description"], inplace=True)
+
+        new_dd = self._reset_dict_headers(self.config, new_dd)
 
         return new_dd
 
