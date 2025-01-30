@@ -5,6 +5,7 @@ Create draft intermediate mapping in CSV from source dataset to target dataset
 from __future__ import annotations
 
 import argparse
+import difflib
 import warnings
 from pathlib import Path
 from typing import Literal
@@ -200,6 +201,34 @@ class Mapper:
             on="source_description",
         )
         df_merged.set_index("target_field", inplace=True, drop=True)
+
+        # Check to see if any fields with mapped descriptions are missing after merge
+        missed_merge = df_merged[
+            (df_merged["source_description"].notna())
+            & (df_merged["source_field"].isna())
+        ]
+
+        if not missed_merge.empty:
+
+            def get_matches(llm, dd, cutoff=0.8):
+                matches = difflib.get_close_matches(llm, dd, n=1, cutoff=cutoff)
+                return matches[0] if matches else None
+
+            descriptions_list = self.data_dictionary["source_description"].tolist()
+            df_merged.loc[
+                (df_merged["source_description"].notna())
+                & (df_merged["source_field"].isna()),
+                "source_description",
+            ] = missed_merge["source_description"].apply(
+                lambda x: get_matches(x, descriptions_list)
+            )
+
+            df_merged = (
+                df_merged["source_description"]
+                .reset_index()
+                .merge(self.data_dictionary, how="left")
+                .set_index("target_field")
+            )
 
         self.mapped_fields = df_merged.source_field
         self.filtered_data_dict = df_merged
