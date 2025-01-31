@@ -129,7 +129,7 @@ RULE_ENUM_LIST = {
                 {"symptoms": "[high temp; fatigue]"},
                 RULE_ENUM_LIST | {"ignoreMissingKey": True},
             ),
-            ["fever", "fatigue"],
+            ["high temp; fatigue"],
         ),
     ],
 )
