@@ -67,6 +67,12 @@ RULE_FIELD_OPTION_SKIP = {
     "can_skip": True,
 }
 
+RULE_ENUM_LIST = {
+    "field": "symptoms",
+    "type": "enum_list",
+    "values": {"high temp": "fever", "head pain": "headache"},
+}
+
 
 @pytest.mark.parametrize(
     "row_rule,expected",
@@ -97,6 +103,34 @@ RULE_FIELD_OPTION_SKIP = {
         (({"aidshiv": "1"}, RULE_FIELD_OPTION_SKIP), None),
         (({"aidshiv_mhyn": "1"}, RULE_FIELD_OPTION_SKIP), True),
         (({"aidshiv_mhyn": "2"}, RULE_FIELD_OPTION_SKIP), None),
+        (
+            (
+                {"symptoms": "[high temp, head pain]"},
+                RULE_ENUM_LIST,
+            ),
+            ["fever", "headache"],
+        ),
+        (
+            (
+                {"symptoms": "[high temp, fatigue]"},
+                RULE_ENUM_LIST,
+            ),
+            ["fever", None],
+        ),
+        (
+            (
+                {"symptoms": "[high temp, fatigue]"},
+                RULE_ENUM_LIST | {"ignoreMissingKey": True},
+            ),
+            ["fever", "fatigue"],
+        ),
+        (
+            (
+                {"symptoms": "[high temp; fatigue]"},
+                RULE_ENUM_LIST | {"ignoreMissingKey": True},
+            ),
+            ["fever", "fatigue"],
+        ),
     ],
 )
 def test_get_value_single_field(row_rule, expected):

@@ -54,6 +54,79 @@ def skip_field(row: StrDict, rule: StrDict, ctx: Context = None):
     return False
 
 
+def apply_fuction(value, row: StrDict, rule: StrDict, ctx: Context):
+    # apply data transformations.
+    transformation = rule["apply"]["function"]
+    params = None
+    if "params" in rule["apply"]:
+        params = []
+        for i in range(len(rule["apply"]["params"])):
+            if isinstance(rule["apply"]["params"][i], str) and rule["apply"]["params"][
+                i
+            ].startswith("$"):
+                params.append(row[rule["apply"]["params"][i][1:]])
+            elif isinstance(rule["apply"]["params"][i], list):
+                param = [
+                    (
+                        row[rule["apply"]["params"][i][j][1:]]
+                        if (
+                            isinstance(rule["apply"]["params"][i][j], str)
+                            and rule["apply"]["params"][i][j].startswith("$")
+                        )
+                        else rule["apply"]["params"][i][j]
+                    )
+                    for j in range(len(rule["apply"]["params"][i]))
+                ]
+                params.append(param)
+            else:
+                params.append(rule["apply"]["params"][i])
+
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", category=AdtlTransformationWarning)
+            if params:
+                value = getattr(tf, transformation)(value, *params)
+            else:
+                value = getattr(tf, transformation)(value)
+    except AttributeError:
+        raise AttributeError(
+            f"Error using a data transformation: Function {transformation} "
+            "has not been defined."
+        )
+    except AdtlTransformationWarning as e:
+        if ctx and ctx.get("returnUnmatched"):
+            warnings.warn(str(e), AdtlTransformationWarning)
+            return value
+        else:
+            logging.error(str(e))
+            return None
+    return value
+
+
+def convert_values(value, rule: StrDict, ctx: Context) -> str | list[str | None] | None:
+    if rule.get("type") == "enum_list":
+        try:
+            value = [v.lstrip(" ").rstrip(" ") for v in value.strip("[]").split(",")]
+            new_rule = {k: v for k, v in rule.items() if k != "type"}
+            value = [convert_values(v, new_rule, ctx) for v in value]
+            return value
+        except Exception as e:
+            logging.debug(f"Error converting {value} to a list: {e}")
+            return value
+
+    if rule.get("caseInsensitive") and isinstance(value, str):
+        value = value.lower().lstrip(" ").rstrip(" ")
+        rule["values"] = {k.lower(): v for k, v in rule["values"].items()}
+
+    if rule.get("ignoreMissingKey") or (ctx and ctx.get("returnUnmatched")):
+        value = rule["values"].get(value, value)
+    else:
+        value = rule["values"].get(value)
+
+    # recheck if value is empty after mapping (use to map values to None)
+    return None if value == "" else value
+
+
 # main functions
 
 
@@ -85,9 +158,8 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
     and should not be called directly, except for debugging. Use
     get_value() instead.
     """
-    if not isinstance(rule, dict) or isinstance(
-        rule, list
-    ):  # not a container, is constant
+    if not isinstance(rule, dict) or isinstance(rule, list):
+        # not a container, is constant
         return rule
     # Check whether field is present if it's allowed to be passed over
     if "field" in rule:
@@ -99,67 +171,11 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
             return None
         value = row[rule["field"]]
         if "apply" in rule:
-            # apply data transformations.
-            transformation = rule["apply"]["function"]
-            params = None
-            if "params" in rule["apply"]:
-                params = []
-                for i in range(len(rule["apply"]["params"])):
-                    if isinstance(rule["apply"]["params"][i], str) and rule["apply"][
-                        "params"
-                    ][i].startswith("$"):
-                        params.append(row[rule["apply"]["params"][i][1:]])
-                    elif isinstance(rule["apply"]["params"][i], list):
-                        param = [
-                            (
-                                row[rule["apply"]["params"][i][j][1:]]
-                                if (
-                                    isinstance(rule["apply"]["params"][i][j], str)
-                                    and rule["apply"]["params"][i][j].startswith("$")
-                                )
-                                else rule["apply"]["params"][i][j]
-                            )
-                            for j in range(len(rule["apply"]["params"][i]))
-                        ]
-                        params.append(param)
-                    else:
-                        params.append(rule["apply"]["params"][i])
-
-            try:
-                with warnings.catch_warnings():
-                    warnings.simplefilter("error", category=AdtlTransformationWarning)
-                    if params:
-                        value = getattr(tf, transformation)(value, *params)
-                    else:
-                        value = getattr(tf, transformation)(value)
-            except AttributeError:
-                raise AttributeError(
-                    f"Error using a data transformation: Function {transformation} "
-                    "has not been defined."
-                )
-            except AdtlTransformationWarning as e:
-                if ctx and ctx.get("returnUnmatched"):
-                    warnings.warn(str(e), AdtlTransformationWarning)
-                    return value
-                else:
-                    logging.error(str(e))
-                    return None
-            return value
+            value = apply_fuction(value, row, rule, ctx)
         if value == "":
             return None
         if "values" in rule:
-            if rule.get("caseInsensitive") and isinstance(value, str):
-                value = value.lower().lstrip(" ").rstrip(" ")
-                rule["values"] = {k.lower(): v for k, v in rule["values"].items()}
-
-            if rule.get("ignoreMissingKey") or (ctx and ctx.get("returnUnmatched")):
-                value = rule["values"].get(value, value)
-            else:
-                value = rule["values"].get(value)
-
-            # recheck if value is empty after mapping (use to map values to None)
-            if value == "":
-                return None
+            value = convert_values(value, rule, ctx)
         # Either source_unit / unit OR source_date / date triggers conversion
         # do not parse units if value is empty
         if "source_unit" in rule and "unit" in rule:
