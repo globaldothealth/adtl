@@ -4,6 +4,7 @@ Common utility functions for autoparser
 
 from __future__ import annotations
 
+import difflib
 import json
 import re
 from pathlib import Path
@@ -139,3 +140,27 @@ def setup_llm(provider, api_key):
         return GeminiLanguageModel(api_key=api_key)
     else:
         raise ValueError(f"Unsupported LLM provider: {provider}")
+
+
+def check_matches(llm: str, source: list[str], cutoff=0.8) -> str | None:
+    """
+    Use to check if a string returned by an llm is a close enough match to the original
+    source.
+
+    Useful for checking or finding the original word if the LLM misspells it when
+    returning results.
+
+    Parameters
+    ----------
+    llm
+        String returned by the LLM
+    source
+        List of strings to compare against (usually the original fields/descriptions
+        from the previous step)
+    """
+    if not isinstance(source, list):
+        raise ValueError(
+            f"check matches: source must be a list of strings, got '{source}'"
+        )
+    matches = difflib.get_close_matches(llm, source, n=1, cutoff=cutoff)
+    return matches[0] if matches else None

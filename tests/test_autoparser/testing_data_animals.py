@@ -52,8 +52,8 @@ field_mapping = {
     "notification_date": "Notification Date",
     "classification": "Classification",
     "case_status": "Case Status",
-    "date_of_death": "Death Date",
-    "age_years": "Age in Years",
+    "date_of_death": "Death Date",  # "Date of Death", misspelled by 'LLM'
+    "age_years": "Age Years",  # "Age in Years", misspelled by 'LLM'
     "age_months": "Age in Months",
     "sex": "Gender",
     "pet": "Pet Animal",

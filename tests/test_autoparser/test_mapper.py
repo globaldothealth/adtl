@@ -299,6 +299,10 @@ def test_match_fields_to_schema_dummy_data():
     # check mapped_values now filled
     pd.testing.assert_series_equal(mapper.mapped_fields, df["source_field"])
 
+    # check the description that was misspelled is now corrected
+    assert df.at["age_years", "source_field"] == "AgeAns"
+    assert df.at["date_of_death", "source_field"] is np.nan
+
 
 def test_match_values_to_schema_dummy_data():
     mapper = ANIMAL_MAPPER

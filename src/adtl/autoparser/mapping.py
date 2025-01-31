@@ -14,6 +14,7 @@ import pandas as pd
 
 from .util import (
     DEFAULT_CONFIG,
+    check_matches,
     load_data_dict,
     read_config_schema,
     read_json,
@@ -200,6 +201,29 @@ class Mapper:
             on="source_description",
         )
         df_merged.set_index("target_field", inplace=True, drop=True)
+
+        # Check to see if any fields with mapped descriptions are missing after merge
+        missed_merge = df_merged[
+            (df_merged["source_description"].notna())
+            & (df_merged["source_field"].isna())
+        ]
+
+        if not missed_merge.empty:
+            descriptions_list = self.data_dictionary["source_description"].tolist()
+            df_merged.loc[
+                (df_merged["source_description"].notna())
+                & (df_merged["source_field"].isna()),
+                "source_description",
+            ] = missed_merge["source_description"].apply(
+                lambda x: check_matches(x, descriptions_list)
+            )
+
+            df_merged = (
+                df_merged["source_description"]
+                .reset_index()
+                .merge(self.data_dictionary, how="left")
+                .set_index("target_field")
+            )
 
         self.mapped_fields = df_merged.source_field
         self.filtered_data_dict = df_merged

@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 
 from adtl.autoparser.util import (
+    check_matches,
     load_data_dict,
     parse_choices,
     read_config_schema,
@@ -106,3 +107,18 @@ def test_setup_llm_no_key():
 def test_setup_llm_bad_provider():
     with pytest.raises(ValueError, match="Unsupported LLM provider: fish"):
         setup_llm("fish", "abcd")
+
+
+@pytest.mark.parametrize(
+    "input, expected", [(("fish", ["fishes"]), "fishes"), (("fish", ["shark"]), None)]
+)
+def test_check_matches(input, expected):
+    llm, source = input
+    assert check_matches(llm, source) == expected
+
+
+def test_check_matches_error():
+    with pytest.raises(
+        ValueError, match="check matches: source must be a list of strings, got 'fish'"
+    ):
+        check_matches("fish", "fish")

@@ -13,6 +13,7 @@ import pandas as pd
 
 from .util import (
     DEFAULT_CONFIG,
+    check_matches,
     load_data_dict,
     read_config_schema,
     read_data,
@@ -200,7 +201,10 @@ class DictWriter:
         # check ordering is correct even if the return field names aren't quite the same
         # e.g. numbering has been stripped
         assert all(
-            descrip.apply(lambda x: x["source_field_gpt"] in x.source_field, axis=1)
+            descrip.apply(
+                lambda x: check_matches(x["source_field_gpt"], [x.source_field]),
+                axis=1,
+            )
         ), "Field names from the LLM don't match the originals."
 
         descrip.drop(columns=["source_field_gpt"], inplace=True)
