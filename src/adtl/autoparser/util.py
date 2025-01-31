@@ -80,7 +80,9 @@ def parse_choices(s: str) -> Dict[str, Any] | None:
     split_str = re.split(r",(?!(?:[^\[]*\])|(?:[^\[]*\[[^\]]*$))", s)
     choices_list = [tuple(x.strip().split("=")) for x in split_str]
     if any(len(c) != 2 for c in choices_list):
-        raise ValueError(f"Invalid choices list {choices_list!r}")
+        raise ValueError(
+            f"autoparser: Invalid choices list for value mapping {choices_list!r}"
+        )
     choices = dict(choices_list)
 
     for k, v in choices.copy().items():

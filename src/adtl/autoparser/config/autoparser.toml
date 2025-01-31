@@ -16,11 +16,18 @@ choice_delimiter_map = "="
 # max number of references to use in the parser file
 num_refs = 3
 
-# number of unique values below which a column is considered having 'common values'
-# which might need to be mapped in the parser. e.g. a column with only
+# maximum number of unique values a column can contain for them to be considered 'common'
+# and which might need to be mapped in the parser. e.g. a column with only
 # 'oui, non, inconnu' as unique values would be considered to have common values,
 # while a column with 50 unique values (perhaps because they are dates, or IDs) would not.
-num_choices = 25
+# Maximum is 30% of the dataset length (relevant for small datasets to limit data leakage).
+max_common_count = 25
+
+# Optional:
+# Frequency required for a value to be considered common. Max_common_count will act on
+# the filtered 'common' list of values.
+# Will default to 5% if the max_common_count is > 30% of the dataset.
+# min_common_freq = 0.002
 
 # Path to the target schemas, one per table
 [schemas]
