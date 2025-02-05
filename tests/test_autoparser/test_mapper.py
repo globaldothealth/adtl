@@ -287,7 +287,7 @@ def test_match_fields_to_schema_dummy_data():
     )
 
     case_status = pd.Series(
-        data=["Case Status", "StatusCas", "choice", "Vivant, Décédé"],
+        data=["Case Status", "StatusCas", "string", "Vivant, Décédé"],
         index=df.columns,
         name="case_status",
     )

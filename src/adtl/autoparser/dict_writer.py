@@ -125,8 +125,23 @@ class DictWriter:
             max_common_count = calced_max_common_count
             min_common_freq = 0.05
 
-        for i in df.columns:
-            values = df[i].value_counts()
+        for j, i in enumerate(df.columns):
+            values = df[i].value_counts(sort=True)
+
+            # check for lists in the data
+            if types[j] == "object" and any(
+                "[" in x or "," in x for x in values.index.values if isinstance(x, str)
+            ):
+                # the values might be lists.
+                list_col = df[i].apply(
+                    lambda x: [
+                        v.lstrip(" ").rstrip(" ") for v in x.strip("[]").split(",")
+                    ]
+                )
+                flat_col = [item for sublist in list_col.dropna() for item in sublist]
+                values = pd.Series(flat_col).value_counts(sort=True)
+                types[j] = "list"
+
             if min_common_freq:
                 values = values[values > max(1, len(df) * min_common_freq)]
             value_opts[i] = np.nan
@@ -157,13 +172,8 @@ class DictWriter:
                 "float64": "number",
                 "datetime64[ns]": "date",
                 "boolean": "bool",
+                "list": "list",
             }
-        )
-        dd["Field Type"] = dd.apply(
-            lambda x: (
-                "choice" if isinstance(x["Common Values"], str) else x["Field Type"]
-            ),
-            axis=1,
         )
         dd["Field Type"] = dd["Field Type"].fillna("string")
 
