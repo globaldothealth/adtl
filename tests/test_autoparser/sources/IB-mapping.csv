@@ -1,0 +1,11 @@
+target_field,source_description,source_field,common_values,target_values,value_mapping
+Case ID,Case Number,CaseNumber,,,
+Age,Person Age,PersonAge,,,
+Gender,Sex,Sex,"Male, F, Female, M","Male, Female, Other","female=Female, f=Female, male=Male, m=Male"
+Location,City,City,"Chicago, Houston, Philly",,
+Date of Onset,Onset Date,OnsetDate,,,
+Symptoms,Reported Symptoms,ReportedSymptoms,"fever, fatigue, cough, short breath, headache, muscle pain, coughing","fever, cough, dyspnea, fatigue, myalgia, headache, anosmia","fever=fever, coughing=cough, cough=cough, fatigue=fatigue, short breath=dyspnea, muscle pain=myalgia, headache=headache"
+Outcome,Health Outcome,HealthOutcome,"recovered, Recov, Dead, Recovered, Died","Recovered, Deceased, None","recov=Recovered, died=Deceased, recovered=Recovered, dead=Deceased"
+Vaccination Status,Vaccination Status,VaxStatus,"yes, no, Partial, No, Yes, none","Yes, No, Partial, Unknown","partial=Partial, none=Unknown, no=No, yes=Yes"
+Days to Recovery,Recovery Days,RecoveryDays,,,
+Underlying Conditions,Pre-existing Conditions,PreexistingConditions,,"None, Asthma, Diabetes, Hypertension, Heart Disease, Chronic Lung Disease, Chronic Kidney Disease, None",

@@ -122,6 +122,50 @@ def test_target_values():
     pd.testing.assert_series_equal(mapper.target_values, target_vals)
 
 
+def test_target_fields_with_enum_lists():
+    mapper = MapperTest(
+        "tests/test_autoparser/sources/IB_sample_dd.csv",
+        Path("tests/test_autoparser/schemas/IB-sample.schema.json"),
+        "fr",
+    )
+    target_vals = pd.Series(
+        data=[
+            np.nan,
+            np.nan,
+            ["Male", "Female", "Other"],
+            np.nan,
+            np.nan,
+            ["fever", "cough", "dyspnea", "fatigue", "myalgia", "headache", "anosmia"],
+            ["Recovered", "Deceased", None],
+            ["Yes", "No", "Partial", "Unknown"],
+            np.nan,
+            [
+                "None",
+                "Asthma",
+                "Diabetes",
+                "Hypertension",
+                "Heart Disease",
+                "Chronic Lung Disease",
+                "Chronic Kidney Disease",
+                None,
+            ],
+        ],
+        index=[
+            "Case ID",
+            "Age",
+            "Gender",
+            "Location",
+            "Date of Onset",
+            "Symptoms",
+            "Outcome",
+            "Vaccination Status",
+            "Days to Recovery",
+            "Underlying Conditions",
+        ],
+    )
+    pd.testing.assert_series_equal(mapper.target_values, target_vals)
+
+
 def test_common_values():
     mapper = ANIMAL_MAPPER
 
