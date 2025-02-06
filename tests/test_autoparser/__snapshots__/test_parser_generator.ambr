@@ -65,8 +65,20 @@
       'field': 'Sexe',
       'values': dict({
         'f': 'female',
-        'inconnu': '',
         'm': 'male',
+      }),
+    }),
+    'underlying_conditions': dict({
+      'caseInsensitive': True,
+      'description': 'Preexisting Conditions',
+      'field': 'ConditionsPreexistantes',
+      'type': 'enum_list',
+      'values': dict({
+        'arthrite': 'arthritis',
+        'convulsions': 'seizures',
+        'diabète': 'diabetes',
+        "problèmes d'échelle": 'skin problems',
+        'vomir': 'vomiting',
       }),
     }),
   })
@@ -137,8 +149,20 @@
       'field': 'Sexe',
       'values': dict({
         'f': 'female',
-        'inconnu': '',
         'm': 'male',
+      }),
+    }),
+    'underlying_conditions': dict({
+      'caseInsensitive': True,
+      'description': 'Preexisting Conditions',
+      'field': 'ConditionsPreexistantes',
+      'type': 'enum_list',
+      'values': dict({
+        'arthrite': 'arthritis',
+        'convulsions': 'seizures',
+        'diabète': 'diabetes',
+        "problèmes d'échelle": 'skin problems',
+        'vomir': 'vomiting',
       }),
     }),
   })
@@ -252,6 +276,22 @@
         'other',
         'unknown',
         None,
+      ]),
+    }),
+    'underlying_conditions': dict({
+      'items': dict({
+        'enum': list([
+          'diabetes',
+          'arthritis',
+          'seizures',
+          'vomiting',
+          'skin problems',
+        ]),
+        'type': 'string',
+      }),
+      'type': list([
+        'array',
+        'null',
       ]),
     }),
   })

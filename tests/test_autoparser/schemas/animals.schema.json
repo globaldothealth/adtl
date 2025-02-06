@@ -116,6 +116,22 @@
         "string",
         "null"
       ]
+    },
+    "underlying_conditions": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string",
+        "enum": [
+          "diabetes",
+          "arthritis",
+          "seizures",
+          "vomiting",
+          "skin problems"
+        ]
+      }
     }
   }
 }

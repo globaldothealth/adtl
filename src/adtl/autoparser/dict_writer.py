@@ -134,9 +134,11 @@ class DictWriter:
             ):
                 # the values might be lists.
                 list_col = df[i].apply(
-                    lambda x: [
-                        v.lstrip(" ").rstrip(" ") for v in x.strip("[]").split(",")
-                    ]
+                    lambda x: (
+                        [v.lstrip(" ").rstrip(" ") for v in x.strip("[]").split(",")]
+                        if isinstance(x, str)
+                        else x
+                    )
                 )
                 flat_col = [item for sublist in list_col.dropna() for item in sublist]
                 values = pd.Series(flat_col).value_counts(sort=True)

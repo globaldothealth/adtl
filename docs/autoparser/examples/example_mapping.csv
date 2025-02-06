@@ -1,15 +1,16 @@
 target_field,source_description,source_field,common_values,target_values,value_mapping
 identity,Identity,Identité,,,
 name,Full Name,Nom complet ,,,
-loc_admin_1,Province,Province,"Equateur, Orientale, Katanga, Kinshasa",,"equateur=None, katanga=None, kinshasa=None, orientale=None"
+loc_admin_1,Province,Province,"Equateur, Orientale, Katanga",,"equateur=None, katanga=None, orientale=None"
 country_iso3,,,,,
 notification_date,Notification Date,DateNotification,,,
-classification,Classification,Classicfication ,"FISH, amphibie, oiseau, Mammifère, poisson, REPT, OISEAU","mammal, bird, reptile, amphibian, fish, invertebrate, None","oiseau=bird, mammifère=mammal, poisson=fish, rept=reptile, amphibie=amphibian, fish=invertebrate"
-case_status,Case Status,StatusCas,"Vivant, Décédé","alive, dead, unknown, None","décédé=dead, vivant=alive"
+classification,Classification,Classicfication ,"FISH, amphibie, oiseau, Mammifère, poisson, REPT","mammal, bird, reptile, amphibian, fish, invertebrate, None","poisson=fish, oiseau=bird, amphibie=amphibian, rept=reptile, mammifère=mammal, fish=invertebrate"
+case_status,Case Status,StatusCas,"Vivant, Décédé","alive, dead, unknown, None","vivant=alive, décédé=dead"
 date_of_death,Died Date,DateDec,,,
 age_years,Age (Years),AgeAns,,,
 age_months,Age (Months),AgeMois         ,,,
-sex,Sex,Sexe,"F, M,   f, m, f, m     , inconnu","male, female, other, unknown, None","m=male, inconnu=unknown, f=female"
+sex,Sex,Sexe,"F, M,   f, m, f, m     ","male, female, other, unknown, None","m=male, f=female"
 pet,Pet Animal,AnimalDeCompagnie,"Oui, Non, non","True, False, None","oui=True, non=False"
 chipped,Microchipped,Micropucé,"Oui, NON, OUI, oui","True, False, None","oui=True, non=False"
 owner,,,,,
+underlying_conditions,Preexisting Conditions,ConditionsPreexistantes,"diabète, vomir, convulsions, arthrite, problèmes d'échelle","diabetes, arthritis, seizures, vomiting, skin problems","problèmes d'échelle=skin problems, convulsions=seizures, diabète=diabetes, vomir=vomiting, arthrite=arthritis"

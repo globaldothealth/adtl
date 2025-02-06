@@ -161,7 +161,18 @@ class ParserGenerator:
         """Returns all the fields for `table` and their properties"""
         return self.schemas[table]["properties"]
 
-    def single_field_mapping(self, match: pd.DataFrame) -> dict[str, Any]:
+    def field_types(self, table) -> dict[str, list[str]]:
+        """Returns the field types of the target schema"""
+        try:
+            return self._field_types
+        except AttributeError:
+            s = self.schema_fields(table)
+            self._field_types = {
+                f: s[f].get("type", ["string", "null"]) for f in s.keys()
+            }
+            return self._field_types
+
+    def single_field_mapping(self, table, match: pd.DataFrame) -> dict[str, Any]:
         """Make a single field mapping from a single row of the mappings dataframe"""
 
         choices = self.parsed_choices[match.target_field]
@@ -175,6 +186,9 @@ class ParserGenerator:
                 out["values"] = choices
                 out["caseInsensitive"] = True
 
+            if "array" in self.field_types(table)[match.target_field]:
+                out["type"] = "enum_list"
+
         return out
 
     def make_toml_table(self, table: str) -> dict[str, Any]:
@@ -185,7 +199,9 @@ class ParserGenerator:
         for field, field_matches in self.mappings.groupby("target_field"):
             if len(field_matches) == 1:  # single field
                 if not any(field_matches["source_field"].isna()):
-                    outmap[field] = self.single_field_mapping(field_matches.iloc[0])
+                    outmap[field] = self.single_field_mapping(
+                        table, field_matches.iloc[0]
+                    )
 
             else:  # combinedType
                 raise NotImplementedError("CombinedType not supported")

@@ -31,6 +31,7 @@ descriptions = {
     "ContactAnimal": "Animal Contact",
     "Micropucé": "Microchipped",
     "AnimalDeCompagnie": "Pet Animal",
+    "ConditionsPreexistantes": "Preexisting Conditions",
 }
 
 
@@ -59,6 +60,7 @@ field_mapping = {
     "pet": "Pet Animal",
     "chipped": "Microchipped",
     "owner": None,
+    "underlying_conditions": "Preexisting Conditions",
 }
 
 

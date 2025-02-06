@@ -61,7 +61,6 @@ def test_dictionary_creation_no_descrip_excel():
     writer.create_dict(SOURCES + "animal_data.xlsx")
 
 
-@pytest.mark.filterwarnings("ignore:Small Dataset")
 def test_dictionary_creation_no_descrip_dataframe():
     writer = DictWriter(config=CONFIG_PATH)
 

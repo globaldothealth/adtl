@@ -21,7 +21,7 @@ country_iso3 = ""
 [animals.case_status]
 field = "StatusCas"
 description = "Case Status"
-values = { "décédé" = "dead", vivant = "alive" }
+values = { vivant = "alive", "décédé" = "dead" }
 caseInsensitive = true
 
 [animals.classification]
@@ -30,21 +30,34 @@ description = "Classification"
 caseInsensitive = true
 
 [animals.classification.values]
-oiseau = "bird"
-"mammifère" = "mammal"
 poisson = "fish"
-rept = "reptile"
+oiseau = "bird"
 amphibie = "amphibian"
+rept = "reptile"
+"mammifère" = "mammal"
 fish = "invertebrate"
 
 [animals.loc_admin_1]
 field = "Province"
 description = "Province"
-values = { equateur = "", katanga = "", kinshasa = "", orientale = "" }
+values = { equateur = "", katanga = "", orientale = "" }
 caseInsensitive = true
 
 [animals.sex]
 field = "Sexe"
 description = "Sex"
-values = { m = "male", inconnu = "unknown", f = "female" }
+values = { m = "male", f = "female" }
 caseInsensitive = true
+
+[animals.underlying_conditions]
+field = "ConditionsPreexistantes"
+description = "Preexisting Conditions"
+caseInsensitive = true
+type = "enum_list"
+
+[animals.underlying_conditions.values]
+"problèmes d'échelle" = "skin problems"
+convulsions = "seizures"
+"diabète" = "diabetes"
+vomir = "vomiting"
+arthrite = "arthritis"
