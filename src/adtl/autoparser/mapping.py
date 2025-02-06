@@ -102,6 +102,10 @@ class Mapper:
                     return ["True", "False", "None"]
                 elif "string" in self.target_types[f]:
                     return self.schema_properties[f].get("enum", np.nan)
+                elif "array" in self.target_types[f]:
+                    return (
+                        self.schema_properties[f].get("items", {}).get("enum", np.nan)
+                    )
                 else:
                     return np.nan
 

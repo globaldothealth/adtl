@@ -57,6 +57,7 @@ def test_target_fields():
             "pet",
             "chipped",
             "owner",
+            "underlying_conditions",
         ],
     )
 
@@ -78,6 +79,7 @@ def test_target_types():
         "pet": ["boolean", "null"],
         "chipped": ["boolean", "null"],
         "owner": ["string", "null"],
+        "underlying_conditions": ["array", "null"],
     }
 
 
@@ -100,6 +102,7 @@ def test_target_values():
             ["True", "False", "None"],
             ["True", "False", "None"],
             np.nan,
+            ["diabetes", "arthritis", "seizures", "vomiting", "skin problems"],
         ],
         index=[
             "identity",
@@ -116,6 +119,7 @@ def test_target_values():
             "pet",
             "chipped",
             "owner",
+            "underlying_conditions",
         ],
     )
 
@@ -144,6 +148,7 @@ def test_common_values():
             {"non", "oui"},
             {"non", "oui"},
             {"non", "oui"},
+            {"diabète", "vomir", "convulsions", "arthrite", "problèmes d'échelle"},
         ],
         index=[
             "Identité",
@@ -163,6 +168,7 @@ def test_common_values():
             "ContactAnimal",
             "Micropucé",
             "AnimalDeCompagnie",
+            "ConditionsPreexistantes",
         ],
     )
     pd.testing.assert_series_equal(mapper.common_values, common_vals, check_names=False)
@@ -256,7 +262,7 @@ def test_match_fields_to_schema_dummy_data():
 
     df = mapper.match_fields_to_schema()
 
-    assert df.shape == (14, 4)
+    assert df.shape == (15, 4)
     npt.assert_array_equal(
         df.columns,
         [
@@ -283,11 +289,12 @@ def test_match_fields_to_schema_dummy_data():
             "pet",
             "chipped",
             "owner",
+            "underlying_conditions",
         ],
     )
 
     case_status = pd.Series(
-        data=["Case Status", "StatusCas", "choice", "Vivant, Décédé"],
+        data=["Case Status", "StatusCas", "string", "Vivant, Décédé"],
         index=df.columns,
         name="case_status",
     )
@@ -330,7 +337,7 @@ def test_class_create_mapping_no_save():
     with pytest.warns(UserWarning):
         df = mapper.create_mapping(save=False)
 
-    assert df.shape == (14, 5)
+    assert df.shape == (15, 5)
     assert df.index.name == "target_field"
     npt.assert_array_equal(
         df.columns,

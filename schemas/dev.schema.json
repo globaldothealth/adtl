@@ -88,6 +88,12 @@
             "can_skip": {
               "const": true,
               "description": "Indicates to the parser whether the field can be skipped without throwing an error if missing in the data."
+            },
+            "type": {
+              "enum": [
+                "enum_list"
+              ],
+              "description": "If the field is a single field list"
             }
           }
         }

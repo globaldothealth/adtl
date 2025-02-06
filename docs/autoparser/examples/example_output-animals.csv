@@ -1,31 +1,31 @@
-adtl_valid,adtl_error,age_months,age_years,case_status,chipped,classification,country_iso3,date_of_death,identity,loc_admin_1,name,notification_date,pet,sex
-True,,10,2,alive,True,mammal,,,A001,,Luna,2024-01-01,True,female
-True,,4,3,dead,False,invertebrate,,2024-06-01,B002,,Max,2024-15-02,True,male
-True,,11,1,alive,True,bird,,,C003,,Coco,2024-03-10,False,female
-True,,5,4,alive,False,amphibian,,,D004,,Bella,2024-04-22,False,male
-True,,3,5,dead,True,fish,,2024-07-01,E005,,Charlie,2024-05-30,True,female
-True,,10,2,alive,True,mammal,,,A101,,,2024-01-05,True,female
-True,,4,3,dead,False,invertebrate,,2024-06-30,B102,,Bilbo,2024-06-15,True,male
-True,,11,1,alive,True,bird,,,C103,,Badger,2024-07-10,False,female
-True,,5,4,alive,False,amphibian,,,D104,,Freddie,2024-04-10,False,male
-True,,3,5,dead,True,reptile,,2024-01-15,E105,,Dodger,2023-12-30,True,female
-True,,10,2,alive,True,mammal,,,A201,,Boris,2022-01-01,True,female
-True,,4,3,dead,False,invertebrate,,2024-06-05,B202,,Strider,2023-02-15,True,male
-True,,11,1,alive,True,bird,,,C203,,Baggins,2020-03-10,False,female
-True,,5,4,alive,False,amphibian,,,D204,,Pickwick,2021-04-22,False,male
-True,,3,5,dead,True,invertebrate,,2024-07-15,E205,,Spike,2024-05-31,True,male
-True,,10,2,alive,True,mammal,,,A301,,Wilber,2024-01-08,True,female
-True,,4,3,dead,False,invertebrate,,2024-06-01,B302,,Tinker,2024-02-25,True,male
-True,,11,1,alive,True,amphibian,,,C303,,Zorro,2024-06-10,False,female
-True,,5,4,alive,False,amphibian,,,D304,,Flubber,2024-11-22,False,male
-True,,3,5,dead,True,invertebrate,,2024-03-15,E305,,Charlie,2024-02-30,True,female
-True,,11,1,alive,True,bird,,,C403,,Coco,2024-03-13,False,female
-True,,5,4,alive,False,amphibian,,,D404,,Dougal,2024-04-17,False,male
-True,,3,5,dead,True,fish,,2024-06-11,E405,,David,2024-05-20,True,female
-True,,10,2,alive,True,bird,,,A501,,Luna,2024-11-01,True,male
-True,,4,3,dead,False,invertebrate,,2024-03-01,B502,,Ian,2024-02-05,True,female
-True,,11,1,alive,True,bird,,,C503,,Kate,2024-12-10,False,female
-True,,5,4,alive,False,amphibian,,,D504,,Bobby,2024-04-29,False,male
-True,,3,5,dead,True,fish,,2024-04-30,E505,,Toothless,2024-09-30,True,female
-True,,10,2,alive,True,reptile,,,A601,,,2024-02-01,True,female
-True,,4,3,dead,False,invertebrate,,2024-02-25,B602,,Millie,2024-02-12,True,unknown
+adtl_valid,adtl_error,age_months,age_years,case_status,chipped,classification,country_iso3,date_of_death,identity,loc_admin_1,name,notification_date,pet,sex,underlying_conditions
+True,,10,2,alive,True,mammal,,,A001,,Luna,2024-01-01,True,female,"['arthritis', 'vomiting']"
+True,,4,3,dead,False,invertebrate,,2024-06-01,B002,,Max,2024-15-02,True,male,
+True,,11,1,alive,True,bird,,,C003,,Coco,2024-03-10,False,female,
+True,,5,4,alive,False,amphibian,,,D004,,Bella,2024-04-22,False,male,
+True,,3,5,dead,True,fish,,2024-07-01,E005,,Charlie,2024-05-30,True,female,
+True,,10,2,alive,True,mammal,,,A101,,,2024-01-05,True,female,"['vomiting', 'arthritis']"
+True,,4,3,dead,False,invertebrate,,2024-06-30,B102,,Bilbo,2024-06-15,True,male,
+True,,11,1,alive,True,bird,,,C103,,Badger,2024-07-10,False,female,
+True,,5,4,alive,False,amphibian,,,D104,,Freddie,2024-04-10,False,male,
+True,,3,5,dead,True,reptile,,2024-01-15,E105,,Dodger,2023-12-30,True,female,"['seizures', 'diabetes']"
+True,,10,2,alive,True,mammal,,,A201,,Boris,2022-01-01,True,female,
+True,,4,3,dead,False,invertebrate,,2024-06-05,B202,,Strider,2023-02-15,True,male,
+True,,11,1,alive,True,bird,,,C203,,Baggins,2020-03-10,False,female,['diabetes']
+True,,5,4,alive,False,amphibian,,,D204,,Pickwick,2021-04-22,False,male,
+True,,3,5,dead,True,invertebrate,,2024-07-15,E205,,Spike,2024-05-31,True,male,
+True,,10,2,alive,True,mammal,,,A301,,Wilber,2024-01-08,True,female,['seizures']
+True,,4,3,dead,False,invertebrate,,2024-06-01,B302,kinshasa,Tinker,2024-02-25,True,male,
+True,,11,1,alive,True,amphibian,,,C303,,Zorro,2024-06-10,False,female,
+True,,5,4,alive,False,amphibian,,,D304,,Flubber,2024-11-22,False,male,
+True,,3,5,dead,True,invertebrate,,2024-03-15,E305,,Charlie,2024-02-30,True,female,
+True,,11,1,alive,True,bird,,,C403,,Coco,2024-03-13,False,female,"['diabetes', 'vomiting']"
+True,,5,4,alive,False,amphibian,,,D404,,Dougal,2024-04-17,False,male,
+True,,3,5,dead,True,fish,,2024-06-11,E405,,David,2024-05-20,True,female,
+True,,10,2,alive,True,bird,,,A501,,Luna,2024-11-01,True,male,
+True,,4,3,dead,False,invertebrate,,2024-03-01,B502,,Ian,2024-02-05,True,female,"['skin problems', 'seizures', 'diabetes']"
+True,,11,1,alive,True,bird,,,C503,,Kate,2024-12-10,False,female,
+True,,5,4,alive,False,amphibian,,,D504,,Bobby,2024-04-29,False,male,
+True,,3,5,dead,True,fish,,2024-04-30,E505,,Toothless,2024-09-30,True,female,
+True,,10,2,alive,True,reptile,,,A601,,,2024-02-01,True,female,
+False,"data.sex must be one of ['male', 'female', 'other', 'unknown', None]",4,3,dead,False,invertebrate,,2024-02-25,B602,,Millie,2024-02-12,True,inconnu,['skin problems']

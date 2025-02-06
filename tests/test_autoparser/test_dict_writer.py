@@ -54,15 +54,30 @@ def test_create_dict_no_descrip():
 
 
 @pytest.mark.filterwarnings("ignore:Small Dataset")
-def test_dictionary_creation_no_descrip_excel_dataframe():
+def test_dictionary_creation_no_descrip_excel():
     writer = DictWriter(config=CONFIG_PATH)
 
     # check no errors excel
     writer.create_dict(SOURCES + "animal_data.xlsx")
 
+
+def test_dictionary_creation_no_descrip_dataframe():
+    writer = DictWriter(config=CONFIG_PATH)
+
     # check no errors dataframe
-    df = pd.read_csv(SOURCES + "animals_dd.csv")
+    df = pd.read_csv(SOURCES + "animal_data.csv")
     writer.create_dict(df)
+
+
+@pytest.mark.filterwarnings("ignore:Small Dataset")
+def test_dictionary_creation_with_list():
+    writer = DictWriter(config=CONFIG_PATH)
+
+    df = writer.create_dict(SOURCES + "IB_sample_data.csv")
+
+    df_desired = pd.read_csv(SOURCES + "IB_sample_dd.csv")
+
+    pd.testing.assert_frame_equal(df, df_desired)
 
 
 def test_dictionary_description():

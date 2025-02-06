@@ -59,10 +59,17 @@ def test_parsed_choices():
             None,
             None,
             None,
-            {"m": "male", "f": "female", "inconnu": ""},
+            {"m": "male", "f": "female"},
             {"oui": True, "non": False},
             {"oui": True, "non": False},
             None,
+            {
+                "problèmes d'échelle": "skin problems",
+                "convulsions": "seizures",
+                "diabète": "diabetes",
+                "vomir": "vomiting",
+                "arthrite": "arthritis",
+            },
         ],
         index=[
             "identity",
@@ -79,6 +86,7 @@ def test_parsed_choices():
             "pet",
             "chipped",
             "owner",
+            "underlying_conditions",
         ],
     )
 
@@ -224,7 +232,7 @@ def test_schema_fields(snapshot):
 def test_single_field_mapping(row, expected):
     parser = ANIMAL_PARSER
 
-    assert parser.single_field_mapping(row) == expected
+    assert parser.single_field_mapping("animals", row) == expected
 
 
 def test_create_parser(tmp_path, snapshot):

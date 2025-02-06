@@ -1,0 +1,11 @@
+Field Name,Description,Field Type,Common Values
+CaseNumber,,number,
+PersonAge,,number,
+Sex,,string,"Male, F, Female, M"
+City,,string,"Chicago, Houston, Philly"
+OnsetDate,,string,
+ReportedSymptoms,,list,"fever, fatigue, cough, short breath, headache, muscle pain, coughing"
+HealthOutcome,,string,"recovered, Recov, Dead, Recovered, Died"
+VaxStatus,,string,"yes, no, Partial, No, Yes, none"
+RecoveryDays,,number,
+PreexistingConditions,,string,

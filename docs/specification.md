@@ -310,6 +310,22 @@ When the parser encounters e.g. `Homme` or `FEMME` in the data it will still mat
 `Home` will return `null`, but strips and leading or trailing whitespace so `"  FEMME  "`
 will also match to `female`.
 
+#### Field with lists of values
+
+If a field requires a list of values, a `type` of `enum_list` can be added to the rule:
+```toml
+[table.symptoms]
+field = "ReportedSymptoms"
+type = "enum_list"
+values = { "high temp" = "fever", headache = "cephalalgia", "muscle aches"="myalgia" }
+ignoreMissingKey = true
+```
+
+When the parser if given a list either in square brackets, e.g. `'[high temp, headache']'`
+or as a comma-separated string e.g. `"muscle aches, high temp"` it will attempt to turn
+convert the string into a list of values and find matches for the listed values. As with
+a standard value mapping field, it can be tagged to be case insensitive and to return
+all fields it cannot match.
 
 ### Combined type
 
