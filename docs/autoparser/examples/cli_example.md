@@ -12,7 +12,7 @@ In this example, we will generate a data dictionary with descriptions already ad
 
 
 ```bash
-adtl-autoparser create-dict data language [-d] [-k api_key] [-l llm_choice] [-c config_file] [-o output_name]
+adtl-autoparser create-dict data language [-d] [-k api_key] [-l llm_provider] [-m llm_model] [-c config_file] [-o output_name]
 ```
 where the `-d` flag is used to request the LLM-generated descriptions. For the
 `animal_data.csv` data we will run this command to generate a data dictionary
@@ -27,7 +27,7 @@ This creates an `animals_dd.csv` data dictionary to use in the next step.
 The next step is to create an intermediate CSV for you to inspect, mapping the fields and values in the raw data to the target schema. This is the CLI syntax:
 
 ```bash
-adtl-autoparser create-mapping dictionary schema language api_key [-l llm_choice] [-c config_file] [-o output_name]
+adtl-autoparser create-mapping dictionary schema language api_key [-l llm_provider] [-m llm_model] [-c config_file] [-o output_name]
 ```
 so we can run
 ```bash

@@ -18,7 +18,14 @@ class MapperTest(Mapper):
     # override the __init__ method to avoid calling any LLM API's, and fill with dummy
     # data from testing_data.py
     def __init__(
-        self, data_dictionary, schema, language, api_key=None, llm=None, config=None
+        self,
+        data_dictionary,
+        schema,
+        language,
+        api_key=None,
+        llm_provider=None,
+        llm_model=None,
+        config=None,
     ):
         super().__init__(
             data_dictionary,

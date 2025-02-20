@@ -40,8 +40,11 @@ class Mapper:
         The language of the raw data (e.g. 'fr', 'en', 'es')
     api_key
         The API key to use for the LLM
-    llm
-        The LLM to use, currently only 'openai' and 'gemini' are supported
+    llm_provider
+        The LLM API to use, currently only 'openai' and 'gemini' are supported
+    llm_model
+        The LLM model to use. If not provided, a default for the given provider will be
+        used.
     config
         The path to the configuration file to use if not using the default configuration
     """
@@ -330,7 +333,8 @@ def create_mapping(
     schema: Path,
     language: str,
     api_key: str,
-    llm: str | None = "openai",
+    llm_provider: str | None = "openai",
+    llm_model: str | None = None,
     config: Path | None = None,
     save: bool = True,
     file_name: str = "mapping_file",
@@ -351,9 +355,12 @@ def create_mapping(
     language
         Language of the source data (e.g. french, english, spanish).
     api_key
-        API key for the API defined in `llm`
-    llm
-        Which LLM to use, currently only 'openai' is supported.
+        API key for the API defined in `llm_provider`
+    llm_provider
+        Which LLM to use, currently 'openai' and 'gemini' are supported.
+    llm_model
+        Specify an LLM model to use. If not provided, a default for the given provider
+        will be used.
     config
         Path to a JSON file containing the configuration for autoparser.
     save
@@ -366,9 +373,9 @@ def create_mapping(
     pd.DataFrame
         Dataframe containing the mapping between the data dictionary and the schema.
     """
-    df = Mapper(data_dictionary, schema, language, api_key, llm, config).create_mapping(
-        save=save, file_name=file_name
-    )
+    df = Mapper(
+        data_dictionary, schema, language, api_key, llm_provider, llm_model, config
+    ).create_mapping(save=save, file_name=file_name)
 
     return df
 
@@ -385,7 +392,8 @@ def main(argv=None):
     parser.add_argument("schema", help="Schema to use")
     parser.add_argument("language", help="Language of the original data")
     parser.add_argument("api_key", help="OpenAI API key to use")
-    parser.add_argument("-l", "--llm", help="LLM API to use", default="openai")
+    parser.add_argument("-l", "--llm-provider", help="LLM API to use", default="openai")
+    parser.add_argument("-m", "--llm-model", help="LLM model to use")
     parser.add_argument(
         "-c",
         "--config",
@@ -401,7 +409,8 @@ def main(argv=None):
         Path(args.schema),
         args.language,
         args.api_key,
-        args.llm,
+        args.llm_provider,
+        args.llm_model,
         args.config,
     ).create_mapping(save=True, file_name=args.output)
 

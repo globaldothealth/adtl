@@ -148,10 +148,10 @@ def test_main_cli_error_descrip_no_apikey(tmp_path):
 class DictTest(DictWriter):
     # override the __init__ method to avoid calling any LLM API's, and fill with dummy
     # data from testing_data.py
-    def __init__(self, config, llm=None, api_key=None):
+    def __init__(self, config, llm_provider=None, api_key=None):
         super().__init__(
             config,
-            llm,
+            llm_provider,
             api_key,
         )
 
