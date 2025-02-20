@@ -109,6 +109,11 @@ def test_setup_llm_bad_provider():
         setup_llm("fish", "abcd")
 
 
+def test_setup_llm_provide_model():
+    model = setup_llm("gemini", "abcd", "gemini-2.0-flash")
+    assert model.model == "gemini-2.0-flash"
+
+
 @pytest.mark.parametrize(
     "input, expected", [(("fish", ["fishes"]), "fishes"), (("fish", ["shark"]), None)]
 )

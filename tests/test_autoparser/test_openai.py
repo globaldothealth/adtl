@@ -2,6 +2,7 @@
 
 import datetime
 
+import pytest
 from openai.types.chat.parsed_chat_completion import (
     ParsedChatCompletion,
     ParsedChatCompletionMessage,
@@ -18,6 +19,16 @@ def test_init():
 
     assert model.client is not None
     assert model.model == "gpt-4o-mini"
+
+
+def test_init_invalid_model_raises():
+    with pytest.raises(ValueError, match="Unsupported OpenAI model. Must be one of"):
+        OpenAILanguageModel("1234", model="invalid_model")
+
+
+def test_init_with_model():
+    model = OpenAILanguageModel("1234", model="o3-mini")
+    assert model.model == "o3-mini"
 
 
 def test_get_definitions(monkeypatch):

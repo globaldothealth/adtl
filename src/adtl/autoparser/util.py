@@ -146,9 +146,9 @@ def setup_llm(
     if model is not None:
         kwargs["model"] = model
 
-    if provider == "openai":  # pragma: no cover
+    if provider == "openai":
         return OpenAILanguageModel(**kwargs)
-    elif provider == "gemini":  # pragma: no cover
+    elif provider == "gemini":
         return GeminiLanguageModel(**kwargs)
     else:
         raise ValueError(f"Unsupported LLM provider: {provider}")

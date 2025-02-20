@@ -1,5 +1,6 @@
 "Tests the OpenAILanguageModel class."
 
+import pytest
 from google.generativeai import protos
 from google.generativeai.types import GenerateContentResponse
 from testing_data_animals import get_definitions, map_fields, map_values
@@ -12,6 +13,16 @@ def test_init():
 
     assert model.client is not None
     assert model.model == "gemini-1.5-flash"
+
+
+def test_init_invalid_model_raises():
+    with pytest.raises(ValueError, match="Unsupported Gemini model. Must be one of"):
+        GeminiLanguageModel("1234", model="invalid_model")
+
+
+def test_init_with_model():
+    model = GeminiLanguageModel("1234", model="gemini-2.0-flash")
+    assert model.model == "gemini-2.0-flash"
 
 
 def test_get_definitions(monkeypatch):
