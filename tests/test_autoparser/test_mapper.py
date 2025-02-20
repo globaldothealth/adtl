@@ -226,7 +226,7 @@ def test_mapper_class_init_raises():
             Path("tests/test_autoparser/schemas/animals.schema.json"),
             "fr",
             api_key="1234",
-            llm="fish",
+            llm_provider="fish",
         )
 
 
@@ -235,7 +235,7 @@ def test_mapper_class_init():
         "tests/test_autoparser/sources/animals_dd_described.csv",
         Path("tests/test_autoparser/schemas/animals.schema.json"),
         "fr",
-        llm=None,
+        llm_provider=None,
     )
 
     assert mapper.language == "fr"

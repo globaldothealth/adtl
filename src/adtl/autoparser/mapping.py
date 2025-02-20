@@ -52,16 +52,17 @@ class Mapper:
         schema: Path,
         language: str,
         api_key: str | None = None,
-        llm: Literal["openai", "gemini"] | None = "openai",
+        llm_provider: Literal["openai", "gemini"] | None = "openai",
+        llm_model: str | None = None,
         config: Path | None = None,
     ):
         self.schema = read_json(schema)
         self.schema_properties = self.schema["properties"]
         self.language = language
-        if llm is None:
+        if llm_provider is None:
             self.model = None
         else:
-            self.model = setup_llm(llm, api_key)
+            self.model = setup_llm(llm_provider, api_key, model=llm_model)
 
         self.config = read_config_schema(
             config or Path(Path(__file__).parent, DEFAULT_CONFIG)

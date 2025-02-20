@@ -42,7 +42,8 @@ class DictWriter:
     def __init__(
         self,
         config: Path | str | None = None,
-        llm: str | None = None,
+        llm_provider: str | None = None,
+        llm_model: str | None = None,
         api_key: str | None = None,
     ):
         if isinstance(config, str):
@@ -56,8 +57,8 @@ class DictWriter:
         except KeyError:
             raise ValueError("'max_common_count' not found in config file.")
 
-        if llm and api_key:
-            self.model = setup_llm(llm, api_key)
+        if llm_provider and api_key:
+            self.model = setup_llm(llm_provider, api_key, model=llm_model)
         else:
             self.model = None
 
@@ -188,7 +189,8 @@ class DictWriter:
         language: str,
         data_dict: pd.DataFrame | str | None = None,
         key: str | None = None,
-        llm: str | None = "openai",
+        llm_provider: str = "openai",
+        llm_model: str | None = None,
     ) -> pd.DataFrame:
         """
         Generate descriptions for the columns in the dataset.
@@ -206,8 +208,12 @@ class DictWriter:
             has already been created using `create_dict()`.
         key
             OpenAI API key.
-        llm
-            LLM API to call (currently only OpenAI is supported)
+        llm_provider
+            LLM API to call (currently only OpenAI & Google Gemini is supported)
+        llm_model
+            Name of the LLM model to use (must support Structured Outputs for OpenAI, or
+            the equivalent responseSchema for Gemini). If not provided, the default for
+            each provider will be used.
 
         Returns
         -------
@@ -225,7 +231,7 @@ class DictWriter:
         df = load_data_dict(self.config, data_dict)
 
         if not self.model:
-            self.model = setup_llm(llm, key)
+            self.model = setup_llm(llm_provider, key, model=llm_model)
 
         headers = df.source_field
 

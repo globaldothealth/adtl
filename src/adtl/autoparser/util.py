@@ -8,7 +8,7 @@ import difflib
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Literal
 
 import pandas as pd
 import tomli
@@ -119,7 +119,9 @@ def load_data_dict(
     return data_dict
 
 
-def setup_llm(provider, api_key):
+def setup_llm(
+    provider: Literal["gemini", "openai"], api_key: str, model: str | None = None
+):
     """
     Setup the LLM to use to generate descriptions.
 
@@ -128,18 +130,26 @@ def setup_llm(provider, api_key):
 
     Parameters
     ----------
-    key
+    provider
+        Name of the LLM provider to use (openai or gemini)
+    api_key
         API key
-    name
-        Name of the LLM to use (currently only OpenAI and Gemini are supported)
+    model
+        Name of the LLM model to use (must support Structured Outputs for OpenAI, or the
+        equivalent responseSchema for Gemini). If not provided, the default for each
+        provider will be used.
     """
     if api_key is None:
         raise ValueError("API key required to set up an LLM")
 
+    kwargs = {"api_key": api_key}
+    if model is not None:
+        kwargs["model"] = model
+
     if provider == "openai":  # pragma: no cover
-        return OpenAILanguageModel(api_key=api_key)
+        return OpenAILanguageModel(**kwargs)
     elif provider == "gemini":  # pragma: no cover
-        return GeminiLanguageModel(api_key=api_key)
+        return GeminiLanguageModel(**kwargs)
     else:
         raise ValueError(f"Unsupported LLM provider: {provider}")
 

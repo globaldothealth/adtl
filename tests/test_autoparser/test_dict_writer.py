@@ -105,13 +105,13 @@ def test_missing_key_error():
 def test_wrong_llm_error():
     with pytest.raises(ValueError, match="Unsupported LLM provider: fish"):
         DictWriter(config=Path(CONFIG_PATH)).generate_descriptions(
-            "fr", SOURCES + "animals_dd.csv", key="a12b3c", llm="fish"
+            "fr", SOURCES + "animals_dd.csv", key="a12b3c", llm_provider="fish"
         )
 
 
 def test_init_with_llm():
     # test no errors occur
-    writer = DictWriter(config=Path(CONFIG_PATH), api_key="1234", llm="openai")
+    writer = DictWriter(config=Path(CONFIG_PATH), api_key="1234", llm_provider="openai")
     assert isinstance(writer.model, OpenAILanguageModel)
 
 
