@@ -195,6 +195,7 @@ class Parser:
         spec: Union[str, Path, StrDict],
         include_defs: list[str] = [],
         quiet: bool = False,
+        parallel: bool = False,
     ):
         """Loads specification from spec in format (default json)
 
@@ -214,6 +215,7 @@ class Parser:
         self.validators: StrDict = {}
         self.schemas: StrDict = {}
         self.quiet = quiet
+        self.parallel = parallel
         self.date_fields = []
         self.report = {
             "validation_errors": defaultdict(Counter),
@@ -572,7 +574,9 @@ class Parser:
 
         # TODO: currently acts as a for loop, can update to allow a user to choose
         # parallel option
-        data = Parallel(n_jobs=1)(delayed(process_row)(row) for row in rows)
+        data = Parallel(n_jobs=-1 if self.parallel else 1)(
+            delayed(process_row)(row) for row in rows
+        )
 
         # merge each row for each table into one data dict per table
         self.data = {

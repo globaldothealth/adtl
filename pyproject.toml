@@ -32,6 +32,7 @@ dependencies = [
   "python-dateutil",
   "more_itertools",
   "pandas==2.*",
+  "joblib"
   ]
   scripts = { adtl = "adtl:main", adtl-autoparser = "adtl.autoparser:main" }
 
