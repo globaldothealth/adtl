@@ -37,6 +37,13 @@ class DictWriter:
     ----------
     config
         The path to the configuration file to use if not using the default configuration
+    llm_provider
+        The LLM API to use (currently only OpenAI & Google Gemini are supported)
+    llm_model
+        The name of the LLM model to use (must support Structured Outputs for OpenAI, or
+        the equivalent responseSchema for Gemini)
+    api_key
+        API key corresponsing to the chosen LLM provider/model
     """
 
     def __init__(
@@ -57,8 +64,8 @@ class DictWriter:
         except KeyError:
             raise ValueError("'max_common_count' not found in config file.")
 
-        if llm_provider and api_key:
-            self.model = setup_llm(llm_provider, api_key, model=llm_model)
+        if (llm_provider or llm_model) and api_key:
+            self.model = setup_llm(api_key, provider=llm_provider, model=llm_model)
         else:
             self.model = None
 
@@ -231,7 +238,7 @@ class DictWriter:
         df = load_data_dict(self.config, data_dict)
 
         if not self.model:
-            self.model = setup_llm(llm_provider, key, model=llm_model)
+            self.model = setup_llm(key, provider=llm_provider, model=llm_model)
 
         headers = df.source_field
 

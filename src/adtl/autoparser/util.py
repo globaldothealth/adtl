@@ -120,7 +120,9 @@ def load_data_dict(
 
 
 def setup_llm(
-    provider: Literal["gemini", "openai"], api_key: str, model: str | None = None
+    api_key: str,
+    provider: Literal["gemini", "openai"] | None = None,
+    model: str | None = None,
 ):
     """
     Setup the LLM to use to generate descriptions.
@@ -142,13 +144,18 @@ def setup_llm(
     if api_key is None:
         raise ValueError("API key required to set up an LLM")
 
+    if provider is None and model is None:
+        raise ValueError(
+            "Either a provider, a model or both must be provided to set up the LLM"
+        )
+
     kwargs = {"api_key": api_key}
     if model is not None:
         kwargs["model"] = model
 
-    if provider == "openai":
+    if provider == "openai" or model in OpenAILanguageModel.valid_models():
         return OpenAILanguageModel(**kwargs)
-    elif provider == "gemini":
+    elif provider == "gemini" or model in GeminiLanguageModel.valid_models():
         return GeminiLanguageModel(**kwargs)
     else:
         raise ValueError(f"Unsupported LLM provider: {provider}")

@@ -62,10 +62,10 @@ class Mapper:
         self.schema = read_json(schema)
         self.schema_properties = self.schema["properties"]
         self.language = language
-        if llm_provider is None:
+        if llm_provider is None and llm_model is None:
             self.model = None
         else:
-            self.model = setup_llm(llm_provider, api_key, model=llm_model)
+            self.model = setup_llm(api_key, provider=llm_provider, model=llm_model)
 
         self.config = read_config_schema(
             config or Path(Path(__file__).parent, DEFAULT_CONFIG)
