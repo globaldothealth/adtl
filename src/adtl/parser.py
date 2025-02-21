@@ -550,7 +550,7 @@ class Parser:
             adtl.Parser: Returns an instance of itself, updated with the parsed tables
         """
 
-        def process_row(self, row):
+        def process_row(row):
             """Process a single row in the data file"""
 
             row_store = dict.fromkeys(self.tables, None)
