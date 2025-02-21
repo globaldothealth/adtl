@@ -37,12 +37,20 @@ class DictWriter:
     ----------
     config
         The path to the configuration file to use if not using the default configuration
+    llm_provider
+        The LLM API to use (currently only OpenAI & Google Gemini are supported)
+    llm_model
+        The name of the LLM model to use (must support Structured Outputs for OpenAI, or
+        the equivalent responseSchema for Gemini)
+    api_key
+        API key corresponsing to the chosen LLM provider/model
     """
 
     def __init__(
         self,
         config: Path | str | None = None,
-        llm: str | None = None,
+        llm_provider: str | None = None,
+        llm_model: str | None = None,
         api_key: str | None = None,
     ):
         if isinstance(config, str):
@@ -56,8 +64,8 @@ class DictWriter:
         except KeyError:
             raise ValueError("'max_common_count' not found in config file.")
 
-        if llm and api_key:
-            self.model = setup_llm(llm, api_key)
+        if (llm_provider or llm_model) and api_key:
+            self.model = setup_llm(api_key, provider=llm_provider, model=llm_model)
         else:
             self.model = None
 
@@ -188,7 +196,8 @@ class DictWriter:
         language: str,
         data_dict: pd.DataFrame | str | None = None,
         key: str | None = None,
-        llm: str | None = "openai",
+        llm_provider: str = "openai",
+        llm_model: str | None = None,
     ) -> pd.DataFrame:
         """
         Generate descriptions for the columns in the dataset.
@@ -206,8 +215,12 @@ class DictWriter:
             has already been created using `create_dict()`.
         key
             OpenAI API key.
-        llm
-            LLM API to call (currently only OpenAI is supported)
+        llm_provider
+            LLM API to call (currently only OpenAI & Google Gemini is supported)
+        llm_model
+            Name of the LLM model to use (must support Structured Outputs for OpenAI, or
+            the equivalent responseSchema for Gemini). If not provided, the default for
+            each provider will be used.
 
         Returns
         -------
@@ -225,7 +238,7 @@ class DictWriter:
         df = load_data_dict(self.config, data_dict)
 
         if not self.model:
-            self.model = setup_llm(llm, key)
+            self.model = setup_llm(key, provider=llm_provider, model=llm_model)
 
         headers = df.source_field
 
@@ -288,7 +301,8 @@ def generate_descriptions(
     data_dict: pd.DataFrame | str,
     language: str,
     key: str | None = None,
-    llm: str | None = "openai",
+    llm_provider: str | None = "openai",
+    llm_model: str | None = None,
     config: Path | None = None,
 ) -> pd.DataFrame:
     """
@@ -306,8 +320,12 @@ def generate_descriptions(
         Language the column headers are in (e.g. french, spanish).
     key
         OpenAI API key.
-    llm
-        LLM API to call (currently only OpenAI is supported)
+    llm_provider
+        LLM API to call (currently OpenAI & Google Gemini are supported)
+    llm_model
+        Name of the LLM model to use (must support Structured Outputs for OpenAI, or the
+        equivalent responseSchema for Gemini). If not provided, the default for each
+        provider will be used.
     config
         Path to the configuration file to use if not using the default configuration
 
@@ -317,7 +335,9 @@ def generate_descriptions(
         Data dictionary with descriptions added
     """
 
-    dd = DictWriter(config=config).generate_descriptions(language, data_dict, key, llm)
+    dd = DictWriter(config=config).generate_descriptions(
+        language, data_dict, key, llm_provider, llm_model
+    )
 
     return dd
 
@@ -337,10 +357,18 @@ def main(argv=None):
         help="Use an LLM to generate descriptions from file headers",
         action="store_true",
     )
+    parser.add_argument("-k", "--api-key", help="LLM API key to generate descriptions")
     parser.add_argument(
-        "-k", "--api-key", help="OpenAI API key to generate descriptions"
+        "-l",
+        "--llm-provider",
+        help="LLM API to use, either 'openai' or 'gemini'",
+        default="openai",
     )
-    parser.add_argument("-l", "--llm", help="LLM API to use", default="openai")
+    parser.add_argument(
+        "-m",
+        "--llm-model",
+        help="Select a specific model from the llm provider, e.g. 'gpt-4o-mini'",
+    )
     parser.add_argument(
         "-c",
         "--config",
@@ -359,7 +387,12 @@ def main(argv=None):
     df = create_dict(args.data, args.config)
     if args.descriptions:
         df = generate_descriptions(
-            df, args.language, args.api_key, args.llm, args.config
+            df,
+            args.language,
+            args.api_key,
+            args.llm_provider,
+            args.llm_model,
+            args.config,
         )
 
     df.to_csv(f"{args.output}.csv", index=False)

@@ -23,6 +23,12 @@ easy to use library in Python for basic data transformations, which are
 specified in either a JSON or TOML file. It is not meant to be a comprehensive, and
 adtl can be used as a step within a larger data processing pipeline.
 
+## AutoParser
+
+AutoParser provides a semi-automated method for writing the transformation files required
+by ADTL, by using LLMs for field and value mapping. This reduces the need for users to
+write JSON/TOML specification files from scratch by hand.
+
 ```{toctree}
 ---
 caption: Getting started

@@ -1,10 +1,9 @@
 # Write a Data Parser
 
-AutoParser assumes the use of Global.Health's [adtl](https://github.com/globaldothealth/adtl)
-package to transform your source data into a standardised format. To do this, adtl requires a
-[TOML](https://toml.io/en/) specification file which describes how raw data should be
-converted into the new format, on a field-by-field basis. Every unique data file format
-(i.e. unique sets of fields and data types) should have a corresponding parser file.
+ADTL requires a [TOML](https://toml.io/en/) specification file which describes how raw
+data should be converted into a new format, on a field-by-field basis. Every unique data
+file format (i.e. unique sets of fields and data types) should have a corresponding
+parser file.
 
 AutoParser exists to semi-automate the process of writing new parser files. This requires
 a data dictionary (which can be created if it does not already exist, see '[Create Data dictionary](data_dict)'),
@@ -31,9 +30,11 @@ format should be filled using data from the `StatusCas` field in the raw data. T
 column indicated that all instances of `décédé` in the raw data should be mapped to `dead`
 in the converted file, and `vivant` should map to `alive`.
 
-These intermediate mappings should be manually curated, as they are generated using an
-LLM which may be prone to errors and hallucinations, generating incorrect matches for either
+:::{warning}
+**LLM's are prone to errors and hallucinations**. These intermediate mappings
+should be manually curated, as the LLM may generate incorrect matches for either
 the field, or the values within that field.
+:::
 
 ## Generate TOML
 

@@ -6,6 +6,7 @@ import numpy.testing as npt
 import pandas as pd
 import pytest
 
+from adtl.autoparser.language_models.gemini import GeminiLanguageModel
 from adtl.autoparser.util import (
     check_matches,
     load_data_dict,
@@ -101,12 +102,30 @@ def test_load_data_dict():
 
 def test_setup_llm_no_key():
     with pytest.raises(ValueError, match="API key required to set up an LLM"):
-        setup_llm("openai", None)
+        setup_llm(None, provider="openai")
 
 
 def test_setup_llm_bad_provider():
     with pytest.raises(ValueError, match="Unsupported LLM provider: fish"):
-        setup_llm("fish", "abcd")
+        setup_llm("abcd", provider="fish")
+
+
+def test_setup_llm_provide_model():
+    model = setup_llm("abcd", provider="gemini", model="gemini-2.0-flash")
+    assert model.model == "gemini-2.0-flash"
+
+
+def test_setup_llm_provide_model_no_provider():
+    model = setup_llm("abcd", model="gemini-2.0-flash")
+    assert isinstance(model, GeminiLanguageModel)
+    assert model.model == "gemini-2.0-flash"
+
+
+def test_setup_llm_no_provider_no_model():
+    with pytest.raises(
+        ValueError, match="Either a provider, a model or both must be provided"
+    ):
+        setup_llm("1234")
 
 
 @pytest.mark.parametrize(

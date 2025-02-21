@@ -8,7 +8,7 @@ import difflib
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Literal
 
 import pandas as pd
 import tomli
@@ -119,7 +119,11 @@ def load_data_dict(
     return data_dict
 
 
-def setup_llm(provider, api_key):
+def setup_llm(
+    api_key: str,
+    provider: Literal["gemini", "openai"] | None = None,
+    model: str | None = None,
+):
     """
     Setup the LLM to use to generate descriptions.
 
@@ -128,18 +132,31 @@ def setup_llm(provider, api_key):
 
     Parameters
     ----------
-    key
+    provider
+        Name of the LLM provider to use (openai or gemini)
+    api_key
         API key
-    name
-        Name of the LLM to use (currently only OpenAI and Gemini are supported)
+    model
+        Name of the LLM model to use (must support Structured Outputs for OpenAI, or the
+        equivalent responseSchema for Gemini). If not provided, the default for each
+        provider will be used.
     """
     if api_key is None:
         raise ValueError("API key required to set up an LLM")
 
-    if provider == "openai":  # pragma: no cover
-        return OpenAILanguageModel(api_key=api_key)
-    elif provider == "gemini":  # pragma: no cover
-        return GeminiLanguageModel(api_key=api_key)
+    if provider is None and model is None:
+        raise ValueError(
+            "Either a provider, a model or both must be provided to set up the LLM"
+        )
+
+    kwargs = {"api_key": api_key}
+    if model is not None:
+        kwargs["model"] = model
+
+    if provider == "openai" or model in OpenAILanguageModel.valid_models():
+        return OpenAILanguageModel(**kwargs)
+    elif provider == "gemini" or model in GeminiLanguageModel.valid_models():
+        return GeminiLanguageModel(**kwargs)
     else:
         raise ValueError(f"Unsupported LLM provider: {provider}")
 
