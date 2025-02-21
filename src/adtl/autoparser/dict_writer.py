@@ -357,12 +357,17 @@ def main(argv=None):
         help="Use an LLM to generate descriptions from file headers",
         action="store_true",
     )
+    parser.add_argument("-k", "--api-key", help="LLM API key to generate descriptions")
     parser.add_argument(
-        "-k", "--api-key", help="OpenAI API key to generate descriptions"
+        "-l",
+        "--llm-provider",
+        help="LLM API to use, either 'openai' or 'gemini'",
+        default="openai",
     )
-    parser.add_argument("-l", "--llm-provider", help="LLM API to use", default="openai")
     parser.add_argument(
-        "-m", "--llm-model", help="Select a specific model from the llm provider"
+        "-m",
+        "--llm-model",
+        help="Select a specific model from the llm provider, e.g. 'gpt-4o-mini'",
     )
     parser.add_argument(
         "-c",

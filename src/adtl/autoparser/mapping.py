@@ -392,8 +392,15 @@ def main(argv=None):
     parser.add_argument("schema", help="Schema to use")
     parser.add_argument("language", help="Language of the original data")
     parser.add_argument("api_key", help="OpenAI API key to use")
-    parser.add_argument("-l", "--llm-provider", help="LLM API to use", default="openai")
-    parser.add_argument("-m", "--llm-model", help="LLM model to use")
+    parser.add_argument(
+        "-l",
+        "--llm-provider",
+        help="LLM API to use, either 'openai' or 'gemini'",
+        default="openai",
+    )
+    parser.add_argument(
+        "-m", "--llm-model", help="LLM model to use, e.g. 'gpt-4o-mini'"
+    )
     parser.add_argument(
         "-c",
         "--config",

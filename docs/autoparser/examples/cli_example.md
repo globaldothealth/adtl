@@ -7,6 +7,9 @@ are run from the root of the `autoparser` package.
 
 Note: As a reminder, you will need an API key for OpenAI or Google. This example uses the OpenAI LLM.
 
+You can use Gemini by using the `--llm_provider gemini` flag in the first two steps, or specify which model you
+wish to use from either OpenAI or Gemini with the `llm_model` option.
+
 ## Generate a data dictionary
 In this example, we will generate a data dictionary with descriptions already added in one step. The CLI command follows this syntax:
 
