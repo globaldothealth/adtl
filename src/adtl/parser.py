@@ -572,8 +572,6 @@ class Parser:
 
             return row_store
 
-        # TODO: currently acts as a for loop, can update to allow a user to choose
-        # parallel option
         data = Parallel(n_jobs=-1 if self.parallel else 1)(
             delayed(process_row)(row) for row in rows
         )

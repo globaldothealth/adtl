@@ -1043,6 +1043,8 @@ def test_no_overwriting():
     assert overwriting_output == OVERWRITE_OUTPUT
 
 
+@pytest.mark.filterwarnings("ignore:No matches found")
+@pytest.mark.filterwarnings("ignore:Could not construct date")
 def test_return_unmapped(snapshot):
     transformed_csv_data = (
         parser.Parser(TEST_PARSERS_PATH / "return-unmapped.toml")
