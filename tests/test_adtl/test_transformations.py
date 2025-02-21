@@ -14,6 +14,7 @@ def test_isNotNull(test_input, expected):
     assert transform.isNotNull(test_input) == expected
 
 
+@pytest.mark.filterwarnings("ignore:No matches found")
 @pytest.mark.parametrize(
     "test_input,expected",
     [
@@ -62,6 +63,7 @@ def test_Percentage(test_value, expected):
     assert transform.Percentage(test_value) == expected
 
 
+@pytest.mark.filterwarnings("ignore:Could not convert date")
 @pytest.mark.parametrize(
     "test_date_birth, test_date_current, epoch, expected",
     [
@@ -154,6 +156,7 @@ def test_getFloat(badfloat, expected):
     assert transform.getFloat(badfloat, set_decimal=dec, separator=sep) == expected
 
 
+@pytest.mark.filterwarnings("ignore:Could not construct date")
 @pytest.mark.parametrize(
     "year,month,day,expected",
     [
@@ -169,6 +172,7 @@ def test_makeDate(year, month, day, expected):
     assert transform.makeDate(year, month, day) == expected
 
 
+@pytest.mark.filterwarnings("ignore:Could not convert date")
 @pytest.mark.parametrize(
     "date,time_seconds,date_format,tzname,expected",
     [
@@ -201,6 +205,7 @@ def test_textIfNotNull(field, return_text, expected):
     assert transform.textIfNotNull(field, return_text) == expected
 
 
+@pytest.mark.filterwarnings("ignore:Could not convert date")
 @pytest.mark.parametrize(
     "date,time,date_format,tzname,expected",
     [
@@ -217,6 +222,8 @@ def test_makeDateTime(date, time, date_format, tzname, expected):
     assert transform.makeDateTime(date, time, date_format, tzname) == expected
 
 
+@pytest.mark.filterwarnings("ignore:Could not convert date")
+@pytest.mark.filterwarnings("ignore:Invalid option 'blah'")
 @pytest.mark.parametrize(
     "date,option,epoch,date_format,expected",
     [
@@ -233,6 +240,7 @@ def test_splitDate(date, option, epoch, date_format, expected):
     assert transform.splitDate(date, option, epoch, date_format) == expected
 
 
+@pytest.mark.filterwarnings("ignore:Could not convert date")
 @pytest.mark.parametrize(
     "duration,date,epoch,format,type,expected",
     [
@@ -268,6 +276,7 @@ def test_startYear_splitdate(date, duration, epoch, format, month_day, type, exp
     )
 
 
+@pytest.mark.filterwarnings("ignore:Could not convert date")
 @pytest.mark.parametrize(
     "date,duration,epoch,format,type,expected",
     [
@@ -302,6 +311,7 @@ def test_startMonth_splitdate(date, duration, epoch, format, type, month_day, ex
     )
 
 
+@pytest.mark.filterwarnings("ignore:Could not convert date")
 @pytest.mark.parametrize(
     "date,epoch,format,returntype,expected",
     [
