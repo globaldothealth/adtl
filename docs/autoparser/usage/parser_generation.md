@@ -30,9 +30,11 @@ format should be filled using data from the `StatusCas` field in the raw data. T
 column indicated that all instances of `décédé` in the raw data should be mapped to `dead`
 in the converted file, and `vivant` should map to `alive`.
 
-&#x26a0;&#xfe0f; **LLM's are prone to errors and hallucinations**. These intermediate mappings
+:::{warning}
+**LLM's are prone to errors and hallucinations**. These intermediate mappings
 should be manually curated, as the LLM may generate incorrect matches for either
 the field, or the values within that field.
+:::
 
 ## Generate TOML
 
