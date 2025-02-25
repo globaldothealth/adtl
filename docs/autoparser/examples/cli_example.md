@@ -7,12 +7,15 @@ are run from the root of the `autoparser` package.
 
 Note: As a reminder, you will need an API key for OpenAI or Google. This example uses the OpenAI LLM.
 
+You can use Gemini by using the `--llm_provider gemini` flag in the first two steps, or specify which model you
+wish to use from either OpenAI or Gemini with the `llm_model` option.
+
 ## Generate a data dictionary
 In this example, we will generate a data dictionary with descriptions already added in one step. The CLI command follows this syntax:
 
 
 ```bash
-adtl-autoparser create-dict data language [-d] [-k api_key] [-l llm_choice] [-c config_file] [-o output_name]
+adtl-autoparser create-dict data language [-d] [-k api_key] [-l llm_provider] [-m llm_model] [-c config_file] [-o output_name]
 ```
 where the `-d` flag is used to request the LLM-generated descriptions. For the
 `animal_data.csv` data we will run this command to generate a data dictionary
@@ -27,7 +30,7 @@ This creates an `animals_dd.csv` data dictionary to use in the next step.
 The next step is to create an intermediate CSV for you to inspect, mapping the fields and values in the raw data to the target schema. This is the CLI syntax:
 
 ```bash
-adtl-autoparser create-mapping dictionary schema language api_key [-l llm_choice] [-c config_file] [-o output_name]
+adtl-autoparser create-mapping dictionary schema language api_key [-l llm_provider] [-m llm_model] [-c config_file] [-o output_name]
 ```
 so we can run
 ```bash

@@ -16,6 +16,15 @@ class GeminiLanguageModel(LLMBase):
         self.client = gemini.GenerativeModel(model)
         self.model = model
 
+        if self.model not in self.valid_models():
+            raise ValueError(
+                f"Unsupported Gemini model. Must be one of {self.valid_models}."
+            )
+
+    @classmethod
+    def valid_models(cls):
+        return ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"]
+
     def get_definitions(self, headers: list[str], language: str) -> dict[str, str]:
         """
         Get the definitions of the columns in the dataset using the Gemini API.

@@ -13,6 +13,15 @@ class OpenAILanguageModel(LLMBase):
         self.client = OpenAI(api_key=api_key)
         self.model = model
 
+        if self.model not in self.valid_models():
+            raise ValueError(
+                f"Unsupported OpenAI model. Must be one of {self.valid_models}."
+            )
+
+    @classmethod
+    def valid_models(cls):
+        return ["gpt-4o-mini", "gpt-4o", "o1", "o3-mini"]
+
     def get_definitions(self, headers: list[str], language: str) -> dict[str, str]:
         """
         Get the definitions of the columns in the dataset.
