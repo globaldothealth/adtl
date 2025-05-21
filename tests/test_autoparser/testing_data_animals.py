@@ -122,6 +122,8 @@ def map_values(*args):
 
 
 class TestLLM(LLMBase):
+    __test__ = False  # Prevent pytest from collecting this class
+
     def __init__(self):
         self.client = None
         self.model = None
