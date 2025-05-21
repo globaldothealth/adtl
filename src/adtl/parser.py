@@ -18,7 +18,7 @@ import requests
 import tomli
 from joblib import Parallel, delayed
 from more_itertools import unique_everseen
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 
 from adtl.get_value import get_value, parse_if
 
@@ -482,15 +482,17 @@ class Parser:
                     elif combined_type == "firstNonNull":
                         combined_row[attr] = values[0]  # First non-null value
                 else:
-                    logging.debug(
-                        f"Multiple rows of data found for {attr} without a"
-                        " combinedType listed. Data being overwritten."
-                    )
-                    combined_row[attr] = [
+                    data = [
                         row.get(attr)
                         for row in rows
                         if row.get(attr) not in (None, "", [], {})
-                    ][-1]
+                    ]
+                    if data:
+                        logging.debug(
+                            f"Multiple rows of data found for {attr} without a"
+                            " combinedType listed. Data being overwritten."
+                        )
+                        combined_row[attr] = data[-1]
 
             return combined_row
 
@@ -513,7 +515,7 @@ class Parser:
             {group_field: key, **values} for key, values in grouped_results.items()
         ]
 
-    def parse(self, file: str, encoding: str = "utf-8", skip_validation=False):
+    def parse(self, file: str, encoding: str = "utf-8-sig", skip_validation=False):
         """Transform file according to specification
 
         Args:
@@ -524,21 +526,25 @@ class Parser:
         Returns:
             adtl.Parser: Returns an instance of itself, updated with the parsed tables
         """
+        with open(file, newline="") as f:
+            row_count = sum(1 for _ in f) - 1  # Exclude header
+
         with open(file, encoding=encoding) as fp:
             reader = csv.DictReader(fp)
             return self.parse_rows(
-                (
-                    tqdm(
-                        reader,
-                        desc=f"[{self.name}] parsing {Path(file).name}",
-                    )
-                    if not self.quiet
-                    else reader
-                ),
+                reader,
+                Path(file).name,
+                row_count,
                 skip_validation=skip_validation,
             )
 
-    def parse_rows(self, rows: Iterable[StrDict], skip_validation=False):
+    def parse_rows(
+        self,
+        rows: Iterable[StrDict],
+        file_name: str,
+        row_count: float,
+        skip_validation=False,
+    ):
         """Transform rows from an iterable according to specification
 
         Args:
@@ -573,7 +579,15 @@ class Parser:
             return row_store
 
         data = Parallel(n_jobs=-1 if self.parallel else 1)(
-            delayed(process_row)(row) for row in rows
+            delayed(process_row)(row)
+            for row in (
+                tqdm(
+                    rows,
+                    desc=f"[{self.name}] parsing {file_name}",
+                    total=row_count,
+                    disable=self.quiet,
+                )
+            )
         )
 
         # merge each row for each table into one data dict per table
@@ -591,7 +605,11 @@ class Parser:
         self.report_available = not skip_validation
         if not skip_validation:
             for table in self.validators:
-                for row in self.read_table(table):
+                for row in tqdm(
+                    self.read_table(table),
+                    desc=f"[{self.name}] validating {table} table",
+                    disable=self.quiet,
+                ):
                     self.report["total"][table] += 1
                     try:
                         self.validators[table](row)

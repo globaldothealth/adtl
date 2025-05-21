@@ -12,7 +12,7 @@ def parse(
     spec: str | Path | dict[str, str],
     file: str | Path | pd.DataFrame,
     output=None,
-    encoding: str = "utf-8",
+    encoding: str = "utf-8-sig",
     include_defs=[],
     save_as: Literal["csv", "parquet", None] = "csv",
     quiet=False,
