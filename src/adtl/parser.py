@@ -542,7 +542,7 @@ class Parser:
         self,
         rows: Iterable[StrDict],
         file_name: str,
-        row_count: float,
+        row_count: float | None = None,
         skip_validation=False,
     ):
         """Transform rows from an iterable according to specification

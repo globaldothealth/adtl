@@ -331,7 +331,7 @@ def _subdict(d: Dict, keys: Iterable[Any]) -> Dict[str, Any]:
 def test_one_to_many():
     actual_one_many_output_rows = list(
         parser.Parser(TEST_PARSERS_PATH / "oneToMany.json")
-        .parse_rows(ONE_MANY_SOURCE)
+        .parse_rows(ONE_MANY_SOURCE, "test_one_to_many")
         .read_table("observation")
     )
     actual_one_many_output_csv = list(
@@ -346,7 +346,7 @@ def test_one_to_many():
 def test_one_to_many_with_common_mappings():
     one_many_output_rows = list(
         parser.Parser(TEST_PARSERS_PATH / "oneToMany-commonMappings.json")
-        .parse_rows(ONE_MANY_SOURCE)
+        .parse_rows(ONE_MANY_SOURCE, "test_one_to_many_common_mappings")
         .read_table("observation")
     )
     assert one_many_output_rows == ONE_MANY_OUTPUT_COMMON
@@ -453,19 +453,23 @@ def test_load_spec(source, expected):
 
 def test_parse_write_buffer(snapshot):
     ps = parser.Parser(TEST_PARSERS_PATH / "groupBy.json")
-    buf = ps.parse_rows(SOURCE_GROUPBY).write_csv("subject")
+    buf = ps.parse_rows(SOURCE_GROUPBY, "test_groupby").write_csv("subject")
     assert buf == snapshot
 
 
 def test_validation(snapshot):
     ps = parser.Parser(TEST_PARSERS_PATH / "groupBy-with-schema.json")
-    buf = ps.parse_rows(SOURCE_GROUPBY_INVALID).write_csv("subject")
+    buf = ps.parse_rows(SOURCE_GROUPBY_INVALID, "test_groupby_invalid").write_csv(
+        "subject"
+    )
     assert buf == snapshot
 
 
 def test_multi_id_groupby(snapshot):
     ps = parser.Parser(TEST_PARSERS_PATH / "groupBy-multi-id.json")
-    buf = ps.parse_rows(SOURCE_GROUPBY_MULTI_ID).write_csv("subject")
+    buf = ps.parse_rows(SOURCE_GROUPBY_MULTI_ID, "groupby_multi_id").write_csv(
+        "subject"
+    )
     assert buf == snapshot
 
 
@@ -502,13 +506,13 @@ def test_read_table_raises_error():
     with pytest.raises(ValueError, match="Invalid table"):
         list(
             parser.Parser(TEST_PARSERS_PATH / "oneToMany.json")
-            .parse_rows(ONE_MANY_SOURCE)
+            .parse_rows(ONE_MANY_SOURCE, "one_to_many")
             .read_table("obs")
         )
 
 
 def test_constant_table():
-    ps = parser.Parser(TEST_PARSERS_PATH / "constant.json").parse_rows([{"x": 1}])
+    ps = parser.Parser(TEST_PARSERS_PATH / "constant.json").parse_rows([{"x": 1}], "x")
     assert list(ps.read_table("metadata")) == [
         {"dataset": "constant", "version": "20220505.1", "format": "csv"}
     ]
@@ -870,7 +874,7 @@ def test_unsupported_format_raises_exception():
 def test_apply_when_values_are_present():
     apply_values_present_output = list(
         parser.Parser(TEST_PARSERS_PATH / "apply.toml")
-        .parse_rows(SOURCE_APPLY_PRESENT)
+        .parse_rows(SOURCE_APPLY_PRESENT, "apply")
         .read_table("subject")
     )
 
@@ -900,7 +904,7 @@ def test_show_report(snapshot):
 def test_apply_when_values_not_present():
     apply_values_absent_output = list(
         parser.Parser(TEST_PARSERS_PATH / "apply.toml")
-        .parse_rows(SOURCE_APPLY_ABSENT)
+        .parse_rows(SOURCE_APPLY_ABSENT, "apply_absent")
         .read_table("subject")
     )
 
@@ -910,7 +914,7 @@ def test_apply_when_values_not_present():
 def test_apply_in_observations_table():
     apply_observations_output = list(
         parser.Parser(TEST_PARSERS_PATH / "apply-observations.toml")
-        .parse_rows(APPLY_OBSERVATIONS_SOURCE)
+        .parse_rows(APPLY_OBSERVATIONS_SOURCE, "apply_obs")
         .read_table("observation")
     )
 
