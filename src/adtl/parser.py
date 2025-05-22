@@ -636,12 +636,6 @@ class Parser:
         """
         if table not in self.tables:
             raise ValueError(f"Invalid table: {table}")
-        # if "groupBy" in self.tables[table]:
-        #     for i in self.data[table]:
-        #         yield self.data[table][i]
-        # else:
-        #     for row in self.data[table]:
-        #         yield row
         for row in self.data[table]:
             yield row
 
