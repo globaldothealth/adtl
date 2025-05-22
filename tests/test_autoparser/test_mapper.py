@@ -384,7 +384,7 @@ def test_class_create_mapping_save(tmp_path):
     pd.testing.assert_series_equal(df.loc["pet"], pet_test)
 
     loaded_file = pd.read_csv(file_name, index_col=0)
-    pd.testing.assert_frame_equal(loaded_file, df)
+    assert loaded_file.equals(df)
 
 
 @pytest.mark.filterwarnings("ignore:The following schema fields have not been mapped")
