@@ -114,6 +114,7 @@ def load_data_dict(
         else:
             raise ValueError(f"Unsupported format (not CSV or XLSX): {data_dict}")
 
+    data_dict = data_dict[config["column_mappings"].values()]
     column_mappings = {v: k for k, v in config["column_mappings"].items()}
     data_dict.rename(columns=column_mappings, inplace=True)
     return data_dict
