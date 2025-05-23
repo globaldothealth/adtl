@@ -7,6 +7,7 @@ import itertools
 import json
 import logging
 import re
+import warnings
 from collections import Counter, defaultdict
 from functools import lru_cache
 from itertools import chain
@@ -427,21 +428,23 @@ class Parser:
                     match = self._default_if(table, match)
                 if parse_if(row, match["if"], self.ctx):
                     data.append(
-                        {
-                            attr: get_value(row, match[attr], self.ctx(attr))
-                            for attr in set(match.keys()) - {"if"}
-                        }
+                        remove_null_keys(
+                            {
+                                attr: get_value(row, match[attr], self.ctx(attr))
+                                for attr in set(match.keys()) - {"if"}
+                            }
+                        )
                     )
             return data
         elif kind == "constant":  # only one row
             return self.spec[table]
-        else:
-            return remove_null_keys(
-                {
-                    attr: get_value(row, self.spec[table][attr], self.ctx(attr))
-                    for attr in self.spec[table]
-                }
-            )
+        else:  # groupBy
+            parsed_row = {}
+            for attr in self.spec[table]:
+                value = get_value(row, self.spec[table][attr], self.ctx(attr))
+                if value is not None and value != []:
+                    parsed_row[attr] = value
+            return remove_null_keys(parsed_row)
 
     def group_rows(self, table: str, group_field: str, rows: Iterable[StrDict]):
         """
@@ -462,9 +465,7 @@ class Parser:
                 if "combinedType" in self.spec[table][attr]:
                     combined_type = self.spec[table][attr]["combinedType"]
                     values = [
-                        row.get(attr)
-                        for row in rows
-                        if row.get(attr) not in (None, "", [], {})
+                        row.get(attr) for row in rows if row.get(attr) not in (None, "")
                     ]
 
                     if not values:
@@ -481,6 +482,11 @@ class Parser:
                         ]
                     elif combined_type == "firstNonNull":
                         combined_row[attr] = values[0]  # First non-null value
+                    else:
+                        warnings.warn(
+                            f"Invalid combinedType: {combined_type} for {attr}",
+                            UserWarning,
+                        )
                 else:
                     data = [
                         row.get(attr)
@@ -488,10 +494,16 @@ class Parser:
                         if row.get(attr) not in (None, "", [], {})
                     ]
                     if data:
-                        logging.debug(
-                            f"Multiple rows of data found for {attr} without a"
-                            " combinedType listed. Data being overwritten."
-                        )
+                        if len(data) > 1 and not all(x == data[0] for x in data):
+                            # warnings.warn(
+                            #     f"Multiple rows of data found for {attr} without a"
+                            #     f" combinedType listed. Data being overwritten: {data}",
+                            #     UserWarning,
+                            # )
+                            logging.debug(
+                                f"Multiple rows of data found for {attr} without a"
+                                " combinedType listed. Data being overwritten."
+                            )
                         combined_row[attr] = data[-1]
 
             return combined_row
@@ -507,7 +519,8 @@ class Parser:
 
         # Apply grouping function
         grouped_results = {
-            key: group_attrs(group, fields) for key, group in grouped_rows.items()
+            key: remove_null_keys(group_attrs(group, fields))
+            for key, group in grouped_rows.items()
         }
 
         # Convert back to list of dictionaries

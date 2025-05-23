@@ -26,6 +26,8 @@ def parse(
         encoding: Encoding of the file
         include_def: Additional definitions to include
         save_as: Save the output as a CSV or parquet file, or don't save (None)
+        quiet: Suppress all terminal output
+        parallel: Use parallel processing for parsing. Not recommended for small datasets
 
     Returns:
         dict[str, pd.DataFrame]: Dictionary of tables parsed into new format
