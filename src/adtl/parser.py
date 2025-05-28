@@ -196,6 +196,7 @@ class Parser:
         spec: Union[str, Path, StrDict],
         include_defs: list[str] = [],
         quiet: bool = False,
+        verbose: bool = False,
         parallel: bool = False,
     ):
         """Loads specification from spec in format (default json)
@@ -206,6 +207,8 @@ class Parser:
             include_defs: Definition files to include. These are spliced
                 directly into the adtl.defs section of the :ref:`specification`.
             quiet: Boolean that switches on the verbosity of the parser, default False
+            verbose: Boolean that switches on extra verbosity to show e.g. overwrite warnings, default False
+            parallel: Boolean that switches on parallel processing for parsing, default False
         """
 
         self.data: StrDict = {}
@@ -216,6 +219,7 @@ class Parser:
         self.validators: StrDict = {}
         self.schemas: StrDict = {}
         self.quiet = quiet
+        self.verbose = verbose
         self.parallel = parallel
         self.date_fields = []
         self.report = {
@@ -495,15 +499,17 @@ class Parser:
                     ]
                     if data:
                         if len(data) > 1 and not all(x == data[0] for x in data):
-                            # warnings.warn(
-                            #     f"Multiple rows of data found for {attr} without a"
-                            #     f" combinedType listed. Data being overwritten: {data}",
-                            #     UserWarning,
-                            # )
-                            logging.debug(
-                                f"Multiple rows of data found for {attr} without a"
-                                " combinedType listed. Data being overwritten."
-                            )
+                            if self.verbose:
+                                warnings.warn(
+                                    f"Multiple rows of data found for {attr} without a"
+                                    f" combinedType listed. Data being overwritten: {data}",
+                                    UserWarning,
+                                )
+                            else:
+                                logging.debug(
+                                    f"Multiple rows of data found for {attr} without a"
+                                    " combinedType listed. Data being overwritten."
+                                )
                         combined_row[attr] = data[-1]
 
             return combined_row
