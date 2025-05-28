@@ -12,9 +12,11 @@ def parse(
     spec: str | Path | dict[str, str],
     file: str | Path | pd.DataFrame,
     output=None,
-    encoding: str = "utf-8",
+    encoding: str = "utf-8-sig",
     include_defs=[],
     save_as: Literal["csv", "parquet", None] = "csv",
+    quiet=False,
+    parallel=False,
 ):
     """Parse a file according to a specification
 
@@ -24,11 +26,13 @@ def parse(
         encoding: Encoding of the file
         include_def: Additional definitions to include
         save_as: Save the output as a CSV or parquet file, or don't save (None)
+        quiet: Suppress all terminal output
+        parallel: Use parallel processing for parsing. Not recommended for small datasets
 
     Returns:
         dict[str, pd.DataFrame]: Dictionary of tables parsed into new format
     """
-    spec = Parser(spec, include_defs=include_defs)
+    spec = Parser(spec, include_defs=include_defs, quiet=quiet, parallel=parallel)
 
     # check for incompatible options
     if spec.header.get("returnUnmatched") and save_as == "parquet":

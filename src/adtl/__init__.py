@@ -35,6 +35,12 @@ def main(argv=None):
         help="quiet mode - decrease verbosity, disable progress bar",
         action="store_true",
     )
+    cmd.add_argument(
+        "-p",
+        "--parallel",
+        help="process data in parallel",
+        action="store_true",
+    )
     cmd.add_argument("--save-report", help="save report in JSON format")
     cmd.add_argument(
         "--include-def",
@@ -44,7 +50,9 @@ def main(argv=None):
     cmd.add_argument("--version", action="version", version="%(prog)s " + __version__)
     args = cmd.parse_args(argv)
     include_defs = args.include_def or []
-    spec = Parser(args.spec, include_defs=include_defs, quiet=args.quiet)
+    spec = Parser(
+        args.spec, include_defs=include_defs, quiet=args.quiet, parallel=args.parallel
+    )
 
     # check for incompatible options
     if spec.header.get("returnUnmatched") and args.parquet:
