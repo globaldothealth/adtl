@@ -4,6 +4,7 @@ import collections
 import contextlib
 import io
 import json
+import warnings
 from pathlib import Path
 from typing import Any, Dict, Iterable
 
@@ -1064,12 +1065,30 @@ def test_no_overwriting():
     )
     assert overwriting_output == OVERWRITE_OUTPUT
 
-    # check overwriting happens when Strict turned on
+
+@pytest.mark.parametrize(
+    "verbosity,expected_warnings",
+    [
+        (False, None),
+        (True, "Multiple rows of data found for"),
+    ],
+)
+def test_overwriting_with_strict(verbosity, expected_warnings):
+    prsr = parser.Parser(TEST_PARSERS_PATH / "stop-overwriting.toml", verbose=verbosity)
     prsr.tables["visit"]["aggregation"] = "lastNotNullStrict"
 
-    overwritten_output = list(
-        prsr.parse(TEST_SOURCES_PATH / "stop-overwriting.csv").read_table("visit")
-    )
+    if verbosity:
+        with pytest.warns(UserWarning, match=expected_warnings):
+            overwritten_output = list(
+                prsr.parse(TEST_SOURCES_PATH / "stop-overwriting.csv").read_table(
+                    "visit"
+                )
+            )
+    else:
+        warnings.filterwarnings("error")  # Treat warnings as errors
+        overwritten_output = list(
+            prsr.parse(TEST_SOURCES_PATH / "stop-overwriting.csv").read_table("visit")
+        )
     assert overwritten_output == OVERWRITTEN_OUTPUT
 
 
