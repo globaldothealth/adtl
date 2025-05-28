@@ -1035,14 +1035,42 @@ OVERWRITE_OUTPUT = [
     },
 ]
 
+OVERWRITTEN_OUTPUT = [
+    {
+        "subject_id": 1,
+        "earliest_admission": "2023-11-19",
+        "start_date": "2023-11-19",
+        "treatment_antiviral_type": unordered(["Ribavirin"]),
+    },
+    {
+        "subject_id": 2,
+        "start_date": "2020-11-23",
+        "icu_admission_date": unordered(["2020-11-30"]),
+        "treatment_antiviral_type": ["Lopinavir"],
+    },
+    {
+        "subject_id": 3,
+        "start_date": "2020-02-20",
+        "treatment_antiviral_type": unordered(["Ribavirin"]),
+    },
+]
+
 
 def test_no_overwriting():
+    prsr = parser.Parser(TEST_PARSERS_PATH / "stop-overwriting.toml")
+
     overwriting_output = list(
-        parser.Parser(TEST_PARSERS_PATH / "stop-overwriting.toml")
-        .parse(TEST_SOURCES_PATH / "stop-overwriting.csv")
-        .read_table("visit")
+        prsr.parse(TEST_SOURCES_PATH / "stop-overwriting.csv").read_table("visit")
     )
     assert overwriting_output == OVERWRITE_OUTPUT
+
+    # check overwriting happens when Strict turned on
+    prsr.tables["visit"]["aggregation"] = "lastNotNullStrict"
+
+    overwritten_output = list(
+        prsr.parse(TEST_SOURCES_PATH / "stop-overwriting.csv").read_table("visit")
+    )
+    assert overwritten_output == OVERWRITTEN_OUTPUT
 
 
 @pytest.mark.filterwarnings("ignore:No matches found")
