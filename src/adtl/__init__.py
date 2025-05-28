@@ -36,6 +36,12 @@ def main(argv=None):
         action="store_true",
     )
     cmd.add_argument(
+        "-v",
+        "--verbose",
+        help="verbose mode - increase verbosity, show overwriting warnings",
+        action="store_true",
+    )
+    cmd.add_argument(
         "-p",
         "--parallel",
         help="process data in parallel",
@@ -51,7 +57,11 @@ def main(argv=None):
     args = cmd.parse_args(argv)
     include_defs = args.include_def or []
     spec = Parser(
-        args.spec, include_defs=include_defs, quiet=args.quiet, parallel=args.parallel
+        args.spec,
+        include_defs=include_defs,
+        quiet=args.quiet,
+        verbose=args.verbose,
+        parallel=args.parallel,
     )
 
     # check for incompatible options
