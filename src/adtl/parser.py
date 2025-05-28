@@ -7,16 +7,19 @@ import itertools
 import json
 import logging
 import re
+import warnings
 from collections import Counter, defaultdict
 from functools import lru_cache
+from itertools import chain
 from pathlib import Path
 from typing import Any, Iterable, Literal, Union
 
 import fastjsonschema
 import requests
 import tomli
+from joblib import Parallel, delayed
 from more_itertools import unique_everseen
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 
 from adtl.get_value import get_value, parse_if
 
@@ -193,6 +196,7 @@ class Parser:
         spec: Union[str, Path, StrDict],
         include_defs: list[str] = [],
         quiet: bool = False,
+        parallel: bool = False,
     ):
         """Loads specification from spec in format (default json)
 
@@ -212,6 +216,7 @@ class Parser:
         self.validators: StrDict = {}
         self.schemas: StrDict = {}
         self.quiet = quiet
+        self.parallel = parallel
         self.date_fields = []
         self.report = {
             "validation_errors": defaultdict(Counter),
@@ -405,64 +410,24 @@ class Parser:
         rule["if"] = if_rule
         return rule
 
-    def update_table(self, table: str, row: StrDict):
-        """Updates table with a new row
+    def _parse_row_for_table(self, table: str, row: StrDict):
+        """
+        Parses a row of data for a given table into the new format
 
         Args:
             table: Table to update
             row: Dictionary with keys as field names and values as field values
         """
 
-        group_field = self.tables[table].get("groupBy")
         kind = self.tables[table].get("kind")
-        if group_field:
-            group_key = get_value(row, self.spec[table][group_field])
-            for attr in self.spec[table]:
-                value = get_value(row, self.spec[table][attr], self.ctx(attr))
-                # Check against all null elements, for combinedType=set/list, null is []
-                if value is not None and value != []:
-                    if attr not in self.data[table][group_key].keys():
-                        # if data for this field hasn't already been captured
-                        self.data[table][group_key][attr] = value
 
-                    else:
-                        if "combinedType" in self.spec[table][attr]:
-                            combined_type = self.spec[table][attr]["combinedType"]
-                            existing_value = self.data[table][group_key][attr]
-
-                            if combined_type in ["all", "any", "min", "max"]:
-                                values = [existing_value, value]
-                                # normally calling eval() is a bad idea, but here
-                                # values are restricted, so okay
-                                self.data[table][group_key][attr] = eval(combined_type)(
-                                    values
-                                )
-                            elif combined_type in ["list", "set"]:
-                                if combined_type == "set":
-                                    self.data[table][group_key][attr] = list(
-                                        set(existing_value + value)
-                                    )
-                                else:
-                                    self.data[table][group_key][attr] = (
-                                        existing_value + value
-                                    )
-                            elif combined_type == "firstNonNull":
-                                # only use the first value found
-                                pass
-                        else:
-                            # otherwise overwrite?
-                            logging.debug(
-                                f"Multiple rows of data found for {attr} without a"
-                                " combinedType listed. Data being overwritten."
-                            )
-                            self.data[table][group_key][attr] = value
-
-        elif kind == "oneToMany":
+        if kind == "oneToMany":
+            data = []
             for match in self.spec[table]:
                 if "if" not in match:
                     match = self._default_if(table, match)
                 if parse_if(row, match["if"], self.ctx):
-                    self.data[table].append(
+                    data.append(
                         remove_null_keys(
                             {
                                 attr: get_value(row, match[attr], self.ctx(attr))
@@ -470,19 +435,100 @@ class Parser:
                             }
                         )
                     )
+            return data
         elif kind == "constant":  # only one row
-            self.data[table] = [self.spec[table]]
-        else:
-            self.data[table].append(
-                remove_null_keys(
-                    {
-                        attr: get_value(row, self.spec[table][attr], self.ctx(attr))
-                        for attr in self.spec[table]
-                    }
-                )
-            )
+            return self.spec[table]
+        else:  # groupBy
+            parsed_row = {}
+            for attr in self.spec[table]:
+                value = get_value(row, self.spec[table][attr], self.ctx(attr))
+                if value is not None and value != []:
+                    parsed_row[attr] = value
+            return remove_null_keys(parsed_row)
 
-    def parse(self, file: str, encoding: str = "utf-8", skip_validation=False):
+    def group_rows(self, table: str, group_field: str, rows: Iterable[StrDict]):
+        """
+        Applys the 'groupBy' rule and any 'combinedType' rules to the rows of data
+        grouped by the group_field (e.g. an ID number).
+        """
+
+        def group_attrs(rows, attrs):
+            """
+            For a grouped set of rows, apply the combinedType rules to the attributes
+            """
+            if len(rows) == 1:
+                return rows[0]  # Return a single dictionary
+
+            combined_row = {}
+
+            for attr in attrs:
+                if "combinedType" in self.spec[table][attr]:
+                    combined_type = self.spec[table][attr]["combinedType"]
+                    values = [
+                        row.get(attr) for row in rows if row.get(attr) not in (None, "")
+                    ]
+
+                    if not values:
+                        continue
+                    elif combined_type in ["all", "any", "min", "max"]:
+                        combined_row[attr] = eval(combined_type)(values)
+                    elif combined_type == "set":
+                        combined_row[attr] = list(
+                            set(item for sublist in values for item in sublist)
+                        )
+                    elif combined_type == "list":
+                        combined_row[attr] = [
+                            item for sublist in values for item in sublist
+                        ]
+                    elif combined_type == "firstNonNull":
+                        combined_row[attr] = values[0]  # First non-null value
+                    else:
+                        warnings.warn(
+                            f"Invalid combinedType: {combined_type} for {attr}",
+                            UserWarning,
+                        )
+                else:
+                    data = [
+                        row.get(attr)
+                        for row in rows
+                        if row.get(attr) not in (None, "", [], {})
+                    ]
+                    if data:
+                        if len(data) > 1 and not all(x == data[0] for x in data):
+                            # warnings.warn(
+                            #     f"Multiple rows of data found for {attr} without a"
+                            #     f" combinedType listed. Data being overwritten: {data}",
+                            #     UserWarning,
+                            # )
+                            logging.debug(
+                                f"Multiple rows of data found for {attr} without a"
+                                " combinedType listed. Data being overwritten."
+                            )
+                        combined_row[attr] = data[-1]
+
+            return combined_row
+
+        grouped_rows = defaultdict(list)
+
+        # Group rows by the specified field
+        for row in rows:
+            grouped_rows[row[group_field]].append(row)
+
+        fields = list(self.spec[table].keys())
+        fields.remove(group_field)
+
+        # Apply grouping function
+        grouped_results = {
+            key: remove_null_keys(group_attrs(group, fields))
+            for key, group in grouped_rows.items()
+        }
+
+        # Convert back to list of dictionaries
+        self.data[table] = [
+            {group_field: key, **values} for key, values in grouped_results.items()
+        ]
+
+    def parse(self, file: str, encoding: str = "utf-8-sig", skip_validation=False):
         """Transform file according to specification
 
         Args:
@@ -493,21 +539,25 @@ class Parser:
         Returns:
             adtl.Parser: Returns an instance of itself, updated with the parsed tables
         """
+        with open(file, newline="") as f:
+            row_count = sum(1 for _ in f) - 1  # Exclude header
+
         with open(file, encoding=encoding) as fp:
             reader = csv.DictReader(fp)
             return self.parse_rows(
-                (
-                    tqdm(
-                        reader,
-                        desc=f"[{self.name}] parsing {Path(file).name}",
-                    )
-                    if not self.quiet
-                    else reader
-                ),
+                reader,
+                Path(file).name,
+                row_count,
                 skip_validation=skip_validation,
             )
 
-    def parse_rows(self, rows: Iterable[StrDict], skip_validation=False):
+    def parse_rows(
+        self,
+        rows: Iterable[StrDict],
+        file_name: str,
+        row_count: float | None = None,
+        skip_validation=False,
+    ):
         """Transform rows from an iterable according to specification
 
         Args:
@@ -518,10 +568,15 @@ class Parser:
         Returns:
             adtl.Parser: Returns an instance of itself, updated with the parsed tables
         """
-        for row in rows:
+
+        def process_row(row):
+            """Process a single row in the data file"""
+
+            row_store = dict.fromkeys(self.tables, None)
+
             for table in self.tables:
                 try:
-                    self.update_table(table, row)
+                    row_store[table] = self._parse_row_for_table(table, row)
                 except ValueError:  # pragma: no cover
                     print(
                         "\n".join(
@@ -533,10 +588,41 @@ class Parser:
                         )
                     )
                     raise
+
+            return row_store
+
+        data = Parallel(n_jobs=-1 if self.parallel else 1)(
+            delayed(process_row)(row)
+            for row in (
+                tqdm(
+                    rows,
+                    desc=f"[{self.name}] parsing {file_name}",
+                    total=row_count,
+                    disable=self.quiet,
+                )
+            )
+        )
+
+        # merge each row for each table into one data dict per table
+        self.data = {
+            key: list(values)
+            for key, values in zip(data[0], zip(*[d.values() for d in data]))
+        }
+        for table in self.tables:
+            group_field = self.tables[table].get("groupBy")
+            if group_field:
+                self.group_rows(table, group_field, self.data[table])
+            if self.tables[table].get("kind") == "oneToMany":
+                self.data[table] = list(chain(*self.data[table]))
+
         self.report_available = not skip_validation
         if not skip_validation:
             for table in self.validators:
-                for row in self.read_table(table):
+                for row in tqdm(
+                    self.read_table(table),
+                    desc=f"[{self.name}] validating {table} table",
+                    disable=self.quiet,
+                ):
                     self.report["total"][table] += 1
                     try:
                         self.validators[table](row)
@@ -563,12 +649,8 @@ class Parser:
         """
         if table not in self.tables:
             raise ValueError(f"Invalid table: {table}")
-        if "groupBy" in self.tables[table]:
-            for i in self.data[table]:
-                yield self.data[table][i]
-        else:
-            for row in self.data[table]:
-                yield row
+        for row in self.data[table]:
+            yield row
 
     def write_csv(self, table: str, output: str | None = None) -> str | None:
         """Writes to output as CSV a particular table

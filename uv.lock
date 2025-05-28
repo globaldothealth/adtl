@@ -26,6 +26,7 @@ version = "0.8.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastjsonschema" },
+    { name = "joblib" },
     { name = "more-itertools" },
     { name = "pandas" },
     { name = "pint" },
@@ -105,6 +106,7 @@ requires-dist = [
     { name = "eval-type-backport", marker = "python_full_version < '3.10' and extra == 'autoparser'" },
     { name = "fastjsonschema", specifier = "==2.16.*" },
     { name = "google-generativeai", marker = "extra == 'autoparser'", specifier = ">=0.8.3" },
+    { name = "joblib" },
     { name = "more-itertools" },
     { name = "myst-nb", marker = "extra == 'docs'", specifier = "==1.*" },
     { name = "numpy", marker = "extra == 'autoparser'", specifier = "==2.*" },
@@ -1080,6 +1082,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/46/4e/c695c803aa2b668c057b2dea1cdd7a884d1a819ce610cec0be9666210bfd/jiter-0.8.2-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:8bd2a824d08d8977bb2794ea2682f898ad3d8837932e3a74937e93d62ecbb637", size = 505141 },
     { url = "https://files.pythonhosted.org/packages/8e/51/e805b837db056f872db0b7a7a3610b7d764392be696dbe47afa0bea05bf2/jiter-0.8.2-cp39-cp39-win32.whl", hash = "sha256:ca29b6371ebc40e496995c94b988a101b9fbbed48a51190a4461fcb0a68b4a36", size = 203529 },
     { url = "https://files.pythonhosted.org/packages/32/b7/a3cde72c644fd1caf9da07fb38cf2c130f43484d8f91011940b7c4f42c8f/jiter-0.8.2-cp39-cp39-win_amd64.whl", hash = "sha256:1c0dfbd1be3cbefc7510102370d86e35d1d53e5a93d48519688b1bf0f761160a", size = 207527 },
+]
+
+[[package]]
+name = "joblib"
+version = "1.4.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/64/33/60135848598c076ce4b231e1b1895170f45fbcaeaa2c9d5e38b04db70c35/joblib-1.4.2.tar.gz", hash = "sha256:2382c5816b2636fbd20a09e0f4e9dad4736765fdfb7dca582943b9c1366b3f0e", size = 2116621 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/91/29/df4b9b42f2be0b623cbd5e2140cafcaa2bef0759a00b7b70104dcfe2fb51/joblib-1.4.2-py3-none-any.whl", hash = "sha256:06d478d5674cbc267e7496a410ee875abd68e4340feff4490bcb7afb88060ae6", size = 301817 },
 ]
 
 [[package]]
