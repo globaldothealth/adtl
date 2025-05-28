@@ -321,10 +321,12 @@ class Parser:
                 raise ValueError(
                     f"Required 'kind' attribute within 'tables' not present for {table}"
                 )
-            if group_field is not None and aggregation != "lastNotNull":
+            if group_field is not None and aggregation not in [
+                "lastNotNull",
+                "lastNotNullStrict",
+            ]:
                 raise ValueError(
-                    "groupBy needs aggregation=lastNotNull to be set for table: "
-                    f"{table}"
+                    f"groupBy needs aggregation to be set for table: {table}"
                 )
 
     def _set_field_names(self):
@@ -450,7 +452,9 @@ class Parser:
                     parsed_row[attr] = value
             return remove_null_keys(parsed_row)
 
-    def group_rows(self, table: str, group_field: str, rows: Iterable[StrDict]):
+    def group_rows(
+        self, table: str, group_field: str, aggregation: str, rows: Iterable[StrDict]
+    ):
         """
         Applys the 'groupBy' rule and any 'combinedType' rules to the rows of data
         grouped by the group_field (e.g. an ID number).
@@ -466,7 +470,9 @@ class Parser:
             combined_row = {}
 
             for attr in attrs:
-                if "combinedType" in self.spec[table][attr]:
+                if ("combinedType" in self.spec[table][attr]) and (
+                    not aggregation.endswith("Strict")
+                ):
                     combined_type = self.spec[table][attr]["combinedType"]
                     values = [
                         row.get(attr) for row in rows if row.get(attr) not in (None, "")
@@ -510,7 +516,8 @@ class Parser:
                                     f"Multiple rows of data found for {attr} without a"
                                     " combinedType listed. Data being overwritten."
                                 )
-                        combined_row[attr] = data[-1]
+                        if aggregation.startswith("lastNotNull"):
+                            combined_row[attr] = data[-1]
 
             return combined_row
 
@@ -616,8 +623,9 @@ class Parser:
         }
         for table in self.tables:
             group_field = self.tables[table].get("groupBy")
+            aggregation = self.tables[table].get("aggregation")
             if group_field:
-                self.group_rows(table, group_field, self.data[table])
+                self.group_rows(table, group_field, aggregation, self.data[table])
             if self.tables[table].get("kind") == "oneToMany":
                 self.data[table] = list(chain(*self.data[table]))
 

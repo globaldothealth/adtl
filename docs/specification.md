@@ -33,9 +33,11 @@ These metadata fields are defined under a header key `adtl`.
     allowed value is *oneToMany* when multiple rows are
     generated from the same row.
   * *groupBy*: Attribute(s) to group by
-  * *aggregation*: Aggregation type. Currently only one
-    type*lastNotNull* is supported which sets a particular
-    attribute to the last non-null value in the grouped dataset.
+  * *aggregation*: Aggregation type. Currently either
+    type *lastNotNull* or *lastNotNullStrict* is supported which sets a particular
+    attribute to the last non-null value in the grouped dataset. *lastNotNull* applies
+    [combinedType](#combined-Type) rules over all the rows being grouped, while *Strict*
+    only applies those rules along a single row, and retains the last row regardless.
   * *schema* (optional): Specifies JSON schema to use for validation,
     can be a relative path, or a URL
   * *common* (optional): Specifies common mappings that are applied to every if-block
@@ -329,7 +331,7 @@ all fields it cannot match.
 
 ### Combined type
 
-Refers to multiple fields in the source format. Requires
+Use to collate data from to multiple fields in the source format to one. Requires
 a `combinedType` attribute specifying the combination criteria, and
 a `fields` attribute which a list of fields that will be combined.
 Accepted values for `combinedType` are:
@@ -341,6 +343,10 @@ Accepted values for `combinedType` are:
 * *firstNonNull* - First in the list of fields that has a non-null value
 * *list* - List of various fields
 * *set* - List of various fields, with duplicates removed
+
+With `kind=GroupBy` and non-*Strict* aggregation, combinedType will apply both along a
+single row, and across multiple rows being aggregated. If aggregation is strict, rules only
+apply across a single row.
 
 A combinedType can have multiple fields within a `fields` key, or can specify
 multiple fields with a `fieldPattern` key which is a regex that is matched to the
