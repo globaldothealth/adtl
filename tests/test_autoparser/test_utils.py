@@ -10,7 +10,7 @@ from adtl.autoparser.language_models.gemini import GeminiLanguageModel
 from adtl.autoparser.util import (
     check_matches,
     load_data_dict,
-    parse_choices,
+    parse_llm_mapped_values,
     read_config_schema,
     setup_llm,
 )
@@ -62,19 +62,19 @@ def test_read_config_schema():
         ("pos=Y, neg=N", {"pos": "Y", "neg": "N"}),
     ],
 )
-def test_parse_choices(s, expected):
-    choices = parse_choices(s)
+def test_parse_llm_mapped_values(s, expected):
+    choices = parse_llm_mapped_values(s)
     assert choices == expected
 
 
-def test_parse_choices_error():
+def test_parse_llm_mapped_values_error():
     # dictionary printed without stringification
     with pytest.raises(ValueError, match="Invalid choices list"):
-        parse_choices('{"oui":"True", "non":"False", "blah":"None"}')
+        parse_llm_mapped_values('{"oui":"True", "non":"False", "blah":"None"}')
 
     # different choice_delimeter_map
     with pytest.raises(ValueError, match="Invalid choices list"):
-        parse_choices("oui:True, non:False, blah:None")
+        parse_llm_mapped_values("oui:True, non:False, blah:None")
 
 
 def test_load_data_dict():

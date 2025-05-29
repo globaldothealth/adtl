@@ -198,22 +198,23 @@ def test_missing_common_values():
         ).common_values
 
 
-def test_choices_present():
+def test_choices():
     df = pd.DataFrame(
         {
             "source_field": ["test"],
             "source_description": ["test"],
             "source_type": ["test"],
-            "choices": ["test"],
+            "choices": ["1=test, 2=test2"],
         }
     )
 
-    with pytest.raises(NotImplementedError, match="choices column not yet supported"):
-        MapperTest(
-            df,
-            Path("tests/test_autoparser/schemas/animals.schema.json"),
-            "fr",
-        ).common_values
+    cv = MapperTest(
+        df,
+        Path("tests/test_autoparser/schemas/animals.schema.json"),
+        "fr",
+    ).common_values
+
+    npt.assert_array_equal(cv.iloc[0], ["test", "test2"])
 
 
 def test_mapped_fields_error():

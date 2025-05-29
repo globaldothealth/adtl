@@ -7,6 +7,7 @@ from __future__ import annotations
 import difflib
 import json
 import re
+import warnings
 from pathlib import Path
 from typing import Any, Dict, Literal
 
@@ -61,9 +62,9 @@ def read_data(file: str | Path | pd.DataFrame, file_type: str):
         )
 
 
-def parse_choices(s: str) -> Dict[str, Any] | None:
+def parse_llm_mapped_values(s: str) -> Dict[str, Any] | None:
     """
-    Takes the choices from llm as a string and turns into pairs.
+    Takes the values mapped by the llm as a string and turns into pairs.
 
     "oui=True, non=False, blah=None" -> {"oui": True, "non": False, "blah": ""}
     "vivant=alive, décédé=dead, " "=None" -> {"vivant": "alive", "décédé": "dead"}
@@ -102,6 +103,27 @@ def parse_choices(s: str) -> Dict[str, Any] | None:
     return choices
 
 
+def parse_choices(choice_col: pd.Series, config) -> pd.Series:
+    sep = config.get("choice_delimiter", "|")
+    link = config.get("choice_delimiter_map", ",")
+
+    def parse(x):
+        if not isinstance(x, str):
+            return None
+        options = {}
+        for i in x.split(sep):
+            try:
+                k, v = i.split(link)
+            except ValueError:
+                return None
+            k = k.strip()
+            v = v.strip()
+            options[k] = v
+        return options if options else None
+
+    return choice_col.apply(lambda x: parse(x))
+
+
 def load_data_dict(
     config: dict[str:Any], data_dict: str | Path | pd.DataFrame
 ) -> pd.DataFrame:
@@ -114,9 +136,40 @@ def load_data_dict(
         else:
             raise ValueError(f"Unsupported format (not CSV or XLSX): {data_dict}")
 
-    data_dict = data_dict[config["column_mappings"].values()]
     column_mappings = {v: k for k, v in config["column_mappings"].items()}
     data_dict.rename(columns=column_mappings, inplace=True)
+    data_dict = data_dict.loc[
+        :,
+        data_dict.columns.isin(
+            [
+                "source_field",
+                "source_description",
+                "source_type",
+                "common_values",
+                "choices",
+            ]
+        ),
+    ]
+
+    if "choices" in data_dict.columns:
+        data_dict["choices"] = parse_choices(data_dict["choices"], config)
+
+    # Check column descriptions are unique
+    if not data_dict["source_description"].is_unique and not all(
+        data_dict["source_description"].isnull()
+    ):
+        empty_description_fields = data_dict[data_dict["source_description"].isnull()]
+        dup_description_fields = data_dict["source_field"][
+            data_dict["source_description"].duplicated(keep=False)
+        ]
+        # remove fields without descriptions
+        data_dict = data_dict.dropna(subset=["source_description"])
+        warnings.warn(
+            f"There are {len(dup_description_fields)} fields in the data dictionary with identical descriptions, and {len(empty_description_fields)} fields with no descriptions.  \n"
+            "autoparser cannot disambiguate these fields; please ensure every field has a unique description.  \n"
+            "Any field with a matching description could be used for mapping.  \n"
+        )
+
     return data_dict
 
 
