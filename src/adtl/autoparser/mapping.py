@@ -142,7 +142,12 @@ class Mapper:
                 cv.index = self.data_dictionary.source_field
                 self._common_values = cv
             elif "choices" in self.data_dictionary.columns:
-                raise NotImplementedError("choices column not yet supported")
+                choices = self.data_dictionary.choices
+                cv = choices.apply(
+                    lambda x: list(x.values()) if isinstance(x, dict) else None
+                )
+                cv.index = self.data_dictionary.source_field
+                self._common_values = cv
             else:
                 raise ValueError(
                     "No common values or choices column found in data dictionary"
@@ -207,7 +212,7 @@ class Mapper:
             self.data_dictionary,
             how="left",
             on="source_description",
-        )
+        ).drop_duplicates(subset="target_field")
         df_merged.set_index("target_field", inplace=True, drop=True)
 
         # Check to see if any fields with mapped descriptions are missing after merge
@@ -217,10 +222,11 @@ class Mapper:
         ]
 
         if not missed_merge.empty:
-            descriptions_list = self.data_dictionary["source_description"].tolist()
+            descriptions_list = (
+                self.data_dictionary["source_description"].dropna().tolist()
+            )
             df_merged.loc[
-                (df_merged["source_description"].notna())
-                & (df_merged["source_field"].isna()),
+                missed_merge.index,
                 "source_description",
             ] = missed_merge["source_description"].apply(
                 lambda x: check_matches(x, descriptions_list)
@@ -230,6 +236,7 @@ class Mapper:
                 df_merged["source_description"]
                 .reset_index()
                 .merge(self.data_dictionary, how="left")
+                .drop_duplicates(subset="target_field")
                 .set_index("target_field")
             )
 
@@ -305,6 +312,41 @@ class Mapper:
                 f"The following schema fields have not been mapped: {list(unmapped)}",
                 UserWarning,
             )
+
+        if "choices" in self.data_dictionary:
+            # If the data dictionary has a choices column,
+            # the keys need to be mapped rather than the text values
+            filtered_dict = self.data_dictionary[
+                self.data_dictionary["source_field"].isin(mapping_dict["source_field"])
+            ][["source_field", "choices"]]
+
+            mapping_choices = mapping_dict[["source_field", "value_mapping"]]
+
+            choices = filtered_dict.merge(mapping_choices, on="source_field")
+            choices["combined_choices"] = choices.apply(
+                lambda x: (
+                    {k: x["value_mapping"].get(v) for k, v in x["choices"].items()}
+                    if isinstance(x["choices"], dict)
+                    else None
+                ),
+                axis=1,
+            )
+
+            merged_mapping_dict = (
+                mapping_dict.reset_index()
+                .merge(
+                    choices[["source_field", "combined_choices"]],
+                    on="source_field",
+                    how="left",
+                )
+                .drop_duplicates(subset="target_field")
+                .set_index("target_field")
+            )
+            mmd = merged_mapping_dict.drop(columns=["value_mapping"]).rename(
+                columns={"combined_choices": "value_mapping"}
+            )
+
+            mapping_dict = mmd
 
         # turn lists & dicts into strings for consistancy with saved CSV
         mapping_dict["target_values"] = mapping_dict["target_values"].apply(

@@ -13,7 +13,7 @@ from typing import Any
 import pandas as pd
 
 from .toml_writer import dump
-from .util import DEFAULT_CONFIG, parse_choices, read_config_schema, read_data
+from .util import DEFAULT_CONFIG, parse_llm_mapped_values, read_config_schema, read_data
 
 
 def adtl_header(
@@ -139,7 +139,9 @@ class ParserGenerator:
         try:
             return self._parsed_choices
         except AttributeError:
-            self._parsed_choices = self.mappings.value_mapping.map(parse_choices)
+            self._parsed_choices = self.mappings.value_mapping.map(
+                parse_llm_mapped_values
+            )
             self._parsed_choices.index = self.mappings.target_field
             return self._parsed_choices
 

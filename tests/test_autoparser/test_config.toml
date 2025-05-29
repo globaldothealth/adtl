@@ -34,6 +34,6 @@ max_common_count = 8
 # Column mappings to standardise column names across data dictionaries
 [column_mappings]
   source_field = "Field Name"
-  source_type = "Field Type"
   source_description = "Description"
+  source_type = "Field Type"
   common_values = "Common Values"
