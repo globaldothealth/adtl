@@ -1,4 +1,4 @@
-Identité,Province,DateNotification,Classicfication ,Nom complet ,Date de naissance,AgeAns,AgeMois         ,Sexe,StatusCas,DateDec,ContSoins ,ContHumain Autre,AutreContHumain,ContactAnimal,Micropucé,AnimalDeCompagnie,ConditionsPreexistantes
+Identité,Province,DateNotification,Classicfication ,Nom complet ,Date de naissance,AgeAns,AgeMois         ,Sexe,StatusCas,DateDec,ContSoins ,ContHumain Autre,ContexteContHumain,ContactAnimal,Micropucé,AnimalDeCompagnie,ConditionsPreexistantes
 A001,Equateur,2024-01-01,Mammifère,Luna,15/03/2022,2,10,f,Vivant,,Oui,Non,Non,Oui,Oui,Oui,"[arthrite, vomir]"
 B002,Equateur,2024-15-02,FISH,Max,21/07/2021,3,4,m,Décédé,2024-06-01,Non,Oui,Voyage,Non,NON,Oui,
 C003,Equateur,2024-03-10,oiseau,Coco,10/02/2023,1,11,F,Vivant,,Oui,Non,Non,Oui,Oui,Non,

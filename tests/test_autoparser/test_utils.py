@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy.testing as npt
 import pandas as pd
+import pandera.pandas as pa
 import pytest
 
 from adtl.autoparser.language_models.gemini import GeminiLanguageModel
@@ -77,7 +78,7 @@ def test_parse_llm_mapped_values_error():
         parse_llm_mapped_values("oui:True, non:False, blah:None")
 
 
-def test_load_data_dict():
+def test_load_data_dict_invalid():
     dd_original = pd.read_csv("tests/test_autoparser/sources/animals_dd.csv")
 
     npt.assert_array_equal(
@@ -90,14 +91,8 @@ def test_load_data_dict():
         ],
     )
 
-    data = load_data_dict(CONFIG, "tests/test_autoparser/sources/animals_dd.csv")
-    npt.assert_array_equal(
-        data.columns,
-        ["source_field", "source_description", "source_type", "common_values"],
-    )
-
-    with pytest.raises(ValueError, match="Unsupported format"):
-        load_data_dict(CONFIG, "tests/test_autoparser/sources/animals.txt")
+    with pytest.raises(pa.errors.SchemaErrors):
+        load_data_dict("tests/test_autoparser/sources/animals_dd.csv")
 
 
 def test_setup_llm_no_key():

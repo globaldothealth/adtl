@@ -27,7 +27,7 @@ descriptions = {
     "DateDec": "Date of Death",
     "ContSoins ": "Care Contact",
     "ContHumain Autre": "Other Human Contact",
-    "AutreContHumain": "Other Human Contact",
+    "ContexteContHumain": "Human Contact Context",
     "ContactAnimal": "Animal Contact",
     "Micropucé": "Microchipped",
     "AnimalDeCompagnie": "Pet Animal",
