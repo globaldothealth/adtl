@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Iterable, Literal, Union
 
 import fastjsonschema
+import pandas as pd
 import requests
 import tomli
 from joblib import Parallel, delayed
@@ -704,23 +705,15 @@ class Parser:
                     name + table name with a parquet suffix.
         """
 
-        try:
-            import polars as pl
-        except ImportError:
-            raise ImportError(
-                "Parquet output requires the polars library. "
-                "Install with 'pip install polars'"
-            )
-
         # Read the table data
         data = list(self.read_table(table))
 
-        # Convert data to Polars DataFrame
-        df = pl.DataFrame(data, infer_schema_length=len(data))
+        # Convert data to Pandas DataFrame
+        df = pd.DataFrame(data)
 
         if table in self.validators:
             valid_cols = [c for c in ["adtl_valid", "adtl_error"] if c in df.columns]
-            df_validated = df.select(
+            df_validated = df[
                 valid_cols
                 + [
                     *[
@@ -729,15 +722,15 @@ class Parser:
                         if (col != "adtl_valid" and col != "adtl_error")
                     ],  # All other columns, in their original order
                 ]
-            )
+            ]
         else:
             df_validated = df
 
         if output:
-            df_validated.write_parquet(output)
+            df_validated.to_parquet(output)
         else:
             buf = io.BytesIO()
-            df_validated.write_parquet(buf)
+            df_validated.to_parquet(buf)
             return buf.getvalue()
 
     def show_report(self):
