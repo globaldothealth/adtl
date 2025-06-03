@@ -31,9 +31,9 @@ dependencies = [
   "tqdm",
   "python-dateutil",
   "more_itertools",
-  "pandas==2.*",
+  "pandas[parquet]==2.*",
   "joblib"
-  ]
+]
   scripts = { adtl = "adtl:main", adtl-autoparser = "adtl.autoparser:main" }
 
 [project.urls]
@@ -54,7 +54,8 @@ autoparser = [
     "openpyxl>=3.1.5",
     "pydantic>=2.9.2",
     "eval_type_backport; python_version < '3.10'",
-    "google-generativeai>=0.8.3"
+    "google-generativeai>=0.8.3",
+    "pandera[pandas]"
     ]
 test = [
   "pytest>=8.3.3",
@@ -62,7 +63,7 @@ test = [
   "syrupy==4.*",
   "responses",
   "pytest-unordered",
-  "adtl[parquet, autoparser]"
+  "adtl[autoparser]"
 ]
 docs = [
   "sphinx==8.*; python_version >= '3.10'",
@@ -70,9 +71,6 @@ docs = [
   "sphinxcontrib-mermaid",
   "myst-nb==1.*",
   "adtl[autoparser]"
-]
-parquet = [
-  "polars"
 ]
 all = [
   "adtl[test,docs]"
