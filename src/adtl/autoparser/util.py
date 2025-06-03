@@ -7,13 +7,13 @@ from __future__ import annotations
 import difflib
 import json
 import re
-import warnings
 from pathlib import Path
 from typing import Any, Dict, Literal
 
 import pandas as pd
 import tomli
 
+from adtl.autoparser.data_dict_schema import DataDictionaryProcessed
 from adtl.autoparser.language_models.gemini import GeminiLanguageModel
 from adtl.autoparser.language_models.openai import OpenAILanguageModel
 
@@ -52,13 +52,15 @@ def read_data(file: str | Path | pd.DataFrame, file_type: str):
             return pd.read_csv(file)
         elif file.suffix == ".xlsx":
             return pd.read_excel(file)
+        elif file.suffix == ".parquet":
+            return pd.read_parquet(file)
         else:
-            raise ValueError(f"Unsupported format (not CSV or XLSX): {file}")
+            raise ValueError(f"Unsupported format (not CSV, XLSX or parquet): {file}")
     elif isinstance(file, pd.DataFrame):
         return file
     else:
         raise ValueError(
-            f"{file_type} must be a path to a CSV or XLSX file, or a DataFrame"
+            f"{file_type} must be a path to a CSV, XLSX or parquet file, or a DataFrame"
         )
 
 
@@ -103,74 +105,18 @@ def parse_llm_mapped_values(s: str) -> Dict[str, Any] | None:
     return choices
 
 
-def parse_choices(choice_col: pd.Series, config) -> pd.Series:
-    sep = config.get("choice_delimiter", "|")
-    link = config.get("choice_delimiter_map", ",")
-
-    def parse(x):
-        if not isinstance(x, str):
-            return None
-        options = {}
-        for i in x.split(sep):
-            try:
-                k, v = i.split(link)
-            except ValueError:
-                return None
-            k = k.strip()
-            v = v.strip()
-            options[k] = v
-        return options if options else None
-
-    return choice_col.apply(lambda x: parse(x))
-
-
 def load_data_dict(
-    config: dict[str:Any], data_dict: str | Path | pd.DataFrame
+    dd: pd.DataFrame | str, schema=DataDictionaryProcessed
 ) -> pd.DataFrame:
-    if isinstance(data_dict, str):
-        data_dict = Path(data_dict)
-        if data_dict.suffix == ".csv":
-            data_dict = pd.read_csv(data_dict)
-        elif data_dict.suffix == ".xlsx":  # pragma: no cover
-            data_dict = pd.read_excel(data_dict)
-        else:
-            raise ValueError(f"Unsupported format (not CSV or XLSX): {data_dict}")
+    """
+    Load and validate the data dictionary from a file or DataFrame.
+    """
+    if isinstance(dd, str):
+        dd = read_data(dd, "Data Dictionary")
 
-    column_mappings = {v: k for k, v in config["column_mappings"].items()}
-    data_dict.rename(columns=column_mappings, inplace=True)
-    data_dict = data_dict.loc[
-        :,
-        data_dict.columns.isin(
-            [
-                "source_field",
-                "source_description",
-                "source_type",
-                "common_values",
-                "choices",
-            ]
-        ),
-    ]
+    schema.validate(dd, lazy=True)
 
-    if "choices" in data_dict.columns:
-        data_dict["choices"] = parse_choices(data_dict["choices"], config)
-
-    # Check column descriptions are unique
-    if not data_dict["source_description"].is_unique and not all(
-        data_dict["source_description"].isnull()
-    ):
-        empty_description_fields = data_dict[data_dict["source_description"].isnull()]
-        dup_description_fields = data_dict["source_field"][
-            data_dict["source_description"].duplicated(keep=False)
-        ]
-        # remove fields without descriptions
-        data_dict = data_dict.dropna(subset=["source_description"])
-        warnings.warn(
-            f"There are {len(dup_description_fields)} fields in the data dictionary with identical descriptions, and {len(empty_description_fields)} fields with no descriptions.  \n"
-            "autoparser cannot disambiguate these fields; please ensure every field has a unique description.  \n"
-            "Any field with a matching description could be used for mapping.  \n"
-        )
-
-    return data_dict
+    return dd
 
 
 def setup_llm(

@@ -7,6 +7,7 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 import pytest
+from pandera.errors import SchemaError
 from testing_data_animals import TestLLM
 
 from adtl.autoparser import create_mapping
@@ -39,7 +40,7 @@ class MapperTest(Mapper):
 
 
 ANIMAL_MAPPER = MapperTest(
-    "tests/test_autoparser/sources/animals_dd_described.csv",
+    "tests/test_autoparser/sources/animals_dd_described.parquet",
     Path("tests/test_autoparser/schemas/animals.schema.json"),
     "fr",
 )
@@ -139,23 +140,23 @@ def test_common_values():
     common_vals = pd.Series(
         data=[
             None,
-            {"orientale", "katanga", "equateur"},
+            ["orientale", "katanga", "equateur"],
             None,
-            {"poisson", "fish", "rept", "oiseau", "mammifère", "amphibie"},
-            None,
-            None,
+            ["mammifère", "fish", "rept", "amphibie", "oiseau", "poisson"],
             None,
             None,
-            {"m", "f"},
-            {"vivant", "décédé"},
             None,
-            {"non", "oui"},
-            {"non", "oui"},
-            {"non", "autres", "voyage"},
-            {"non", "oui"},
-            {"non", "oui"},
-            {"non", "oui"},
-            {"diabète", "vomir", "convulsions", "arthrite", "problèmes d'échelle"},
+            None,
+            ["m", "f"],
+            ["vivant", "décédé"],
+            None,
+            ["oui", "non"],
+            ["oui", "non"],
+            ["autres", "voyage", "non"],
+            ["oui", "non"],
+            ["oui", "non"],
+            ["oui", "non"],
+            ["convulsions", "vomir", "arthrite", "diabète", "problèmes d'échelle"],
         ],
         index=[
             "Identité",
@@ -190,12 +191,12 @@ def test_missing_common_values():
         }
     )
 
-    with pytest.raises(ValueError, match="No common values or choices"):
+    with pytest.raises(SchemaError, match="Data dictionary validation failed"):
         MapperTest(
             df,
             Path("tests/test_autoparser/schemas/animals.schema.json"),
             "fr",
-        ).common_values
+        )
 
 
 def test_choices():
@@ -240,7 +241,7 @@ def test_mapper_class_init_raises():
 
 def test_mapper_class_init():
     mapper = Mapper(
-        "tests/test_autoparser/sources/animals_dd_described.csv",
+        "tests/test_autoparser/sources/animals_dd_described.parquet",
         Path("tests/test_autoparser/schemas/animals.schema.json"),
         "fr",
         llm_provider=None,
@@ -256,7 +257,7 @@ def test_mapper_class_init():
 
 def test_mapper_class_init_with_llm():
     mapper = Mapper(
-        "tests/test_autoparser/sources/animals_dd_described.csv",
+        "tests/test_autoparser/sources/animals_dd_described.parquet",
         Path("tests/test_autoparser/schemas/animals.schema.json"),
         "fr",
         api_key="abcd",
@@ -302,7 +303,7 @@ def test_match_fields_to_schema_dummy_data():
     )
 
     case_status = pd.Series(
-        data=["Case Status", "StatusCas", "string", "Vivant, Décédé"],
+        data=["Case Status", "StatusCas", "string", ["vivant", "décédé"]],
         index=df.columns,
         name="case_status",
     )
@@ -362,7 +363,7 @@ def test_class_create_mapping_no_save():
         {
             "source_description": "Pet Animal",
             "source_field": "AnimalDeCompagnie",
-            "common_values": "Oui, Non, non",
+            "common_values": "oui, non",
             "target_values": "True, False, None",
             "value_mapping": "oui=True, non=False",
         },
@@ -383,7 +384,7 @@ def test_class_create_mapping_save(tmp_path):
         {
             "source_description": "Pet Animal",
             "source_field": "AnimalDeCompagnie",
-            "common_values": "Oui, Non, non",
+            "common_values": "oui, non",
             "target_values": "True, False, None",
             "value_mapping": "oui=True, non=False",
         },
@@ -400,7 +401,7 @@ def test_create_mapping(monkeypatch, tmp_path):
     monkeypatch.setattr("adtl.autoparser.mapping.Mapper", MapperTest)
 
     create_mapping(
-        "tests/test_autoparser/sources/animals_dd_described.csv",
+        "tests/test_autoparser/sources/animals_dd_described.parquet",
         "tests/test_autoparser/schemas/animals.schema.json",
         "fr",
         "1a2b3c4d",
@@ -414,7 +415,7 @@ def test_create_mapping(monkeypatch, tmp_path):
 @pytest.mark.filterwarnings("ignore:The following schema fields have not been mapped")
 def test_main_cli(monkeypatch, tmp_path):
     ARGV = [
-        "tests/test_autoparser/sources/animals_dd_described.csv",
+        "tests/test_autoparser/sources/animals_dd_described.parquet",
         "tests/test_autoparser/schemas/animals.schema.json",
         "fr",
         "1a2b3c4d",

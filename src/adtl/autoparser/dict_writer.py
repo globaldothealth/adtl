@@ -11,7 +11,9 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from pandera.errors import SchemaError
 
+from .data_dict_schema import GeneratedDict, GeneratedDictDescribed
 from .util import (
     DEFAULT_CONFIG,
     check_matches,
@@ -89,6 +91,13 @@ class DictWriter:
         column_mappings = config["column_mappings"]
         data_dict.rename(columns=column_mappings, inplace=True)
         return data_dict
+
+    def _load_dict(self, data_dict: pd.DataFrame) -> pd.DataFrame:
+        dd = load_data_dict(data_dict, schema=GeneratedDict)
+        column_mappings = {v: k for k, v in self.config["column_mappings"].items()}
+        dd.rename(columns=column_mappings, inplace=True)
+
+        return dd
 
     def create_dict(self, data: pd.DataFrame | str) -> pd.DataFrame:
         """
@@ -235,7 +244,7 @@ class DictWriter:
                     "No data dictionary found. Please create a data dictionary first."
                 )
 
-        df = load_data_dict(self.config, data_dict)
+        df = self._load_dict(data_dict)
 
         if not self.model:
             self.model = setup_llm(key, provider=llm_provider, model=llm_model)
@@ -267,6 +276,18 @@ class DictWriter:
         new_dd.drop(columns=["description"], inplace=True)
 
         new_dd = self._reset_dict_headers(self.config, new_dd)
+
+        # Validate the new data dictionary
+        try:
+            GeneratedDictDescribed.validate(new_dd)
+        except SchemaError as e:
+            if "'Description' contains duplicate values" in str(e):
+                warnings.warn(
+                    "Duplicate descriptions found in the data dictionary. "
+                    "Before proceeding to mapping and parser generation, each description must be unique."
+                )
+            else:
+                raise e
 
         return new_dd
 

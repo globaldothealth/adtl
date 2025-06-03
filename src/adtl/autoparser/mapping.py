@@ -12,10 +12,10 @@ from typing import Literal
 import numpy as np
 import pandas as pd
 
+from .dict_reader import format_dict
 from .util import (
     DEFAULT_CONFIG,
     check_matches,
-    load_data_dict,
     read_config_schema,
     read_json,
     setup_llm,
@@ -71,7 +71,7 @@ class Mapper:
             config or Path(Path(__file__).parent, DEFAULT_CONFIG)
         )
 
-        self.data_dictionary = load_data_dict(self.config, data_dictionary)
+        self.data_dictionary = format_dict(data_dictionary, config=self.config)
 
     @property
     def target_fields(self) -> list[str]:
@@ -129,16 +129,7 @@ class Mapper:
             return self._common_values
         except AttributeError:
             if "common_values" in self.data_dictionary.columns:
-
-                def _lower_string(x):
-                    if isinstance(x, str):
-                        return {
-                            y.lower().strip()
-                            for y in x.split(self.config["choice_delimiter"])
-                        }
-
                 cv = self.data_dictionary.common_values
-                cv = cv.apply(_lower_string)
                 cv.index = self.data_dictionary.source_field
                 self._common_values = cv
             elif "choices" in self.data_dictionary.columns:
@@ -254,7 +245,7 @@ class Mapper:
         for f in self.target_fields:
             s = self.common_values_mapped.get(f)
             t = self.target_values[f]
-            if s and t:
+            if s is not None and t is not None:
                 values_tuples.append((f, s, t))
 
         # to LLM
@@ -349,16 +340,24 @@ class Mapper:
             mapping_dict = mmd
 
         # turn lists & dicts into strings for consistancy with saved CSV
-        mapping_dict["target_values"] = mapping_dict["target_values"].apply(
-            lambda x: (", ".join(str(item) for item in x) if isinstance(x, list) else x)
-        )
-        mapping_dict["value_mapping"] = mapping_dict["value_mapping"].apply(
-            lambda x: (
-                ", ".join(f"{k}={v}" for k, v in x.items())
-                if isinstance(x, dict)
-                else x
-            )
-        )
+        for col in ["common_values", "target_values"]:
+            if col in mapping_dict.columns:
+                mapping_dict[col] = mapping_dict[col].apply(
+                    lambda x: (
+                        ", ".join(str(item) for item in x)
+                        if isinstance(x, (list, np.ndarray))
+                        else x
+                    )
+                )
+        for col in ["choices", "value_mapping"]:
+            if col in mapping_dict.columns:
+                mapping_dict[col] = mapping_dict[col].apply(
+                    lambda x: (
+                        ", ".join(f"{k}={v}" for k, v in x.items())
+                        if isinstance(x, dict)
+                        else x
+                    )
+                )
 
         if save is False:
             return mapping_dict

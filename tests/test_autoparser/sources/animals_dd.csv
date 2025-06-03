@@ -12,7 +12,7 @@ StatusCas,,string,"Vivant, Décédé"
 DateDec,,string,
 ContSoins ,,string,"Oui, Non"
 ContHumain Autre,,string,"Non, Oui"
-AutreContHumain,,string,"Non, Voyage, Autres, Voyage "
+ContexteContHumain,,string,"Non, Voyage, Autres, Voyage "
 ContactAnimal,,string,"Oui, Non"
 Micropucé,,string,"Oui, NON, OUI, oui"
 AnimalDeCompagnie,,string,"Oui, Non, non"

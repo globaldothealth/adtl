@@ -2,6 +2,7 @@ import argparse
 import sys
 
 try:
+    from .dict_reader import DictReader, format_dict
     from .dict_writer import DictWriter, create_dict, generate_descriptions
     from .make_toml import ParserGenerator, create_parser
     from .mapping import Mapper, create_mapping
@@ -10,16 +11,20 @@ except ImportError:  # pragma: no cover
         "autoparser is not available. Import as 'adtl[autoparser]' to use."
     )
 
+
 __all__ = [
     "DictWriter",
     "create_dict",
     "generate_descriptions",
+    "DictReader",
+    "format_dict",
     "Mapper",
     "create_mapping",
     "ParserGenerator",
     "create_parser",
 ]
 
+from .dict_reader import main as format_dict_main
 from .dict_writer import main as make_dd_main
 from .make_toml import main as make_toml_main
 from .mapping import main as csv_mapping_main
@@ -38,6 +43,13 @@ def main():
         help="Create a data dictionary from a dataset",
     )
     parser_create_dict.set_defaults(func=make_dd_main)
+
+    # Subcommand: format-dict
+    parser_format_dict = subparsers.add_parser(
+        "format-dict",
+        help="Format a data dictionary to use with autoparser",
+    )
+    parser_format_dict.set_defaults(func=format_dict_main)
 
     # Subcommand: create-mapping
     parser_create_mapping = subparsers.add_parser(
