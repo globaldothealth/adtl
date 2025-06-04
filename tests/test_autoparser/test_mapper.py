@@ -33,15 +33,16 @@ class MapperTest(Mapper):
         self.model = TestLLM()
 
 
-ANIMAL_MAPPER = MapperTest(
-    "tests/test_autoparser/sources/animals_dd_described.parquet",
-    Path("tests/test_autoparser/schemas/animals.schema.json"),
-    "fr",
-)
+@pytest.fixture
+def mapper():
+    return MapperTest(
+        "tests/test_autoparser/sources/animals_dd_described.parquet",
+        Path("tests/test_autoparser/schemas/animals.schema.json"),
+        "fr",
+    )
 
 
-def test_target_fields():
-    mapper = ANIMAL_MAPPER
+def test_target_fields(mapper):
     npt.assert_array_equal(
         mapper.target_fields,
         [
@@ -64,8 +65,7 @@ def test_target_fields():
     )
 
 
-def test_target_types():
-    mapper = ANIMAL_MAPPER
+def test_target_types(mapper):
     assert mapper.target_types == {
         "identity": ["string", "integer"],
         "name": ["string", "null"],
@@ -85,9 +85,7 @@ def test_target_types():
     }
 
 
-def test_target_values():
-    mapper = ANIMAL_MAPPER
-
+def test_target_values(mapper):
     target_vals = pd.Series(
         data=[
             np.nan,
@@ -128,9 +126,7 @@ def test_target_values():
     pd.testing.assert_series_equal(mapper.target_values, target_vals)
 
 
-def test_common_values():
-    mapper = ANIMAL_MAPPER
-
+def test_common_values(mapper):
     common_vals = pd.Series(
         data=[
             None,
@@ -212,14 +208,14 @@ def test_choices():
     npt.assert_array_equal(cv.iloc[0], ["test", "test2"])
 
 
-def test_mapped_fields_error():
+def test_mapped_fields_error(mapper):
     with pytest.raises(AttributeError):
-        ANIMAL_MAPPER.mapped_fields
+        mapper.mapped_fields
 
 
-def test_common_values_mapped_fields_error():
+def test_common_values_mapped_fields_error(mapper):
     with pytest.raises(AttributeError):
-        ANIMAL_MAPPER.common_values_mapped
+        mapper.common_values_mapped
 
 
 def test_mapper_class_init_raises():
@@ -260,9 +256,7 @@ def test_mapper_class_init_with_llm():
     assert isinstance(mapper.model, OpenAILanguageModel)
 
 
-def test_match_fields_to_schema_dummy_data():
-    mapper = ANIMAL_MAPPER
-
+def test_match_fields_to_schema_dummy_data(mapper):
     df = mapper.match_fields_to_schema()
 
     assert df.shape == (15, 4)
@@ -314,9 +308,7 @@ def test_match_fields_to_schema_dummy_data():
     assert df.at["date_of_death", "source_field"] is np.nan
 
 
-def test_match_values_to_schema_dummy_data():
-    mapper = ANIMAL_MAPPER
-
+def test_match_values_to_schema_dummy_data(mapper):
     # fill mapper with dummy data mapping the fields
     mapper.match_fields_to_schema()
 
@@ -351,9 +343,7 @@ def test_match_values_to_schema_choices():
     )
 
 
-def test_class_create_mapping_no_save():
-    mapper = ANIMAL_MAPPER
-
+def test_class_create_mapping_no_save(mapper):
     with pytest.warns(UserWarning):
         df = mapper.create_mapping(save=False)
 
@@ -384,9 +374,7 @@ def test_class_create_mapping_no_save():
 
 
 @pytest.mark.filterwarnings("ignore:The following schema fields have not been mapped")
-def test_class_create_mapping_save(tmp_path):
-    mapper = ANIMAL_MAPPER
-
+def test_class_create_mapping_save(tmp_path, mapper):
     file_name = tmp_path / "test_animals_mapping.csv"
 
     df = mapper.create_mapping(save=True, file_name=str(file_name))
