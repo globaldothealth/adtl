@@ -140,9 +140,10 @@ class Mapper:
                 cv.index = self.data_dictionary.source_field
                 self._common_values = cv
             else:
+                # pandera schema validation means this should never be reached
                 raise ValueError(
                     "No common values or choices column found in data dictionary"
-                )
+                )  # pragma: no cover
             return self._common_values
 
     @property
@@ -158,7 +159,6 @@ class Mapper:
                     " first"
                 )
             cv = self.common_values
-            # cv_mapped = filtered_dict.source_field.dropna().apply(lambda x: cv.loc[x])
             cv_mapped = filtered_dict.source_field.apply(
                 lambda x: cv.loc[x] if isinstance(x, str) else None
             )
@@ -177,6 +177,48 @@ class Mapper:
     @mapped_fields.setter
     def mapped_fields(self, value: pd.Series):
         self._mapped_fields = value
+
+    def _relabel_choices(self, map_df):
+        """
+        If 'choices' are present in the data dictionary, relabel the choices
+        in the mapping dataframe to match the source field names.
+        e.g.
+        if the data dictionary indicates {1: Man, 2:Female, 3:Unknown}, and the LLM maps
+        {Man:male, Female:female, Unknown:unknown}, then `relabel_choices` should give
+        {1:male, 2:female, 3:unknown}
+        """
+
+        filtered_dict = self.data_dictionary[
+            self.data_dictionary["source_field"].isin(map_df["source_field"])
+        ][["source_field", "choices"]]
+
+        mapping_choices = map_df[["source_field", "value_mapping"]]
+
+        choices = filtered_dict.merge(mapping_choices, on="source_field")
+        choices["combined_choices"] = choices.apply(
+            lambda x: (
+                {k: x["value_mapping"].get(v) for k, v in x["choices"].items()}
+                if isinstance(x["choices"], dict)
+                else None
+            ),
+            axis=1,
+        )
+
+        merged_mapping_dict = (
+            map_df.reset_index()
+            .merge(
+                choices[["source_field", "combined_choices"]],
+                on="source_field",
+                how="left",
+            )
+            .drop_duplicates(subset="target_field")
+            .set_index("target_field")
+        )
+        mmd = merged_mapping_dict.drop(columns=["value_mapping"]).rename(
+            columns={"combined_choices": "value_mapping"}
+        )
+
+        return mmd
 
     def match_fields_to_schema(self) -> pd.DataFrame:
         """
@@ -216,12 +258,9 @@ class Mapper:
             descriptions_list = (
                 self.data_dictionary["source_description"].dropna().tolist()
             )
-            df_merged.loc[
-                missed_merge.index,
-                "source_description",
-            ] = missed_merge["source_description"].apply(
-                lambda x: check_matches(x, descriptions_list)
-            )
+            df_merged.loc[missed_merge.index, "source_description"] = missed_merge[
+                "source_description"
+            ].apply(lambda x: check_matches(x, descriptions_list))
 
             df_merged = (
                 df_merged["source_description"]
@@ -280,8 +319,8 @@ class Mapper:
         Parameters
         ----------
         save
-            Whether to save the mapping to a CSV file. If True, lists in `target_values`
-            dicts in `value_mapping` are converted to strings before saving.
+            Whether to save the mapping to a CSV file. If True, lists and dicts are
+            converted to strings before saving.
         name
             The name to use for the CSV file
         """
@@ -305,39 +344,7 @@ class Mapper:
             )
 
         if "choices" in self.data_dictionary:
-            # If the data dictionary has a choices column,
-            # the keys need to be mapped rather than the text values
-            filtered_dict = self.data_dictionary[
-                self.data_dictionary["source_field"].isin(mapping_dict["source_field"])
-            ][["source_field", "choices"]]
-
-            mapping_choices = mapping_dict[["source_field", "value_mapping"]]
-
-            choices = filtered_dict.merge(mapping_choices, on="source_field")
-            choices["combined_choices"] = choices.apply(
-                lambda x: (
-                    {k: x["value_mapping"].get(v) for k, v in x["choices"].items()}
-                    if isinstance(x["choices"], dict)
-                    else None
-                ),
-                axis=1,
-            )
-
-            merged_mapping_dict = (
-                mapping_dict.reset_index()
-                .merge(
-                    choices[["source_field", "combined_choices"]],
-                    on="source_field",
-                    how="left",
-                )
-                .drop_duplicates(subset="target_field")
-                .set_index("target_field")
-            )
-            mmd = merged_mapping_dict.drop(columns=["value_mapping"]).rename(
-                columns={"combined_choices": "value_mapping"}
-            )
-
-            mapping_dict = mmd
+            mapping_dict = self._relabel_choices(mapping_dict)
 
         # turn lists & dicts into strings for consistancy with saved CSV
         for col in ["common_values", "target_values"]:

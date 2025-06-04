@@ -59,7 +59,7 @@ autoparser = [
     ]
 test = [
   "pytest>=8.3.3",
-  "pytest-cov>=5.0.0",
+  "pytest-cov>=6.0.0",
   "syrupy==4.*",
   "responses",
   "pytest-unordered",

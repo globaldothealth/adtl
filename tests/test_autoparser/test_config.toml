@@ -37,3 +37,4 @@ max_common_count = 8
   source_description = "Description"
   source_type = "Field Type"
   common_values = "Common Values"
+  choices = "Choices"
