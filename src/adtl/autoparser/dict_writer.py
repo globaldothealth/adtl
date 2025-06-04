@@ -7,7 +7,6 @@ from __future__ import annotations
 import argparse
 import warnings
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -71,16 +70,11 @@ class DictWriter:
         else:
             self.model = None
 
-    def _reset_dict_headers(
-        self, config: dict[str:Any], data_dict: pd.DataFrame
-    ) -> pd.DataFrame:
+    def _reset_headers_and_validate(self, data_dict: pd.DataFrame) -> pd.DataFrame:
         """
         Reset the headers of a data dictionary to those provided.
+        Validate the data dictionary against the generated dictionary schema.
 
-        Parameters
-        ----------
-        config
-            Loaded configuration
 
         Returns
         -------
@@ -88,8 +82,21 @@ class DictWriter:
             Data dictionary with the headers reset
         """
 
-        column_mappings = config["column_mappings"]
+        column_mappings = self.config["column_mappings"]
         data_dict.rename(columns=column_mappings, inplace=True)
+
+        # Validate the new data dictionary
+        try:
+            GeneratedDictDescribed.validate(data_dict)
+        except SchemaError as e:
+            if "'Description' contains duplicate values" in str(e):
+                warnings.warn(
+                    "Duplicate descriptions found in the data dictionary. "
+                    "Before proceeding to mapping and parser generation, each description must be unique."
+                )
+            else:
+                raise e
+
         return data_dict
 
     def _load_dict(self, data_dict: pd.DataFrame) -> pd.DataFrame:
@@ -275,19 +282,7 @@ class DictWriter:
         new_dd["source_description"] = new_dd["description"]
         new_dd.drop(columns=["description"], inplace=True)
 
-        new_dd = self._reset_dict_headers(self.config, new_dd)
-
-        # Validate the new data dictionary
-        try:
-            GeneratedDictDescribed.validate(new_dd)
-        except SchemaError as e:
-            if "'Description' contains duplicate values" in str(e):
-                warnings.warn(
-                    "Duplicate descriptions found in the data dictionary. "
-                    "Before proceeding to mapping and parser generation, each description must be unique."
-                )
-            else:
-                raise e
+        new_dd = self._reset_headers_and_validate(new_dd)
 
         return new_dd
 
