@@ -28,13 +28,7 @@ class MapperTest(Mapper):
         llm_model=None,
         config=None,
     ):
-        super().__init__(
-            data_dictionary,
-            schema,
-            language,
-            None,
-            None,
-        )
+        super().__init__(data_dictionary, schema, language, None, None, config=config)
 
         self.model = TestLLM()
 
@@ -338,6 +332,23 @@ def test_match_values_to_schema_dummy_data():
         "poisson": "fish",
         "autre": None,
     }
+
+
+def test_match_values_to_schema_choices():
+    mapper = MapperTest(
+        "tests/test_autoparser/sources/animals_dd_choices.csv",
+        Path("tests/test_autoparser/schemas/animals.schema.json"),
+        "fr",
+        config="tests/test_autoparser/test_config.toml",
+    )
+
+    with pytest.warns(UserWarning, match="schema fields have not been mapped"):
+        df = mapper.create_mapping(save=False)
+
+    assert (
+        df["value_mapping"]["classification"]
+        == "1=fish, 2=amphibian, 3=bird, 4=mammal, 5=fish, 6=reptile"
+    )
 
 
 def test_class_create_mapping_no_save():
