@@ -1,4 +1,4 @@
-# Data Dictionary Functions
+# Data Dictionary Generation Functions
 
 The following functions can be used to create and add descriptions to a data dictionary
 

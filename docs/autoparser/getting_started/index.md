@@ -33,10 +33,15 @@ column headers, text descriptions of what each field contains, and a list of fre
 occuring values if present.
 
 ### Supported file formats
-Autoparser supports CSV and XLSX formats for raw data and data dictionary files, and either
+Autoparser supports CSV, XLSX and parquet formats for raw data and data dictionary files, and either
 JSON or TOML for the target schema.
 
 ## Quickstart
 
 See the example notebook [here](../examples/example.ipynb) for a basic walk through the
 functionality of AutoParser.
+
+If you already have a data dictionary associated with your data, follow
+[this example](../examples/example_with_dict.ipynb) instead.
+
+## Troubleshooting

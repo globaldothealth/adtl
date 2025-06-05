@@ -2,20 +2,21 @@
 name = "example"
 description = "example"
 returnUnmatched = true
-defs = { "Y/N/NK" = { caseInsensitive = true, values = { oui = true, non = false } } }
+defs = { "Y/N/NK" = { caseInsensitive = true, values = { non = false, oui = true } } }
 
 [adtl.tables]
 animals = { kind = "oneToOne", schema = "../../../tests/test_autoparser/schemas/animals.schema.json" }
 
 [animals]
-age_months = { field = "AgeMois         ", description = "Age (Months)" }
-age_years = { field = "AgeAns", description = "Age (Years)" }
+age_months = { field = "AgeMois         ", description = "Age Months" }
+age_years = { field = "AgeAns", description = "Age Years" }
 chipped = { field = "Micropucé", description = "Microchipped", ref = "Y/N/NK" }
-date_of_death = { field = "DateDec", description = "Died Date" }
+date_of_death = { field = "DateDec", description = "Date of Death" }
 identity = { field = "Identité", description = "Identity" }
+loc_admin_1 = { field = "Province", description = "Province" }
 name = { field = "Nom complet ", description = "Full Name" }
 notification_date = { field = "DateNotification", description = "Notification Date" }
-pet = { field = "AnimalDeCompagnie", description = "Pet Animal", ref = "Y/N/NK" }
+pet = { field = "AnimalDeCompagnie", description = "Pet", ref = "Y/N/NK" }
 country_iso3 = ""
 
 [animals.case_status]
@@ -32,16 +33,10 @@ caseInsensitive = true
 [animals.classification.values]
 poisson = "fish"
 oiseau = "bird"
-amphibie = "amphibian"
-rept = "reptile"
 "mammifère" = "mammal"
-fish = "invertebrate"
-
-[animals.loc_admin_1]
-field = "Province"
-description = "Province"
-values = { equateur = "", katanga = "", orientale = "" }
-caseInsensitive = true
+amphibie = "amphibian"
+fish = "fish"
+rept = "reptile"
 
 [animals.sex]
 field = "Sexe"
@@ -51,13 +46,13 @@ caseInsensitive = true
 
 [animals.underlying_conditions]
 field = "ConditionsPreexistantes"
-description = "Preexisting Conditions"
+description = "Pre-existing Conditions"
 caseInsensitive = true
 type = "enum_list"
 
 [animals.underlying_conditions.values]
 "problèmes d'échelle" = "skin problems"
-convulsions = "seizures"
 "diabète" = "diabetes"
-vomir = "vomiting"
+convulsions = "seizures"
 arthrite = "arthritis"
+vomir = "vomiting"
