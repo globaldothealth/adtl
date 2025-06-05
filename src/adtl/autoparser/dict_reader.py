@@ -25,10 +25,13 @@ class DictReader:
     format usable by autoparser.
 
     Validates the final data dictionary against the schema defined in
-    `adtl.autoparser.data_dict_schema.DataDictionaryEntry`.
+    `adtl.autoparser.data_dict_schema.DataDictionaryProcessed`.
 
     Parameters
     ----------
+    data_dict
+        Path to a CSV, XLSX or parquet file, or a DataFrame, containing the data dictionary.
+
     config
         The path to the configuration file to use if not using the default configuration
 
@@ -43,8 +46,6 @@ class DictReader:
             # If config is a dictionary, use it directly
             self.config = config
         else:
-            if isinstance(config, str):
-                config = Path(config)
             self.config = read_config_schema(
                 config or Path(Path(__file__).parent, DEFAULT_CONFIG)
             )
@@ -72,19 +73,6 @@ class DictReader:
         return choice_col.apply(lambda x: parse(x))
 
     def _process_dict(self, dd):
-        dd = dd.loc[
-            :,
-            dd.columns.isin(
-                [
-                    "source_field",
-                    "source_description",
-                    "source_type",
-                    "common_values",
-                    "choices",
-                ]
-            ),
-        ]
-
         if "common_values" in dd.columns:
 
             def _lower_string(x):
@@ -103,7 +91,9 @@ class DictReader:
 
         return dd
 
-    def validate(self) -> DataFrame[DataDictionaryProcessed]:
+    def validate_dictionary(
+        self, save: bool | str = True
+    ) -> DataFrame[DataDictionaryProcessed]:
         try:
             # check if the data dictionary is already in the correct format
             # e.g. if loaded from a parquet file
@@ -117,6 +107,11 @@ class DictReader:
             dd = self.data_dict
             column_mappings = {v: k for k, v in self.config["column_mappings"].items()}
             dd.rename(columns=column_mappings, inplace=True)
+
+            dd = dd.loc[
+                :,
+                dd.columns.isin(list(DataDictionaryProcessed.to_schema().columns)),
+            ]
 
             DataDictionaryEntry.validate(dd, lazy=True)
         except pa.errors.SchemaErrors as exc:
@@ -160,11 +155,14 @@ class DictReader:
                     f"Processed data dictionary validation failed with {len(exc.failure_cases)} error(s). See below for details.  \n"
                     + f"{exc.failure_cases}"
                 ),
-            ) from None
+            ) from None  # pragma: no cover
+
+        if save:
+            self.save_formatted_dictionary(name=save if isinstance(save, str) else None)
 
         return self.data_dict
 
-    def save_formatted_dictionary(self, name=None) -> None:
+    def save_formatted_dictionary(self, name: str | Path | None = None) -> None:
         """
         Save the formatted data dictionary to a parquet file.
 
@@ -172,29 +170,14 @@ class DictReader:
         with '_formatted' appended to the filename.
         """
         if name:
-            if not name.endswith(".parquet"):
-                name += ".parquet"
             output_path = Path(name)
+            if not output_path.suffix == "parquet":
+                output_path = output_path.with_suffix(".parquet")
         else:
-            output_path = self.data_dict.name.replace(".csv", "_formatted.parquet")
+            output_path = Path("formatted_data_dict.parquet")
 
-        self.data_dict.to_parquet(output_path, index=False)
-        print(f"Formatted data dictionary saved to {output_path}")
-
-    def _reset_dict_headers(self) -> pd.DataFrame:
-        """
-        Reset the headers of a data dictionary to those provided, but don't save
-        internally.
-
-        Returns
-        -------
-        pd.DataFrame
-            Data dictionary with the headers reset
-        """
-
-        column_mappings = self.config["column_mappings"]
-        inverted_dd = self.data_dict.rename(columns=column_mappings, inplace=True)
-        return inverted_dd
+        self.data_dict.to_parquet(output_path, index=False, engine="fastparquet")
+        print(f"Formatted data dictionary saved to '{output_path}'")
 
 
 def format_dict(
@@ -218,12 +201,9 @@ def format_dict(
     """
 
     dr = DictReader(data_dict, config)
-    dd = dr.validate()
+    dd = dr.validate_dictionary(save=save)
 
-    if save:
-        dr.save_formatted_dictionary()
-    else:
-        return dd
+    return dd
 
 
 def main(argv=None):
@@ -246,8 +226,7 @@ def main(argv=None):
 
     dict_reader = DictReader(data_dict=args.data_dict, config=args.config)
 
-    dict_reader.validate()
-    dict_reader.save_formatted_dictionary()
+    dict_reader.validate_dictionary(save=args.output if args.output else True)
 
 
 if __name__ == "__main__":

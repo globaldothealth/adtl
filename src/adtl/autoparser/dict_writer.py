@@ -54,8 +54,6 @@ class DictWriter:
         llm_model: str | None = None,
         api_key: str | None = None,
     ):
-        if isinstance(config, str):
-            config = Path(config)
         self.config = read_config_schema(
             config or Path(Path(__file__).parent, DEFAULT_CONFIG)
         )
