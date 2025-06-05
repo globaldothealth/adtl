@@ -8,9 +8,9 @@ from pytest_unordered import unordered
 
 from adtl.autoparser.dict_reader import DictReader, main
 
-CONFIG_PATH = "tests/test_autoparser/test_config_provided_dict.toml"
 SOURCES = "tests/test_autoparser/sources/"
 SCHEMAS = "tests/test_autoparser/schemas/"
+CONFIG_PATH = SOURCES + "test_config_provided_dict.toml"
 
 
 @pytest.fixture
