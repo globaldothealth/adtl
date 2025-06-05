@@ -1,0 +1,31 @@
+adtl_valid,adtl_error,age_months,age_years,case_status,chipped,classification,country_iso3,date_of_death,identity,loc_admin_1,name,notification_date,owner,pet,sex,underlying_conditions
+False,data.underlying_conditions must be array or null,10,2,alive,True,mammal,,,A001,Equateur,Luna,2024-01-01,,True,female,"[arthrite, vomir]"
+True,,4,3,dead,False,fish,,2024-06-01,B002,Equateur,Max,2024-15-02,,True,male,
+True,,11,1,alive,True,bird,,,C003,Equateur,Coco,2024-03-10,,False,female,
+True,,5,4,alive,False,amphibian,,,D004,,Bella,2024-04-22,,False,male,
+True,,3,5,dead,True,fish,,2024-07-01,E005,,Charlie,2024-05-30,,True,female,
+False,data.underlying_conditions must be array or null,10,2,alive,True,mammal,,,A101,Equateur,,2024-01-05,,True,female,"[vomir, arthrite]"
+True,,4,3,dead,False,fish,,2024-06-30,B102,Equateur,Bilbo,2024-06-15,,True,male,
+True,,11,1,alive,True,bird,,,C103,Equateur,Badger,2024-07-10,,False,female,
+True,,5,4,alive,False,amphibian,,,D104,Orientale,Freddie,2024-04-10,,False,male,
+False,data.underlying_conditions must be array or null,3,5,dead,True,reptile,,2024-01-15,E105,Equateur,Dodger,2023-12-30,,True,female,"[convulsions, diabète]"
+True,,10,2,alive,True,mammal,,,A201,Equateur,Boris,2022-01-01,,True,female,
+True,,4,3,dead,False,fish,,2024-06-05,B202,Equateur,Strider,2023-02-15,,True,male,
+False,data.underlying_conditions must be array or null,11,1,alive,True,bird,,,C203,Katanga,Baggins,2020-03-10,,False,female,diabète
+True,,5,4,alive,False,amphibian,,,D204,Orientale,Pickwick,2021-04-22,,False,male,
+True,,3,5,dead,True,fish,,2024-07-15,E205,Equateur,Spike,2024-05-31,,True,male,
+False,data.underlying_conditions must be array or null,10,2,alive,True,mammal,,,A301,Equateur,Wilber,2024-01-08,,True,female,convulsions
+True,,4,3,dead,False,fish,,2024-06-01,B302,Kinshasa,Tinker,2024-02-25,,True,male,
+True,,11,1,alive,True,amphibian,,,C303,Katanga,Zorro,2024-06-10,,False,female,
+True,,5,4,alive,False,amphibian,,,D304,Orientale,Flubber,2024-11-22,,False,male,
+True,,3,5,dead,True,fish,,2024-03-15,E305,Equateur,Charlie,2024-02-30,,True,female,
+False,data.underlying_conditions must be array or null,11,1,alive,True,bird,,,C403,Equateur,Coco,2024-03-13,,False,female,"[diabète, vomir]"
+True,,5,4,alive,False,amphibian,,,D404,,Dougal,2024-04-17,,False,male,
+False,data.underlying_conditions must be array or null,3,5,dead,True,fish,,2024-06-11,E405,,David,2024-05-20,,True,female,"[diabète, vomir]"
+True,,10,2,alive,True,bird,,,A501,Equateur,Luna,2024-11-01,,True,male,
+False,data.underlying_conditions must be array or null,4,3,dead,False,fish,,2024-03-01,B502,Equateur,Ian,2024-02-05,,True,female,"[problèmes d'échelle, convulsions, diabète]"
+True,,11,1,alive,True,bird,,,C503,Equateur,Kate,2024-12-10,,False,female,
+True,,5,4,alive,False,amphibian,,,D504,,Bobby,2024-04-29,,False,male,
+True,,3,5,dead,True,fish,,2024-04-30,E505,,Toothless,2024-09-30,,True,female,
+True,,10,2,alive,True,reptile,,,A601,Equateur,,2024-02-01,,True,female,
+False,data.underlying_conditions must be array or null,4,3,dead,False,fish,,2024-02-25,B602,Equateur,Millie,2024-02-12,,True,unknown,problèmes d'échelle
