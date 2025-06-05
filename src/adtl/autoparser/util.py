@@ -53,7 +53,7 @@ def read_data(file: str | Path | pd.DataFrame, file_type: str):
         elif file.suffix == ".xlsx":
             return pd.read_excel(file)
         elif file.suffix == ".parquet":
-            return pd.read_parquet(file)
+            return pd.read_parquet(file, engine="fastparquet")
         else:
             raise ValueError(f"Unsupported format (not CSV, XLSX or parquet): {file}")
     elif isinstance(file, pd.DataFrame):
