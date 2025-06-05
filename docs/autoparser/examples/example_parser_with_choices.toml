@@ -1,0 +1,45 @@
+[adtl]
+name = "example_choices"
+description = "example_choices"
+returnUnmatched = true
+defs = { "Y/N/NK" = { caseInsensitive = true, values = { 1 = true, 2 = false } } }
+
+[adtl.tables]
+animals = { kind = "oneToOne", schema = "../../../tests/test_autoparser/schemas/animals.schema.json" }
+
+[animals]
+age_months = { field = "AgeMois         ", description = "Age in Months" }
+age_years = { field = "AgeAns", description = "Age in Years" }
+chipped = { field = "Micropucé", description = "Microchipped", ref = "Y/N/NK" }
+date_of_death = { field = "DateDec", description = "Date of Death" }
+identity = { field = "Identité", description = "Identity" }
+loc_admin_1 = { field = "Province", description = "Province" }
+name = { field = "Nom complet ", description = "Full Name" }
+notification_date = { field = "DateNotification", description = "Notification Date" }
+pet = { field = "AnimalDeCompagnie", description = "Pet Animal", ref = "Y/N/NK" }
+underlying_conditions = { field = "ConditionsPreexistantes", description = "Preexisting Conditions" }
+country_iso3 = ""
+
+[animals.case_status]
+field = "StatusCas"
+description = "Case Status"
+values = { 1 = "alive", 2 = "dead" }
+caseInsensitive = true
+
+[animals.classification]
+field = "Classicfication "
+description = "Classification"
+values = { 1 = "fish", 2 = "amphibian", 3 = "bird", 4 = "mammal", 5 = "fish", 6 = "reptile" }
+caseInsensitive = true
+
+[animals.owner]
+field = "ContSoins "
+description = "Care Contact"
+values = { 1 = "", 2 = "" }
+caseInsensitive = true
+
+[animals.sex]
+field = "Sexe"
+description = "Gender"
+values = { 1 = "male", 2 = "female", 3 = "unknown" }
+caseInsensitive = true
