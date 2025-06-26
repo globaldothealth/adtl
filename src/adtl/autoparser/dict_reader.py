@@ -1,5 +1,5 @@
 """
-Infer a data dictionary from a dataset.
+Load and validate a data dictionary for use with autoparser.
 """
 
 from __future__ import annotations
@@ -167,7 +167,7 @@ class DictReader:
         Save the formatted data dictionary to a parquet file.
 
         The file will be saved in the same directory as the input data dictionary,
-        with '_formatted' appended to the filename.
+        either with the name provided or as 'formatted_data_dict.parquet'
         """
         if name:
             output_path = Path(name)
@@ -193,6 +193,9 @@ def format_dict(
         Path to a CSV, XLSX or parquet file, or a DataFrame, containing the data dictionary.
     config
         Path to the configuration file to use if not using the default configuration
+    save
+        If True, saves the formatted data dictionary to a parquet file in the same directory as the
+        input data dictionary, as 'formatted_data_dictionary.parquet'.
 
     Returns
     -------

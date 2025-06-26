@@ -13,7 +13,7 @@ body (in this case an externally hosted LLM hosted); instead a *decription* of w
 data looks like from the dictionary can be sent to the LLM, which allows for mapping to
 occur without risking the unintentional release of data.
 
-Many data capture services such as [REDCaP](https://projectredcap.org/) will generate
+Many data capture services such as [REDCap](https://projectredcap.org/) will generate
 a data dictionary automatically when surveys are set up. AutoParser can read in these
 dictionaries, and format them for onward use.
 
@@ -41,7 +41,7 @@ dataset of animals, a generated data dictionary looks like this:
 
 `source_field` contains each column header from the source data, and `source_type` shows the
 data type in each column. 'common_values' denotes where a small set of strings have been frequently detected,
-so AutoParser assumes that specific terminology is being used, and lists them in `common values`.
+so AutoParser assumes that specific terminology is being used, and lists them in `common_values`.
 
 Notice that the `source_description` column is empty. This is done by default, so the
 user can add in a short text description *in English* (as this column is read by the LLM
@@ -57,7 +57,7 @@ to generate a data parser.
 
 AutoParser will attempt to convert and validate your data dictionary when provided at
 the mapping and parser validation stage. To enable this to function, you must edit the
-`config.toml` file you provide to match the columns in your exsting data dictionary to
+`config.toml` file you provide to match the columns in your existing data dictionary to
 those AutoParser expects. For example, data provided like this:
 
 ```toml
