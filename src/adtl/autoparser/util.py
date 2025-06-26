@@ -13,6 +13,7 @@ from typing import Any, Dict, Literal
 import pandas as pd
 import tomli
 
+from adtl.autoparser.data_dict_schema import DataDictionaryProcessed
 from adtl.autoparser.language_models.gemini import GeminiLanguageModel
 from adtl.autoparser.language_models.openai import OpenAILanguageModel
 
@@ -51,19 +52,21 @@ def read_data(file: str | Path | pd.DataFrame, file_type: str):
             return pd.read_csv(file)
         elif file.suffix == ".xlsx":
             return pd.read_excel(file)
+        elif file.suffix == ".parquet":
+            return pd.read_parquet(file, engine="fastparquet")
         else:
-            raise ValueError(f"Unsupported format (not CSV or XLSX): {file}")
+            raise ValueError(f"Unsupported format (not CSV, XLSX or parquet): {file}")
     elif isinstance(file, pd.DataFrame):
         return file
     else:
         raise ValueError(
-            f"{file_type} must be a path to a CSV or XLSX file, or a DataFrame"
+            f"{file_type} must be a path to a CSV, XLSX or parquet file, or a DataFrame"
         )
 
 
-def parse_choices(s: str) -> Dict[str, Any] | None:
+def parse_llm_mapped_values(s: str) -> Dict[str, Any] | None:
     """
-    Takes the choices from llm as a string and turns into pairs.
+    Takes the values mapped by the llm as a string and turns into pairs.
 
     "oui=True, non=False, blah=None" -> {"oui": True, "non": False, "blah": ""}
     "vivant=alive, décédé=dead, " "=None" -> {"vivant": "alive", "décédé": "dead"}
@@ -103,20 +106,17 @@ def parse_choices(s: str) -> Dict[str, Any] | None:
 
 
 def load_data_dict(
-    config: dict[str:Any], data_dict: str | Path | pd.DataFrame
+    dd: pd.DataFrame | str, schema=DataDictionaryProcessed
 ) -> pd.DataFrame:
-    if isinstance(data_dict, str):
-        data_dict = Path(data_dict)
-        if data_dict.suffix == ".csv":
-            data_dict = pd.read_csv(data_dict)
-        elif data_dict.suffix == ".xlsx":  # pragma: no cover
-            data_dict = pd.read_excel(data_dict)
-        else:
-            raise ValueError(f"Unsupported format (not CSV or XLSX): {data_dict}")
+    """
+    Load and validate the data dictionary from a file or DataFrame.
+    """
+    if isinstance(dd, str):
+        dd = read_data(dd, "Data Dictionary")
 
-    column_mappings = {v: k for k, v in config["column_mappings"].items()}
-    data_dict.rename(columns=column_mappings, inplace=True)
-    return data_dict
+    schema.validate(dd, lazy=True)
+
+    return dd
 
 
 def setup_llm(

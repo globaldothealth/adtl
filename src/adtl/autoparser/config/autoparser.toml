@@ -1,3 +1,4 @@
+#:schema ./autoparser-config.schema.json
 
 name = "autoparser"
 description = "Autoparser config for generating CSV mappings and TOML from autoparser-generated dictionaries"

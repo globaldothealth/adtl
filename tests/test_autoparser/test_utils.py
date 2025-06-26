@@ -4,13 +4,14 @@ from pathlib import Path
 
 import numpy.testing as npt
 import pandas as pd
+import pandera.pandas as pa
 import pytest
 
 from adtl.autoparser.language_models.gemini import GeminiLanguageModel
 from adtl.autoparser.util import (
     check_matches,
     load_data_dict,
-    parse_choices,
+    parse_llm_mapped_values,
     read_config_schema,
     setup_llm,
 )
@@ -62,22 +63,22 @@ def test_read_config_schema():
         ("pos=Y, neg=N", {"pos": "Y", "neg": "N"}),
     ],
 )
-def test_parse_choices(s, expected):
-    choices = parse_choices(s)
+def test_parse_llm_mapped_values(s, expected):
+    choices = parse_llm_mapped_values(s)
     assert choices == expected
 
 
-def test_parse_choices_error():
+def test_parse_llm_mapped_values_error():
     # dictionary printed without stringification
     with pytest.raises(ValueError, match="Invalid choices list"):
-        parse_choices('{"oui":"True", "non":"False", "blah":"None"}')
+        parse_llm_mapped_values('{"oui":"True", "non":"False", "blah":"None"}')
 
     # different choice_delimeter_map
     with pytest.raises(ValueError, match="Invalid choices list"):
-        parse_choices("oui:True, non:False, blah:None")
+        parse_llm_mapped_values("oui:True, non:False, blah:None")
 
 
-def test_load_data_dict():
+def test_load_data_dict_invalid():
     dd_original = pd.read_csv("tests/test_autoparser/sources/animals_dd.csv")
 
     npt.assert_array_equal(
@@ -90,14 +91,8 @@ def test_load_data_dict():
         ],
     )
 
-    data = load_data_dict(CONFIG, "tests/test_autoparser/sources/animals_dd.csv")
-    npt.assert_array_equal(
-        data.columns,
-        ["source_field", "source_description", "source_type", "common_values"],
-    )
-
-    with pytest.raises(ValueError, match="Unsupported format"):
-        load_data_dict(CONFIG, "tests/test_autoparser/sources/animals.txt")
+    with pytest.raises(pa.errors.SchemaErrors):
+        load_data_dict("tests/test_autoparser/sources/animals_dd.csv")
 
 
 def test_setup_llm_no_key():

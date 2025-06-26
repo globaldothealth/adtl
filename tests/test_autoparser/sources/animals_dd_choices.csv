@@ -1,0 +1,19 @@
+Field Name,Description,Field Type,Choices
+Identité,Identity,string,
+Province,Province,string,
+DateNotification,Notification Date,string,
+Classicfication ,Classification,string,"1=fish, 2=amphibie, 3=oiseau, 4=mammifère, 5=poisson, 6=rept"
+Nom complet ,Full Name,string,
+Date de naissance,Date of Birth,string,
+AgeAns,Age in Years,number,
+AgeMois         ,Age in Months,number,
+Sexe,Gender,string,"1=mâle, 2=femelle, 3=inconnu"
+StatusCas,Case Status,string,"1=Vivant, 2=Décédé"
+DateDec,Date of Death,string,
+ContSoins ,Care Contact,string,"1=oui, 2=non"
+ContHumain Autre,Other Human Contact,string,"1=oui, 2=non"
+ContexteContHumain,Human Contact Context,string,"2=non, 1=voyage, 3=autres"
+ContactAnimal,Animal Contact,string,"1=oui, 2=non"
+Micropucé,Microchipped,string,"1=oui, 2=non"
+AnimalDeCompagnie,Pet Animal,string,"1=oui, 2=non"
+ConditionsPreexistantes,Preexisting Conditions,list,

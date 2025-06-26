@@ -1,0 +1,11 @@
+﻿Variable / Field Name,Form Name,Section Header,Field Type,Field Label,"Choices, Calculations, OR Slider Labels",Field Note,Text Validation Type OR Show Slider Number,Text Validation Min,Text Validation Max,Identifier?,Branching Logic (Show field only if...),Required Field?,Custom Alignment,Question Number (surveys only),Matrix Group Name,Matrix Ranking?,Field Annotation
+subjid,participant_identification_number_pin,,text,Participant Identification Number (PIN) specify CPMS Site code (hyphen) four to six digit number patient number e.g. Y0401-0001.,,,patient_id_5_alphanum-4to6_digits,,,,,,,,,,
+dsstdat,inclusion_criteria,,text,Date of Enrolment,,,date_dmy,01/01/2000,,,,y,,,,,
+fever,inclusion_criteria,Experience of the following symptoms during this illness episode (one or more required for inclusion),yesno,A history of self reported feverishness or measured fever of ≥ 38°C,,,,,,,"[corona_ieorres] = '1' or [coriona_ieorres2] = '1' or ([covid19_new] <> """" and [version_9_7] =  """")",y,RH,,,,
+cough,inclusion_criteria,,yesno,Cough ,,,,,,,"[corona_ieorres] = '1' or [coriona_ieorres2] = '1' or ([covid19_new] <> """" and [version_9_7] =  """")",y,RH,,,,
+dyspnoe,inclusion_criteria,,yesno,Dyspnoea (shortness of breath) OR Tachypnoea*,,,,,,,"[corona_ieorres] = '1' or [coriona_ieorres2] = '1' or ([covid19_new] <> """" and [version_9_7] =  """")",y,RH,,,,
+apvs_weight,demographics,,text,Birth weight,,,number_2dp,,,,"[apdm_age] = '1' and [apvs_weightnk] = """"",,,,,,
+apvs_weightu,demographics,,dropdown,Birth weight unit,"1, kg | 2, lbs",,,,,,"[apdm_age] = '1' and [apvs_weightnk] = """"",,,,,,
+supper_trcntry,onset_and_admission,,dropdown,"If YES, state location: Country","1, Afghanistan | 2, Albania | 3, Algeria | 4, Andorra",,autocomplete,,,,[travel_erterm] = '1',y,,,,,
+supper_trcntry_2,onset_and_admission,,dropdown,"If YES, state location: Country","1, Afghanistan | 2, Albania | 3, Algeria | 4, Andorra",,autocomplete,,,,[travel_erterm_2] = '1',y,,,,,
+daily_temp_vsorresu,daily_form,,radio,Highest Temperature Unit,"1, °C|2, °F",,,,,,"[daily_temp_vsorres] <> """"",,RH,,,,

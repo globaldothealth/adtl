@@ -7,11 +7,12 @@ from __future__ import annotations
 import argparse
 import warnings
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pandas as pd
+from pandera.errors import SchemaError
 
+from .data_dict_schema import GeneratedDict, GeneratedDictDescribed
 from .util import (
     DEFAULT_CONFIG,
     check_matches,
@@ -53,8 +54,6 @@ class DictWriter:
         llm_model: str | None = None,
         api_key: str | None = None,
     ):
-        if isinstance(config, str):
-            config = Path(config)
         self.config = read_config_schema(
             config or Path(Path(__file__).parent, DEFAULT_CONFIG)
         )
@@ -69,16 +68,11 @@ class DictWriter:
         else:
             self.model = None
 
-    def _reset_dict_headers(
-        self, config: dict[str:Any], data_dict: pd.DataFrame
-    ) -> pd.DataFrame:
+    def _reset_headers_and_validate(self, data_dict: pd.DataFrame) -> pd.DataFrame:
         """
         Reset the headers of a data dictionary to those provided.
+        Validate the data dictionary against the generated dictionary schema.
 
-        Parameters
-        ----------
-        config
-            Loaded configuration
 
         Returns
         -------
@@ -86,9 +80,29 @@ class DictWriter:
             Data dictionary with the headers reset
         """
 
-        column_mappings = config["column_mappings"]
+        column_mappings = self.config["column_mappings"]
         data_dict.rename(columns=column_mappings, inplace=True)
+
+        # Validate the new data dictionary
+        try:
+            GeneratedDictDescribed.validate(data_dict)
+        except SchemaError as e:
+            if "'Description' contains duplicate values" in str(e):
+                warnings.warn(
+                    "Duplicate descriptions found in the data dictionary. "
+                    "Before proceeding to mapping and parser generation, each description must be unique."
+                )
+            else:
+                raise e
+
         return data_dict
+
+    def _load_dict(self, data_dict: pd.DataFrame) -> pd.DataFrame:
+        dd = load_data_dict(data_dict, schema=GeneratedDict)
+        column_mappings = {v: k for k, v in self.config["column_mappings"].items()}
+        dd.rename(columns=column_mappings, inplace=True)
+
+        return dd
 
     def create_dict(self, data: pd.DataFrame | str) -> pd.DataFrame:
         """
@@ -159,13 +173,15 @@ class DictWriter:
                 # drop any values with a frequency of 1
                 values = values[values > 1]
                 if not values.empty:
-                    try:
+                    index_values = list(values.index.values)
+                    # Check: only allow if all values are str or bool
+                    if all(isinstance(v, (str, bool)) for v in index_values):
                         value_opts[i] = f"{self.config['choice_delimiter']} ".join(
-                            list(values.index.values)
+                            str(v) for v in index_values
                         )
-                    except TypeError:
-                        # This stops float values being given as 'common values'.
-                        continue
+
+                    if all(isinstance(v, (bool)) for v in index_values):
+                        types[j] = "boolean"
 
         dd = pd.DataFrame(
             {
@@ -235,7 +251,7 @@ class DictWriter:
                     "No data dictionary found. Please create a data dictionary first."
                 )
 
-        df = load_data_dict(self.config, data_dict)
+        df = self._load_dict(data_dict)
 
         if not self.model:
             self.model = setup_llm(key, provider=llm_provider, model=llm_model)
@@ -266,7 +282,7 @@ class DictWriter:
         new_dd["source_description"] = new_dd["description"]
         new_dd.drop(columns=["description"], inplace=True)
 
-        new_dd = self._reset_dict_headers(self.config, new_dd)
+        new_dd = self._reset_headers_and_validate(new_dd)
 
         return new_dd
 
