@@ -4,6 +4,7 @@ import collections
 import contextlib
 import io
 import json
+import warnings
 from pathlib import Path
 from typing import Any, Dict, Iterable
 
@@ -486,7 +487,7 @@ def test_multi_id_groupby(snapshot):
         ),
         (
             TEST_PARSERS_PATH / "groupBy-incorrect-aggregation.json",
-            "groupBy needs aggregation=lastNotNull to be set for table:",
+            "groupBy needs 'aggregation' to be set for table:",
         ),
     ],
 )
@@ -1035,14 +1036,60 @@ OVERWRITE_OUTPUT = [
     },
 ]
 
+OVERWRITTEN_OUTPUT = [
+    {
+        "subject_id": 1,
+        "earliest_admission": "2023-11-19",
+        "start_date": "2023-11-19",
+        "treatment_antiviral_type": unordered(["Ribavirin"]),
+    },
+    {
+        "subject_id": 2,
+        "start_date": "2020-11-23",
+        "icu_admission_date": unordered(["2020-11-30"]),
+        "treatment_antiviral_type": ["Lopinavir"],
+    },
+    {
+        "subject_id": 3,
+        "start_date": "2020-02-20",
+        "treatment_antiviral_type": unordered(["Ribavirin"]),
+    },
+]
+
 
 def test_no_overwriting():
+    prsr = parser.Parser(TEST_PARSERS_PATH / "stop-overwriting.toml")
+
     overwriting_output = list(
-        parser.Parser(TEST_PARSERS_PATH / "stop-overwriting.toml")
-        .parse(TEST_SOURCES_PATH / "stop-overwriting.csv")
-        .read_table("visit")
+        prsr.parse(TEST_SOURCES_PATH / "stop-overwriting.csv").read_table("visit")
     )
     assert overwriting_output == OVERWRITE_OUTPUT
+
+
+@pytest.mark.parametrize(
+    "verbosity,expected_warnings",
+    [
+        (False, None),
+        (True, "Multiple rows of data found for"),
+    ],
+)
+def test_overwriting_with_strict(verbosity, expected_warnings):
+    prsr = parser.Parser(TEST_PARSERS_PATH / "stop-overwriting.toml", verbose=verbosity)
+    prsr.tables["visit"]["aggregation"] = "lastNotNullStrict"
+
+    if verbosity:
+        with pytest.warns(UserWarning, match=expected_warnings):
+            overwritten_output = list(
+                prsr.parse(TEST_SOURCES_PATH / "stop-overwriting.csv").read_table(
+                    "visit"
+                )
+            )
+    else:
+        warnings.filterwarnings("error")  # Treat warnings as errors
+        overwritten_output = list(
+            prsr.parse(TEST_SOURCES_PATH / "stop-overwriting.csv").read_table("visit")
+        )
+    assert overwritten_output == OVERWRITTEN_OUTPUT
 
 
 @pytest.mark.filterwarnings("ignore:No matches found")

@@ -5,7 +5,7 @@
 [adtl.tables.visit]
   kind = "groupBy"
   groupBy = "subject_id"
-  aggregation = "lastNotNull"
+  aggregation = "applyCombinedType"
 
 [visit]
 

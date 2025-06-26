@@ -16,6 +16,7 @@ def parse(
     include_defs=[],
     save_as: Literal["csv", "parquet", None] = "csv",
     quiet=False,
+    verbose=False,
     parallel=False,
 ):
     """Parse a file according to a specification
@@ -27,12 +28,15 @@ def parse(
         include_def: Additional definitions to include
         save_as: Save the output as a CSV or parquet file, or don't save (None)
         quiet: Suppress all terminal output
+        verbose: Increase verbosity, show overwriting warnings
         parallel: Use parallel processing for parsing. Not recommended for small datasets
 
     Returns:
         dict[str, pd.DataFrame]: Dictionary of tables parsed into new format
     """
-    spec = Parser(spec, include_defs=include_defs, quiet=quiet, parallel=parallel)
+    spec = Parser(
+        spec, include_defs=include_defs, quiet=quiet, verbose=verbose, parallel=parallel
+    )
 
     # check for incompatible options
     if spec.header.get("returnUnmatched") and save_as == "parquet":
