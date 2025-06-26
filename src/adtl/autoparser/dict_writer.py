@@ -173,13 +173,15 @@ class DictWriter:
                 # drop any values with a frequency of 1
                 values = values[values > 1]
                 if not values.empty:
-                    try:
+                    index_values = list(values.index.values)
+                    # Check: only allow if all values are str or bool
+                    if all(isinstance(v, (str, bool)) for v in index_values):
                         value_opts[i] = f"{self.config['choice_delimiter']} ".join(
-                            list(values.index.values)
+                            str(v) for v in index_values
                         )
-                    except TypeError:
-                        # This stops float values being given as 'common values'.
-                        continue
+
+                    if all(isinstance(v, (bool)) for v in index_values):
+                        types[j] = "boolean"
 
         dd = pd.DataFrame(
             {
