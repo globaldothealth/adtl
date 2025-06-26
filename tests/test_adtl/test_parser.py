@@ -487,7 +487,7 @@ def test_multi_id_groupby(snapshot):
         ),
         (
             TEST_PARSERS_PATH / "groupBy-incorrect-aggregation.json",
-            "groupBy needs aggregation to be set for table:",
+            "groupBy needs 'aggregation' to be set for table:",
         ),
     ],
 )

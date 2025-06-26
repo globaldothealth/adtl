@@ -34,9 +34,9 @@ These metadata fields are defined under a header key `adtl`.
     generated from the same row.
   * *groupBy*: Attribute(s) to group by
   * *aggregation*: Aggregation type. Currently either
-    type *lastNotNull* or *lastNotNullStrict* is supported which sets a particular
-    attribute to the last non-null value in the grouped dataset. *lastNotNull* applies
-    [combinedType](#combined-Type) rules over all the rows being grouped, while *Strict*
+    type *lastNotNull* or *applyCombinedType* is supported which sets a particular
+    attribute to the last non-null value in the grouped dataset. *applyCombinedType* applies
+    [combinedType](#combined-Type) rules over all the rows being grouped, while *lastNotNull*
     only applies those rules along a single row, and retains the last row regardless.
   * *schema* (optional): Specifies JSON schema to use for validation,
     can be a relative path, or a URL
@@ -344,8 +344,8 @@ Accepted values for `combinedType` are:
 * *list* - List of various fields
 * *set* - List of various fields, with duplicates removed
 
-With `kind=GroupBy` and non-*Strict* aggregation, combinedType will apply both along a
-single row, and across multiple rows being aggregated. If aggregation is strict, rules only
+With `kind=GroupBy` and *applyCombinedType* aggregation, combinedType will apply both along a
+single row, and across multiple rows being aggregated. If aggregation is *lastNonNull*, rules only
 apply across a single row.
 
 A combinedType can have multiple fields within a `fields` key, or can specify

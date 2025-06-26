@@ -323,10 +323,10 @@ class Parser:
                 )
             if group_field is not None and aggregation not in [
                 "lastNotNull",
-                "lastNotNullStrict",
+                "applyCombinedType",
             ]:
                 raise ValueError(
-                    f"groupBy needs aggregation to be set for table: {table}"
+                    f"groupBy needs 'aggregation' to be set for table: {table}"
                 )
 
     def _set_field_names(self):
@@ -471,7 +471,7 @@ class Parser:
 
             for attr in attrs:
                 if ("combinedType" in self.spec[table][attr]) and (
-                    not aggregation.endswith("Strict")
+                    aggregation == "applyCombinedType"
                 ):
                     combined_type = self.spec[table][attr]["combinedType"]
                     values = [
@@ -516,8 +516,7 @@ class Parser:
                                     f"Multiple rows of data found for {attr} without a"
                                     " combinedType listed. Data being overwritten."
                                 )
-                        if aggregation.startswith("lastNotNull"):
-                            combined_row[attr] = data[-1]
+                        combined_row[attr] = data[-1]
 
             return combined_row
 
