@@ -4,6 +4,7 @@ Generate TOML parser from intermediate CSV file
 
 from __future__ import annotations
 
+import abc
 import argparse
 import json
 import logging
@@ -19,18 +20,27 @@ logger = logging.getLogger(__name__)
 INPUT_FORMAT = pd.DataFrame | str | Path
 
 
-class WideTableParser:
-    """
-    Class for generating a wide table from the mappings.
-    This is a placeholder for future implementation.
-    """
-
+class TableParser(abc.ABC):
     def __init__(self, mapping: pd.DataFrame, schema: dict, table_name: str, config):
         self.mapping = mapping
-
         self.schema = schema
         self.name = table_name
         self.config = config
+
+    def single_field_mapping(self): ...
+
+    def make_toml_table(self) -> dict[str, Any]: ...
+
+    @property
+    def schema_fields(self):
+        """Returns all the fields for `table` and their properties"""
+        return self.schema["properties"]
+
+
+class WideTableParser(TableParser):
+    """
+    Class for generating a wide table from the mappings.
+    """
 
     @property
     def parsed_choices(self) -> pd.Series:
@@ -57,11 +67,6 @@ class WideTableParser:
                 value_counts, self.config["num_refs"]
             )
             return self._references_definitions
-
-    @property
-    def schema_fields(self):
-        """Returns all the fields for `table` and their properties"""
-        return self.schema["properties"]
 
     @property
     def field_types(self) -> dict[str, list[str]]:
@@ -146,6 +151,49 @@ class WideTableParser:
         return {self.name: outmap}, self.references_definitions[1]
 
 
+class LongTableParser(TableParser):
+    """
+    Class for generating a long table from the mappings.
+    """
+
+    @property
+    def other_fields(self) -> list[str]:
+        """Returns the other fields in the schema that are not target fields"""
+        return [
+            f
+            for f in self.schema_fields
+            # shouldn't hard code these, but for now this is fine
+            if f not in ["attribute", "value", "value_num", "value_bool"]
+        ]
+
+    def single_field_mapping(self, match: pd.DataFrame) -> dict[str, Any]:
+        """Make a single field mapping from a single row of the mappings dataframe"""
+
+        out = {
+            "attribute": match.source_field,
+            match.value_type: {"field": match.source_field},
+        }
+
+        for field in self.other_fields:
+            if not pd.isna(match[field]):
+                if self.schema["properties"][field].get("enum", None):
+                    out[field] = match[field]
+                else:
+                    out[field] = {"field": match[field]}
+
+        return out
+
+    def make_toml_table(self) -> dict[str, Any]:
+        """Make single TOML table from mappings"""
+
+        outmap = []
+
+        for _, row in self.mapping.iterrows():
+            outmap.append(self.single_field_mapping(row))
+
+        return {self.name: outmap}, None
+
+
 class ParserGenerator:
     """
     Class for creating a TOML parser from an intermediate CSV file.
@@ -220,7 +268,7 @@ class ParserGenerator:
                 "kind": (
                     "oneToOne" if self.table_types[table] == "wide" else "oneToMany"
                 ),
-                "schema": f"{self.schemas[table]}",
+                "schema": f"{self.schema_path / Path(self.config['schemas'][table])}",
             }
 
         return {
@@ -257,9 +305,15 @@ class ParserGenerator:
                     self.config,
                 ).make_toml_table()
             else:
-                table_parser, references = None, None
+                table_parser, references = LongTableParser(
+                    self.mappings[table],
+                    self.schemas[table],
+                    table,
+                    self.config,
+                ).make_toml_table()
             data.update(table_parser)
-            data["adtl"]["defs"].update(references)
+            if references:
+                data["adtl"]["defs"].update(references)
         return data
 
     def write_toml(self, data: dict[str, Any], output: str = None):
