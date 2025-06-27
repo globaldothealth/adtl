@@ -36,6 +36,14 @@ class TableParser(abc.ABC):
         """Returns all the fields for `table` and their properties"""
         return self.schema["properties"]
 
+    @property
+    def field_types(self) -> dict[str, list[str]]:
+        """Returns the field types of the target schema"""
+        if not hasattr(self, "_field_types"):
+            s = self.schema_fields
+            self._field_types = {f: s[f].get("type", ["string", "null"]) for f in s}
+        return self._field_types
+
 
 class WideTableParser(TableParser):
     """
@@ -45,40 +53,24 @@ class WideTableParser(TableParser):
     @property
     def parsed_choices(self) -> pd.Series:
         """Returns the mapped values for each target field"""
-        try:
-            return self._parsed_choices
-        except AttributeError:
+        if not hasattr(self, "_parsed_choices"):
             self._parsed_choices = self.mapping.value_mapping.map(
                 parse_llm_mapped_values
             )
             self._parsed_choices.index = self.mapping.target_field
-            return self._parsed_choices
+        return self._parsed_choices
 
     @property
     def references_definitions(self) -> tuple[dict[str, str], dict[str, dict]]:
         """Finds and returns the references and definitions for the mappings"""
-        try:
-            return self._references_definitions
-        except AttributeError:
+        if not hasattr(self, "_references_definitions"):
             # use value_counts() on parsed_choices normalise various flavours of Y/N/NK
             value_counts = self.parsed_choices.value_counts()
 
             self._references_definitions = self.refs_defs(
                 value_counts, self.config["num_refs"]
             )
-            return self._references_definitions
-
-    @property
-    def field_types(self) -> dict[str, list[str]]:
-        """Returns the field types of the target schema"""
-        try:
-            return self._field_types
-        except AttributeError:
-            s = self.schema_fields
-            self._field_types = {
-                f: s[f].get("type", ["string", "null"]) for f in s.keys()
-            }
-            return self._field_types
+        return self._references_definitions
 
     def refs_defs(self, choices, num_refs):
         references = {}
