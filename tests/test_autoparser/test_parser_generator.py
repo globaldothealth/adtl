@@ -10,7 +10,7 @@ import tomli
 import adtl.autoparser as autoparser
 from adtl.autoparser import ParserGenerator
 from adtl.autoparser import make_toml_main as main
-from adtl.autoparser.make_toml import refs_defs
+from adtl.autoparser.make_toml import WideTableParser
 
 CONFIG_PATH = "tests/test_autoparser/test_config.toml"
 ANIMAL_PARSER = ParserGenerator(
@@ -19,25 +19,16 @@ ANIMAL_PARSER = ParserGenerator(
     "animals",
     config=Path(CONFIG_PATH),
 )
-
-# TODO: sort out how lists and dicts are written out in the csv file to enable stuff to
-# actually be read in properly. Maybe try and utilise some kind of schema for the
-# dataframe?
-
-
-def test_invalid_converter():
-    with pytest.raises(NotImplementedError, match="Only ADTL is supported"):
-        ParserGenerator(
-            "tests/test_autoparser/sources/animals_mapping.csv",
-            Path("tests/test_autoparser/schemas"),
-            "animals",
-            config=Path(CONFIG_PATH),
-            transformation_tool="invalid",
-        )
+WIDE_TABLE_PARSER = WideTableParser(
+    mapping=pd.read_csv("tests/test_autoparser/sources/animals_mapping.csv"),
+    schema=ANIMAL_PARSER.schemas["animals"],
+    table_name="animals",
+    config=ANIMAL_PARSER.config,
+)
 
 
 def test_parsed_choices():
-    parser = ANIMAL_PARSER
+    parser = WIDE_TABLE_PARSER
 
     choices = pd.Series(
         data=[
@@ -94,7 +85,7 @@ def test_parsed_choices():
 
 
 def test_references_definitions():
-    parser = ANIMAL_PARSER
+    parser = WIDE_TABLE_PARSER
 
     ref_def = (
         {'{"non": false, "oui": true}': "Y/N/NK"},
@@ -148,15 +139,16 @@ s1 = pd.Series(
 def test_ref_def(source, expected):
     choices = source.value_counts()
 
-    answer = refs_defs(choices, 3)
+    # provide a different dataset than the one in the class
+    answer = WIDE_TABLE_PARSER.refs_defs(choices, 3)
 
     assert answer == expected
 
 
 def test_schema_fields(snapshot):
-    parser = ANIMAL_PARSER
+    parser = WIDE_TABLE_PARSER
 
-    assert parser.schema_fields("animals") == snapshot
+    assert parser.schema_fields == snapshot
 
 
 @pytest.mark.parametrize(
@@ -230,9 +222,9 @@ def test_schema_fields(snapshot):
     ],
 )
 def test_single_field_mapping(row, expected):
-    parser = ANIMAL_PARSER
+    parser = WIDE_TABLE_PARSER
 
-    assert parser.single_field_mapping("animals", row) == expected
+    assert parser.single_field_mapping(row) == expected
 
 
 def test_create_parser(tmp_path, snapshot):
