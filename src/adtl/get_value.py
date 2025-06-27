@@ -16,6 +16,8 @@ StrDict = dict[str, Any]
 Rule = Union[str, StrDict]
 Context = Union[dict[str, Union[bool, int, str, list[str]]], None]
 
+logger = logging.getLogger(__name__)
+
 # helper functions
 
 
@@ -98,7 +100,7 @@ def apply_fuction(value, row: StrDict, rule: StrDict, ctx: Context):
             warnings.warn(str(e), AdtlTransformationWarning)
             return value
         else:
-            logging.error(str(e))
+            logger.error(str(e))
             return None
     return value
 
@@ -111,7 +113,7 @@ def convert_values(value, rule: StrDict, ctx: Context) -> str | list[str | None]
             value = [convert_values(v, new_rule, ctx) for v in value]
             return value
         except Exception as e:
-            logging.debug(f"Error converting {value} to a list: {e}")
+            logger.debug(f"Error converting {value} to a list: {e}")
             return value
 
     if rule.get("caseInsensitive") and isinstance(value, str):
@@ -183,7 +185,7 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
             source_unit = get_value(row, rule["source_unit"])
             unit = rule["unit"]
             if not isinstance(source_unit, str):
-                logging.debug(
+                logger.debug(
                     f"Error converting source_unit {source_unit} to {unit!r} with "
                     "rule: {rule}, defaulting to assume source_unit is {unit}"
                 )
@@ -192,7 +194,7 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
                 value = pint.Quantity(float(value), source_unit).to(unit).m
             except ValueError:
                 if ctx and ctx.get("returnUnmatched"):
-                    logging.debug(f"Could not convert {value} to a floating point")
+                    logger.debug(f"Could not convert {value} to a floating point")
                     return value
                 raise ValueError(f"Could not convert {value} to a floating point")
         if "source_date" in rule or (ctx and ctx.get("is_date")):
@@ -207,7 +209,7 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
                 try:
                     value = datetime.strptime(value, source_date).strftime(target_date)
                 except (TypeError, ValueError):
-                    logging.info(f"Could not parse date: {value}")
+                    logger.info(f"Could not parse date: {value}")
                     if ctx and ctx.get("returnUnmatched"):
                         return value
                     return None
@@ -251,7 +253,7 @@ def parse_if(
         try:
             cast_value = type(value)(attr_value)
         except ValueError:
-            logging.debug(
+            logger.debug(
                 f"Error when casting value {attr_value!r} with rule: {rule}, defaulting"
                 " to False"
             )
@@ -281,7 +283,7 @@ def parse_if(
         try:
             cast_value = type(value)(attr_value)
         except ValueError:
-            logging.debug(
+            logger.debug(
                 f"Error when casting value {attr_value!r} with rule: {rule}, defaulting"
                 " to False"
             )

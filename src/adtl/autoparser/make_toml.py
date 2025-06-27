@@ -15,6 +15,8 @@ import pandas as pd
 from .toml_writer import dump
 from .util import DEFAULT_CONFIG, parse_llm_mapped_values, read_config_schema, read_data
 
+logger = logging.getLogger(__name__)
+
 
 def adtl_header(
     name: str,
@@ -213,7 +215,7 @@ class ParserGenerator:
         if "required" in schema:
             for field in schema["required"]:
                 if field not in outmap:
-                    logging.warning(
+                    logger.warning(
                         f"Missing required field {field} in {table} schema."
                         " Adding empty field..."
                     )

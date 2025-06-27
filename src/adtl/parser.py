@@ -29,6 +29,8 @@ DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
 StrDict = dict[str, Any]
 
+logger = logging.getLogger(__name__)
+
 
 def expand_refs(spec_fragment: StrDict, defs: StrDict) -> Union[StrDict, list[StrDict]]:
     "Expand all references (ref) with definitions (defs)"
@@ -266,13 +268,13 @@ class Parser:
                     try:
                         res = requests.get(schema)
                         if res.status_code != 200:
-                            logging.warning(
+                            logger.warning(
                                 f"Could not fetch schema for table {table!r}, will not "
                                 "validate"
                             )
                             continue
                     except ConnectionError:  # pragma: no cover
-                        logging.warning(
+                        logger.warning(
                             f"Could not fetch schema for table {table!r}, will not "
                             "validate"
                         )
@@ -513,7 +515,7 @@ class Parser:
                                     UserWarning,
                                 )
                             else:
-                                logging.debug(
+                                logger.debug(
                                     f"Multiple rows of data found for {attr} without a"
                                     " combinedType listed. Data being overwritten."
                                 )
