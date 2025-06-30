@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft-04/schema",
   "id": "https://raw.githubusercontent.com/globaldothealth/isaric/main/autoparser/autoparser-config.schema.json",
+  "additionalProperties": false,
   "title": "autoparser configuration schema",
   "description": "Schema for autoparser configuration",
   "required": [
@@ -78,6 +79,30 @@
       "choices": {
         "type": "string",
         "description": "Delimited field -> value mappings"
+      }
+    }
+  },
+  "long_tables": {
+    "type": "object",
+    "description": "field information for long-format tables, one per table",
+    "properties": {
+      "id_cols": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Identifier columns for the long table, e.g. subjid, dataset_id"
+      },
+      "variable_col": {
+        "type": "string",
+        "description": "Variable column for the long table, e.g. 'attribute'"
+      },
+      "value_cols": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Value columns for the long table, e.g. 'value_bool', 'value_num', 'value'"
       }
     }
   }

@@ -38,3 +38,14 @@ max_common_count = 25
   source_type = "Field Type"
   source_description = "Field Label"
   choices = "Choices, Calculations, OR Slider Labels"
+
+# Optional: long tables configuration
+# [long_tables.attribute]
+# id_cols = ["subjid", "dataset_id"]
+# variable_col = "attribute"
+# value_cols = ["value_bool", "value_num", "value"]
+
+# [long_tables.event]
+# id_cols = ["subjid", "dataset_id"]
+# variable_col = "attribute"
+# value_cols = ["value_bool", "value_num", "value"]

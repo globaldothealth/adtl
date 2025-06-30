@@ -155,23 +155,36 @@ class LongTableParser(TableParser):
             f
             for f in self.schema_fields
             # shouldn't hard code these, but for now this is fine
-            if f not in ["attribute", "value", "value_num", "value_bool"]
+            if f not in [*self.id_cols, self.variable_col, *self.value_cols]
         ]
+
+    @property
+    def id_cols(self) -> list[str]:
+        """Returns the ID columns for the long table"""
+        return self.config["long_tables"][self.name]["id_cols"]
+
+    @property
+    def variable_col(self) -> str:
+        """Returns the variable column for the long table"""
+        return self.config["long_tables"][self.name]["variable_col"]
+
+    @property
+    def value_cols(self) -> list[str]:
+        """Returns the value columns for the long table"""
+        return self.config["long_tables"][self.name]["value_cols"]
 
     def single_field_mapping(self, match: pd.DataFrame) -> dict[str, Any]:
         """Make a single field mapping from a single row of the mappings dataframe"""
 
         out = {
-            "attribute": match.source_field,
+            self.variable_col: match.source_field,
             match.value_type: {"field": match.source_field},
+            **{field: {"field": match[field]} for field in self.id_cols},
         }
 
         for field in self.other_fields:
             if not pd.isna(match[field]):
-                if self.schema["properties"][field].get("enum", None):
-                    out[field] = match[field]
-                else:
-                    out[field] = {"field": match[field]}
+                out[field] = match[field]
 
         return out
 
