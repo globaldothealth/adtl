@@ -15,7 +15,7 @@ from adtl.autoparser.make_toml import WideTableParser
 CONFIG_PATH = "tests/test_autoparser/test_config.toml"
 ANIMAL_PARSER = ParserGenerator(
     "tests/test_autoparser/sources/animals_mapping.csv",
-    Path("tests/test_autoparser/schemas"),
+    "",
     "animals",
     config=Path(CONFIG_PATH),
 )
@@ -246,7 +246,7 @@ def test_create_parser_ap_access(tmp_path, snapshot):
 
     autoparser.create_parser(
         "tests/test_autoparser/sources/animals_mapping.csv",
-        "tests/test_autoparser/schemas",
+        "",
         str(file),
         config=CONFIG_PATH,
     )
@@ -261,7 +261,7 @@ def test_create_parser_ap_access(tmp_path, snapshot):
 def test_main_cli(tmp_path):
     ARGV = [
         "tests/test_autoparser/sources/animals_mapping.csv",
-        "tests/test_autoparser/schemas",
+        "",
         "-o",
         str(tmp_path / "animals"),
         "-c",

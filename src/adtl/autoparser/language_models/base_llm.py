@@ -28,3 +28,12 @@ class LLMBase:
         """
         # subclasses should implement this method
         raise NotImplementedError
+
+    def map_long_table(
+        self, single_field_format, descriptions, enums
+    ):  # pragma: no cover
+        """
+        Calls the OpenAI API to generate a mapping for a long table.
+        """
+        # subclasses should implement this method
+        raise NotImplementedError

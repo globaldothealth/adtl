@@ -6,11 +6,13 @@ from __future__ import annotations
 
 import argparse
 import warnings
+from enum import Enum
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 
 import numpy as np
 import pandas as pd
+from pydantic import create_model
 
 from .dict_reader import format_dict
 from .util import (
@@ -52,15 +54,14 @@ class Mapper:
     def __init__(
         self,
         data_dictionary: str | pd.DataFrame,
-        schema: Path,
+        table_name: str,
         language: str,
         api_key: str | None = None,
         llm_provider: Literal["openai", "gemini"] | None = "openai",
         llm_model: str | None = None,
         config: Path | None = None,
     ):
-        self.schema = read_json(schema)
-        self.schema_properties = self.schema["properties"]
+        self.name = table_name
         self.language = language
         if llm_provider is None and llm_model is None:
             self.model = None
@@ -70,6 +71,9 @@ class Mapper:
         self.config = read_config_schema(
             config or Path(Path(__file__).parent, DEFAULT_CONFIG)
         )
+
+        self.schema = read_json(self.config["schemas"][table_name])
+        self.schema_properties = self.schema["properties"]
 
         self.data_dictionary = format_dict(data_dictionary, config=self.config)
 
@@ -376,9 +380,224 @@ class Mapper:
             return mapping_dict
 
 
+class LongMapper:
+    """
+    Class for creating an intermediate mapping file linking the data dictionary to
+    long-format schema's fields and values.
+
+    Use `create_mapping()` to write out the mapping file, as the function equivalent
+    of the command line `create-mapping` script.
+
+    Parameters
+    ----------
+    data_dictionary
+        The data dictionary to use
+    table_name
+        The name of the table to map to
+    language
+        The language of the raw data (e.g. 'fr', 'en', 'es')
+    api_key
+        The API key to use for the LLM
+    llm_provider
+        The LLM API to use, currently only 'openai' and 'gemini' are supported
+    llm_model
+        The LLM model to use. If not provided, a default for the given provider will be
+        used.
+    config
+        The path to the configuration file to use if not using the default configuration
+    """
+
+    def __init__(
+        self,
+        data_dictionary: str | pd.DataFrame,
+        table_name: str,
+        schema: Path,
+        language: str,
+        api_key: str | None = None,
+        llm_provider: Literal["openai", "gemini"] | None = "openai",
+        llm_model: str | None = None,
+        config: Path | None = None,
+    ):
+        self.schema = read_json(schema)
+        self.schema_properties = self.schema["properties"]
+        self.language = language
+        if llm_provider is None and llm_model is None:
+            self.model = None
+        else:
+            self.model = setup_llm(api_key, provider=llm_provider, model=llm_model)
+
+        self.config = read_config_schema(
+            config or Path(Path(__file__).parent, DEFAULT_CONFIG)
+        )
+
+        self.data_dictionary = format_dict(data_dictionary, config=self.config)
+        self.common_fields = {}
+        self.name = table_name
+
+    @property
+    def schema_variable_col(self) -> str:
+        """Returns the variable column for the long table"""
+        return self.config["long_tables"][self.name]["variable_col"]
+
+    @property
+    def schema_value_cols(self) -> list[str]:
+        """Returns the value columns for the long table"""
+        return self.config["long_tables"][self.name]["value_cols"]
+
+    @property
+    def other_fields(self) -> list[str]:
+        """Returns the other fields in the schema that are not target fields"""
+        return [
+            f
+            for f in self.schema_properties.keys()
+            if f
+            not in [
+                *self.common_fields.keys(),
+                self.schema_variable_col,
+                *self.schema_value_cols,
+            ]
+        ]
+
+    def _create_data_structure(self) -> pd.DataFrame:
+        def _enum_creator(name: str, enums: list[str]) -> dict:
+            """
+            Creates a dictionary for a single entry in the long table format.
+            """
+            return Enum(name, {v.upper(): v for v in enums})
+
+        fields = {
+            "source_description": (str, ...),
+            "variable_name": (str, ...),
+            "value_col": (_enum_creator("ValueColEnum", self.schema_value_cols), None),
+        }
+
+        if self.schema_properties[self.schema_variable_col].get("enum", []):
+            VarColEnum = _enum_creator(
+                "VarColEnum", self.schema_properties[self.schema_variable_col]["enum"]
+            )
+            fields["variable_name"] = (Optional[VarColEnum], None)
+
+        # Add arbitrary fields from CSV headers
+        for field in self.other_fields:
+            if self.schema_properties[field].get("enum", []):
+                # If the field has an enum, create an Enum type for it
+                EnumType = _enum_creator(
+                    f"{field}Enum", self.schema_properties[field]["enum"]
+                )
+                fields[field] = (EnumType, None)
+            else:
+                fields[field] = (str, None)
+
+        SingleEntry = create_model("SingleEntry", **fields)
+        return SingleEntry
+
+    def match_fields_to_schema(self) -> pd.DataFrame:
+        """
+        Use the LLM to match the target (schema) fields to the descriptions of the
+        source data fields from the data dictionary.
+        """
+
+        data_format = self._create_data_structure()
+
+        source_descriptions = self.uncommon_data_dict.source_description
+
+        mappings = self.model.map_long_table(
+            data_format,
+            source_descriptions,
+            self.schema["properties"][self.schema_variable_col].get("enum", []),
+            self.schema,
+        )
+
+        mapping_dict = pd.DataFrame(mappings.model_dump()["long_table"])
+
+        missed_descrips = len(source_descriptions) != len(mapping_dict)
+
+        if missed_descrips:
+            mapping_dict = pd.merge(
+                pd.DataFrame({"source_description": source_descriptions}),
+                mapping_dict,
+                how="left",
+                on="source_description",
+            )
+
+            assert len(source_descriptions) == len(mapping_dict), (
+                "malformed descriptions!"
+            )
+
+        df_merged = pd.merge(
+            self.uncommon_data_dict,
+            mapping_dict,
+            how="left",
+            on="source_description",
+        )
+
+        df_merged.set_index("source_field", inplace=True, drop=True)
+
+        self.mapped_fields = df_merged.index
+        return df_merged
+
+    def create_mapping(
+        self,
+        save=True,
+        file_name="mapping_file",
+        common_fields: dict[str, str] | None = None,
+    ) -> pd.DataFrame:
+        """
+        Creates an intermediate mapping dataframe linking the data dictionary to schema
+        fields. The index contains the source field names, and the columns are:
+        source_description
+        common_values OR choices (depending on the data dictionary)
+        <variable_name> (the name of the column identified in the config file)
+        value_col
+        * any other fields in the long schema.
+
+        Raises a warning if any fields are present in the schema where a
+        corresponding source field in the data dictionary has not been found.
+
+        Parameters
+        ----------
+        save
+            Whether to save the mapping to a CSV file. If True, lists and dicts are
+            converted to strings before saving.
+        name
+            The name to use for the CSV file
+        """
+
+        self.common_fields = common_fields or {}
+        self.uncommon_data_dict = self.data_dictionary[
+            ~self.data_dictionary.source_field.isin(self.common_fields.values())
+        ].drop(columns=["source_type"])
+
+        mapping_dict = self.match_fields_to_schema()
+
+        unmapped = mapping_dict[mapping_dict["variable_name"].isna()].index
+        if any(unmapped):
+            warnings.warn(
+                f"The following fields have not been mapped to the new schema: {list(unmapped)}",
+                UserWarning,
+            )
+
+        # Add in the common columns to the file
+        for col, value in common_fields.items():
+            mapping_dict[col] = value
+
+        mapping_dict.rename(
+            columns={"variable_name": self.schema_variable_col}, inplace=True
+        )
+
+        if save is False:
+            return mapping_dict
+        else:
+            # Write to CSV
+            if not file_name.endswith(".csv"):
+                file_name += ".csv"
+            mapping_dict.to_csv(file_name)
+            return mapping_dict
+
+
 def create_mapping(
     data_dictionary: str | pd.DataFrame,
-    schema: Path,
+    table_name: str,
     language: str,
     api_key: str,
     llm_provider: str | None = "openai",
@@ -386,6 +605,7 @@ def create_mapping(
     config: Path | None = None,
     save: bool = True,
     file_name: str = "mapping_file",
+    table_format: Literal["wide", "long"] = "wide",
 ) -> pd.DataFrame:
     """
     Creates a csv containing the mapping between a data dictionary and a schema.
@@ -421,8 +641,16 @@ def create_mapping(
     pd.DataFrame
         Dataframe containing the mapping between the data dictionary and the schema.
     """
-    df = Mapper(
-        data_dictionary, schema, language, api_key, llm_provider, llm_model, config
+    if table_format == "long":
+        MapperClass = LongMapper
+    elif table_format == "wide":
+        MapperClass = Mapper
+    else:
+        raise ValueError(
+            f"Invalid table format: {table_format}. Must be either 'wide' or 'long'."
+        )
+    df = MapperClass(
+        data_dictionary, table_name, language, api_key, llm_provider, llm_model, config
     ).create_mapping(save=save, file_name=file_name)
 
     return df
@@ -437,7 +665,7 @@ def main(argv=None):
         prog="autoparser create-mapping",
     )
     parser.add_argument("dictionary", help="Data dictionary to use")
-    parser.add_argument("schema", help="Schema to use")
+    parser.add_argument("table_name", help="Name of the table being mapped")
     parser.add_argument("language", help="Language of the original data")
     parser.add_argument("api_key", help="OpenAI API key to use")
     parser.add_argument(
@@ -461,7 +689,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     Mapper(
         args.dictionary,
-        Path(args.schema),
+        args.table_name,
         args.language,
         args.api_key,
         args.llm_provider,

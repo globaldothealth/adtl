@@ -30,11 +30,11 @@ This creates an `animals_dd.csv` data dictionary to use in the next step.
 The next step is to create an intermediate CSV for you to inspect, mapping the fields and values in the raw data to the target schema. This is the CLI syntax:
 
 ```bash
-adtl-autoparser create-mapping dictionary schema language api_key [-l llm_provider] [-m llm_model] [-c config_file] [-o output_name]
+adtl-autoparser create-mapping dictionary table_name language api_key [-l llm_provider] [-m llm_model] [-c config_file] [-o output_name]
 ```
 so we can run
 ```bash
-adtl-autoparser create-mapping animal_dd.csv tests/test_autoparser/schemas/animals.schema.json "fr" $OPENAI_API_KEY -c tests/test_autoparser/test_config.toml -o animal_mapping
+adtl-autoparser create-mapping animal_dd.csv "animals" "fr" $OPENAI_API_KEY -c tests/test_autoparser/test_config.toml -o animal_mapping
 ```
 to create the intermediate mapping file `animal_mapping.csv` for you to inspect for any errors.
 
