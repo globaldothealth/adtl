@@ -8,6 +8,9 @@ description = "Autoparser config for generating CSV mappings and TOML"
 # to this TOML:
 #  { "oui" = True, "non" = False}
 
+# provide one, other or both of these
+llm_provider = "openai"
+
 choice_delimiter = ","
 choice_delimiter_map = "="
 

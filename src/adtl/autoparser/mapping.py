@@ -56,22 +56,34 @@ class BaseMapper(abc.ABC):
         self,
         data_dictionary: str | pd.DataFrame,
         table_name: str,
-        language: str,
-        api_key: str | None = None,
-        llm_provider: Literal["openai", "gemini"] | None = "openai",
+        *,
+        api_key: str,
+        language: str | None = None,
+        llm_provider: Literal["openai", "gemini"] | None = None,
         llm_model: str | None = None,
         config: Path | None = None,
     ):
         self.name = table_name
-        self.language = language
-        if llm_provider is None and llm_model is None:
-            self.model = None
-        else:
-            self.model = setup_llm(api_key, provider=llm_provider, model=llm_model)
 
         self.config = read_config_schema(
             config or Path(Path(__file__).parent, DEFAULT_CONFIG)
         )
+
+        self.language = language or self.config.get("language", None)
+        self.llm_provider = llm_provider or self.config.get("llm_provider", None)
+        self.llm_model = llm_model or self.config.get("llm_model", None)
+
+        if self.language is None:
+            raise ValueError(
+                "Language must be specified either in the config file or as an argument"
+            )
+
+        if self.llm_provider is None and self.llm_model is None:
+            self.model = None
+        else:
+            self.model = setup_llm(
+                api_key, provider=self.llm_provider, model=self.llm_model
+            )
 
         self.schema = read_json(self.config["schemas"][table_name])
         self.schema_properties = self.schema["properties"]
@@ -562,14 +574,14 @@ class LongMapper(BaseMapper):
 def create_mapping(
     data_dictionary: str | pd.DataFrame,
     table_name: str,
-    language: str,
     api_key: str,
-    llm_provider: str | None = "openai",
-    llm_model: str | None = None,
     config: Path | None = None,
     save: bool = True,
     file_name: str = "mapping_file",
     table_format: Literal["wide", "long"] = "wide",
+    language: str | None = None,
+    llm_provider: str | None = None,
+    llm_model: str | None = None,
 ) -> pd.DataFrame:
     """
     Creates a csv containing the mapping between a data dictionary and a schema.

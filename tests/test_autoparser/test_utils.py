@@ -23,9 +23,11 @@ def test_read_config_schema():
     data = read_config_schema(Path("tests/test_autoparser/test_config.toml"))
     assert isinstance(data, dict)
     npt.assert_array_equal(
+        list(data.keys()),
         [
             "name",
             "description",
+            "llm_provider",
             "choice_delimiter",
             "choice_delimiter_map",
             "num_refs",
@@ -33,7 +35,6 @@ def test_read_config_schema():
             "schemas",
             "column_mappings",
         ],
-        list(data.keys()),
     )
 
     data = read_config_schema(Path("tests/test_autoparser/schemas/animals.schema.json"))

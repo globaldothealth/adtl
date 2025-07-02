@@ -148,6 +148,8 @@ def setup_llm(
         raise ValueError(
             "Either a provider, a model or both must be provided to set up the LLM"
         )
+    elif provider and provider not in ["openai", "gemini"]:
+        raise ValueError(f"Unsupported LLM provider: {provider}")
 
     kwargs = {"api_key": api_key}
     if model is not None:
@@ -158,7 +160,9 @@ def setup_llm(
     elif provider == "gemini" or model in GeminiLanguageModel.valid_models():
         return GeminiLanguageModel(**kwargs)
     else:
-        raise ValueError(f"Unsupported LLM provider: {provider}")
+        raise ValueError(
+            f"Could not set up LLM with provider '{provider}' and model '{model}'."
+        )
 
 
 def check_matches(llm: str, source: list[str], cutoff=0.8) -> str | None:

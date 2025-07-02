@@ -25,12 +25,20 @@ class MapperTest(WideMapper):
         data_dictionary,
         name,
         language,
-        api_key=None,
+        api_key="1234",  # dummy API key
         llm_provider=None,
         llm_model=None,
         config=CONFIG_PATH,
     ):
-        super().__init__(data_dictionary, name, language, None, None, config=config)
+        super().__init__(
+            data_dictionary,
+            name,
+            language=language,
+            api_key=api_key,  # dummy API key
+            llm_provider=llm_provider,
+            llm_model=llm_model,
+            config=config,
+        )
 
         self.model = TestLLM()
 
@@ -40,7 +48,7 @@ def mapper():
     return MapperTest(
         "tests/test_autoparser/sources/animals_dd_described.parquet",
         "animals",
-        "fr",
+        language="fr",
     )
 
 
@@ -225,39 +233,27 @@ def test_mapper_class_init_raises():
         WideMapper(
             "tests/test_autoparser/sources/animals_dd_described.csv",
             Path("tests/test_autoparser/schemas/animals.schema.json"),
-            "fr",
+            language="fr",
             api_key="1234",
             llm_provider="fish",
         )
-
-
-def test_mapper_class_init():
-    mapper = WideMapper(
-        "tests/test_autoparser/sources/animals_dd_described.parquet",
-        "animals",
-        "fr",
-        llm_provider=None,
-        config=CONFIG_PATH,
-    )
-
-    assert mapper.language == "fr"
-    assert mapper.model is None
-    npt.assert_array_equal(
-        mapper.data_dictionary.columns,
-        ["source_field", "source_description", "source_type", "common_values"],
-    )
 
 
 def test_mapper_class_init_with_llm():
     mapper = WideMapper(
         "tests/test_autoparser/sources/animals_dd_described.parquet",
         "animals",
-        "fr",
+        language="fr",
         api_key="abcd",
         config=CONFIG_PATH,
     )
 
+    assert mapper.language == "fr"
     assert isinstance(mapper.model, OpenAILanguageModel)
+    npt.assert_array_equal(
+        mapper.data_dictionary.columns,
+        ["source_field", "source_description", "source_type", "common_values"],
+    )
 
 
 def test_match_fields_to_schema_dummy_data(mapper):
@@ -406,8 +402,8 @@ def test_create_mapping(monkeypatch, tmp_path):
     create_mapping(
         "tests/test_autoparser/sources/animals_dd_described.parquet",
         "animals",
-        "fr",
-        "1a2b3c4d",
+        language="fr",
+        api_key="1a2b3c4d",
         save=True,
         file_name=str(tmp_path / "test_animals_mapping.csv"),
         config=CONFIG_PATH,
