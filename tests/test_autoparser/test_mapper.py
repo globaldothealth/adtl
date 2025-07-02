@@ -12,12 +12,12 @@ from testing_data_animals import TestLLM
 
 from adtl.autoparser import create_mapping
 from adtl.autoparser.language_models.openai import OpenAILanguageModel
-from adtl.autoparser.mapping import Mapper, main
+from adtl.autoparser.mapping import WideMapper, main
 
 CONFIG_PATH = "tests/test_autoparser/test_config.toml"
 
 
-class MapperTest(Mapper):
+class MapperTest(WideMapper):
     # override the __init__ method to avoid calling any LLM API's, and fill with dummy
     # data from testing_data.py
     def __init__(
@@ -222,7 +222,7 @@ def test_common_values_mapped_fields_error(mapper):
 
 def test_mapper_class_init_raises():
     with pytest.raises(ValueError, match="Unsupported LLM provider: fish"):
-        Mapper(
+        WideMapper(
             "tests/test_autoparser/sources/animals_dd_described.csv",
             Path("tests/test_autoparser/schemas/animals.schema.json"),
             "fr",
@@ -232,7 +232,7 @@ def test_mapper_class_init_raises():
 
 
 def test_mapper_class_init():
-    mapper = Mapper(
+    mapper = WideMapper(
         "tests/test_autoparser/sources/animals_dd_described.parquet",
         "animals",
         "fr",
@@ -249,7 +249,7 @@ def test_mapper_class_init():
 
 
 def test_mapper_class_init_with_llm():
-    mapper = Mapper(
+    mapper = WideMapper(
         "tests/test_autoparser/sources/animals_dd_described.parquet",
         "animals",
         "fr",
@@ -401,7 +401,7 @@ def test_class_create_mapping_save(tmp_path, mapper):
 
 @pytest.mark.filterwarnings("ignore:The following schema fields have not been mapped")
 def test_create_mapping(monkeypatch, tmp_path):
-    monkeypatch.setattr("adtl.autoparser.mapping.Mapper", MapperTest)
+    monkeypatch.setattr("adtl.autoparser.mapping.WideMapper", MapperTest)
 
     create_mapping(
         "tests/test_autoparser/sources/animals_dd_described.parquet",
@@ -429,7 +429,7 @@ def test_main_cli(monkeypatch, tmp_path):
         CONFIG_PATH,
     ]
 
-    monkeypatch.setattr("adtl.autoparser.mapping.Mapper", MapperTest)
+    monkeypatch.setattr("adtl.autoparser.mapping.WideMapper", MapperTest)
 
     main(ARGV)
 

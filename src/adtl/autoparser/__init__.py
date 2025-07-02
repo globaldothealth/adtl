@@ -5,7 +5,7 @@ try:
     from .dict_reader import DictReader, format_dict
     from .dict_writer import DictWriter, create_dict, generate_descriptions
     from .make_toml import ParserGenerator, create_parser
-    from .mapping import Mapper, create_mapping
+    from .mapping import LongMapper, WideMapper, create_mapping
 except ImportError:  # pragma: no cover
     raise ImportError(
         "autoparser is not available. Import as 'adtl[autoparser]' to use."
@@ -18,7 +18,8 @@ __all__ = [
     "generate_descriptions",
     "DictReader",
     "format_dict",
-    "Mapper",
+    "WideMapper",
+    "LongMapper",
     "create_mapping",
     "ParserGenerator",
     "create_parser",

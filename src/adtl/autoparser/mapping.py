@@ -4,6 +4,7 @@ Create draft intermediate mapping in CSV from source dataset to target dataset
 
 from __future__ import annotations
 
+import abc
 import argparse
 import warnings
 from enum import Enum
@@ -24,10 +25,10 @@ from .util import (
 )
 
 
-class Mapper:
+class BaseMapper(abc.ABC):
     """
-    Class for creating an intermediate mapping file linking the data dictionary to
-    schema fields and values.
+    Abstract class for creating an intermediate mapping file linking the data dictionary to
+    a schema's fields and values. Will be used to create Wide and Long mapping formats.
 
     Use `create_mapping()` to write out the mapping file, as the function equivalent
     of the command line `create-mapping` script.
@@ -36,8 +37,8 @@ class Mapper:
     ----------
     data_dictionary
         The data dictionary to use
-    schema
-        The path to the schema file to map to
+    table_name
+        The name of the table to map to
     language
         The language of the raw data (e.g. 'fr', 'en', 'es')
     api_key
@@ -76,6 +77,17 @@ class Mapper:
         self.schema_properties = self.schema["properties"]
 
         self.data_dictionary = format_dict(data_dictionary, config=self.config)
+
+    @abc.abstractmethod
+    def create_mapping(self, save=True, file_name="mapping_file") -> pd.DataFrame:
+        pass
+
+
+class WideMapper(BaseMapper):
+    """
+    Class for creating an intermediate mapping file linking the data dictionary to
+    a wide schema fields and values.
+    """
 
     @property
     def target_fields(self) -> list[str]:
@@ -380,59 +392,11 @@ class Mapper:
             return mapping_dict
 
 
-class LongMapper:
+class LongMapper(BaseMapper):
     """
     Class for creating an intermediate mapping file linking the data dictionary to
     long-format schema's fields and values.
-
-    Use `create_mapping()` to write out the mapping file, as the function equivalent
-    of the command line `create-mapping` script.
-
-    Parameters
-    ----------
-    data_dictionary
-        The data dictionary to use
-    table_name
-        The name of the table to map to
-    language
-        The language of the raw data (e.g. 'fr', 'en', 'es')
-    api_key
-        The API key to use for the LLM
-    llm_provider
-        The LLM API to use, currently only 'openai' and 'gemini' are supported
-    llm_model
-        The LLM model to use. If not provided, a default for the given provider will be
-        used.
-    config
-        The path to the configuration file to use if not using the default configuration
     """
-
-    def __init__(
-        self,
-        data_dictionary: str | pd.DataFrame,
-        table_name: str,
-        schema: Path,
-        language: str,
-        api_key: str | None = None,
-        llm_provider: Literal["openai", "gemini"] | None = "openai",
-        llm_model: str | None = None,
-        config: Path | None = None,
-    ):
-        self.schema = read_json(schema)
-        self.schema_properties = self.schema["properties"]
-        self.language = language
-        if llm_provider is None and llm_model is None:
-            self.model = None
-        else:
-            self.model = setup_llm(api_key, provider=llm_provider, model=llm_model)
-
-        self.config = read_config_schema(
-            config or Path(Path(__file__).parent, DEFAULT_CONFIG)
-        )
-
-        self.data_dictionary = format_dict(data_dictionary, config=self.config)
-        self.common_fields = {}
-        self.name = table_name
 
     @property
     def schema_variable_col(self) -> str:
@@ -644,7 +608,7 @@ def create_mapping(
     if table_format == "long":
         MapperClass = LongMapper
     elif table_format == "wide":
-        MapperClass = Mapper
+        MapperClass = WideMapper
     else:
         raise ValueError(
             f"Invalid table format: {table_format}. Must be either 'wide' or 'long'."
@@ -686,16 +650,22 @@ def main(argv=None):
     parser.add_argument(
         "-o", "--output", help="Name to use for output files", default="mapping_file"
     )
+    parser.add_argument(
+        "--long-table", help="The target table has a long format", action="store_true"
+    )
     args = parser.parse_args(argv)
-    Mapper(
-        args.dictionary,
-        args.table_name,
-        args.language,
-        args.api_key,
-        args.llm_provider,
-        args.llm_model,
-        args.config,
-    ).create_mapping(save=True, file_name=args.output)
+    create_mapping(
+        data_dictionary=args.dictionary,
+        table_name=args.table_name,
+        language=args.language,
+        api_key=args.api_key,
+        llm_provider=args.llm_provider,
+        llm_model=args.llm_model,
+        config=args.config,
+        save=True,
+        file_name=args.output,
+        table_format="long" if args.long_table else "wide",
+    )
 
 
 if __name__ == "__main__":
