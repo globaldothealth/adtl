@@ -9,7 +9,7 @@ import argparse
 import warnings
 from enum import Enum
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -54,14 +54,14 @@ class BaseMapper(abc.ABC):
 
     def __init__(
         self,
-        data_dictionary: str | pd.DataFrame,
+        data_dictionary: Union[str, pd.DataFrame],
         table_name: str,
         *,
         api_key: str,
-        language: str | None = None,
-        llm_provider: Literal["openai", "gemini"] | None = None,
-        llm_model: str | None = None,
-        config: Path | None = None,
+        language: Union[str, None] = None,
+        llm_provider: Union[Literal["openai", "gemini"], None] = None,
+        llm_model: Union[str, None] = None,
+        config: Union[Path, None] = None,
     ):
         self.name = table_name
 
@@ -642,16 +642,16 @@ class LongMapper(BaseMapper):
 
 
 def create_mapping(
-    data_dictionary: str | pd.DataFrame,
+    data_dictionary: Union[str, pd.DataFrame],
     table_name: str,
     api_key: str,
-    config: Path | None = None,
+    config: Union[Path, None] = None,
     save: bool = True,
     file_name: str = "mapping_file",
     table_format: Literal["wide", "long"] = "wide",
-    language: str | None = None,
-    llm_provider: str | None = None,
-    llm_model: str | None = None,
+    language: Union[str, None] = None,
+    llm_provider: Union[str, None] = None,
+    llm_model: Union[str, None] = None,
 ) -> pd.DataFrame:
     """
     Creates a csv containing the mapping between a data dictionary and a schema.

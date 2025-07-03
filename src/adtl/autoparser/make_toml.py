@@ -9,7 +9,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Union
 
 import pandas as pd
 
@@ -17,7 +17,7 @@ from .toml_writer import dump
 from .util import DEFAULT_CONFIG, parse_llm_mapped_values, read_config_schema, read_data
 
 logger = logging.getLogger(__name__)
-INPUT_FORMAT = pd.DataFrame | str | Path
+INPUT_FORMAT = Union[pd.DataFrame, str, Path]
 
 
 class TableParser(abc.ABC):
@@ -222,11 +222,11 @@ class ParserGenerator:
 
     def __init__(
         self,
-        mappings: INPUT_FORMAT | dict[str, INPUT_FORMAT],
-        schema_path: Path | str,
+        mappings: Union[INPUT_FORMAT, dict[str, INPUT_FORMAT]],
+        schema_path: Union[Path, str],
         parser_name: str,
-        description: str | None = None,
-        config: Path | None = None,
+        description: Union[str, None] = None,
+        config: Union[Path, None] = None,
     ):
         if not isinstance(mappings, dict):
             # if not a dict, assume a single mapping file
@@ -347,10 +347,10 @@ class ParserGenerator:
 
 
 def create_parser(
-    mappings: pd.DataFrame | str,
+    mappings: Union[pd.DataFrame, str],
     schema_path: Path,
     parser_name: str,
-    description: str | None = None,
+    description: Union[str, None] = None,
     config=DEFAULT_CONFIG,
 ):
     """
