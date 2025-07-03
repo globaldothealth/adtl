@@ -155,13 +155,23 @@ class LongTableParser(TableParser):
             f
             for f in self.schema_fields
             # shouldn't hard code these, but for now this is fine
-            if f not in [*self.id_cols, self.variable_col, *self.value_cols]
+            if f not in [*self.common_cols, self.variable_col, *self.value_cols]
         ]
 
     @property
-    def id_cols(self) -> list[str]:
-        """Returns the ID columns for the long table"""
-        return self.config["long_tables"][self.name]["id_cols"]
+    def common_cols(self) -> str:
+        """Returns the common columns for the long table"""
+        if not hasattr(self, "_common_cols"):
+            ccs = self.config["long_tables"][self.name].get("common_cols", None)
+            if ccs is None:
+                ccs = (
+                    self.config["long_tables"][self.name]
+                    .get("common_fields", {})
+                    .keys()
+                )
+
+            self._common_cols = ccs
+        return self._common_cols
 
     @property
     def variable_col(self) -> str:
@@ -173,13 +183,25 @@ class LongTableParser(TableParser):
         """Returns the value columns for the long table"""
         return self.config["long_tables"][self.name]["value_cols"]
 
+    def _validate_mapping(self):
+        """Validate the mapping dataframe for the long table"""
+        if any(self.mapping[self.variable_col].isna()):
+            raise ValueError(
+                f"Mapping dataframe must not contain NaN values in '{self.variable_col}' column."
+            )
+        if any(self.mapping["value_col"].isna()):
+            raise ValueError(
+                f"Mapping dataframe must not contain NaN values in '{self.value_col}' column."
+            )
+
     def single_field_mapping(self, match: pd.DataFrame) -> dict[str, Any]:
         """Make a single field mapping from a single row of the mappings dataframe"""
 
+        # need a way to differentiate between 'field' options and text/float values
         out = {
-            self.variable_col: match.source_field,
-            match.value_type: {"field": match.source_field},
-            **{field: {"field": match[field]} for field in self.id_cols},
+            self.variable_col: match[self.variable_col],
+            match.value_col: {"field": match.source_field},
+            **{field: {"field": match[field]} for field in self.common_cols},
         }
 
         for field in self.other_fields:
@@ -190,6 +212,8 @@ class LongTableParser(TableParser):
 
     def make_toml_table(self) -> dict[str, Any]:
         """Make single TOML table from mappings"""
+
+        self._validate_mapping()
 
         outmap = []
 

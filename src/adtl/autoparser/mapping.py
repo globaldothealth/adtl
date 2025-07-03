@@ -545,7 +545,7 @@ class LongMapper(BaseMapper):
             self.schema,
         )
 
-        mapping_dict = pd.DataFrame(mappings.model_dump()["long_table"])
+        mapping_dict = pd.DataFrame(mappings.model_dump(mode="json")["long_table"])
 
         missed_descrips = len(source_descriptions) != len(mapping_dict)
 
