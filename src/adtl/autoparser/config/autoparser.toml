@@ -3,6 +3,7 @@
 name = "autoparser"
 description = "Autoparser config for generating CSV mappings and TOML from autoparser-generated dictionaries"
 
+# Can also be set in the function call
 language = "en"
 
 # provide one, other or both of these
@@ -50,9 +51,13 @@ max_common_count = 25
 
 # Optional: long tables configuration
 [long_tables.attribute]
-  common_cols = ["subjid", "dataset_id", "arcver"]
   variable_col = "attribute"
   value_cols = ["value_bool", "value_num", "value"]
+
+  [long_tables.attribute.common_fields]
+    subjid = "usubjid"
+    dataset_id = "studyid"
+    arcver = "1.1.0"
 
 [long_tables.event]
   common_cols = ["subjid", "dataset_id", "arcver"]

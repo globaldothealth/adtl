@@ -146,7 +146,7 @@ class OpenAILanguageModel(LLMBase):
             "LongTableRequest", long_table=(list[single_field_format], ...)
         )
 
-        system_msg = """
+        system_msg_descriptive = """
                         You are an expert at structured data extraction.
                         For each source column description provided, match it to the best variable name
                         from the given list of enums. If no good match exists, use null.
@@ -171,9 +171,14 @@ class OpenAILanguageModel(LLMBase):
                         ]
                         """
 
-        content_msg = (
-            f"Columns descriptions: {', '.join(descriptions)}"
-            f"Variable names: {', '.join(enums)}"
+        system_msg_short = (
+            "You are an expert at structured data extraction. "
+            "You will be provided with a list of column descriptions from a source dataset, "
+            "and a list of enums which are the possible variable names."
+            "Match each column description to the best matching variable name, "
+            "but match the description to None if a good match does not exist."
+            "Return these as part of the provided structure, using the information "
+            "from the column descriptions to fill in the other fields appropriately."
         )
 
         long_table_mapping = self.client.beta.chat.completions.parse(
@@ -181,66 +186,18 @@ class OpenAILanguageModel(LLMBase):
             messages=[
                 {
                     "role": "system",
-                    "content": (
-                        "You are an expert at structured data extraction. "
-                        "You will be provided with a list of column descriptions from a source dataset, "
-                        "and a list of enums which are the possible variable names."
-                        "Match each column description to the best matching variable name, "
-                        "but match the description to None if a good match does not exist."
-                        "Return these as part of the provided structure, using the information "
-                        "from the column descriptions to fill in the other fields appropriately."
-                    ),
+                    "content": system_msg_descriptive,
                 },
                 {
                     "role": "user",
                     "content": (
-                        f"Columns descriptions: {descriptions}\n"
-                        f"Variable names: {enums}\n"
+                        f"Columns descriptions: {', '.join(descriptions)}"
+                        f"Variable names: {', '.join(enums)}"
                     ),
                 },
             ],
             response_format=LongTableRequest,
         )
-        # long_table_mapping = self.client.beta.chat.completions.parse(
-        #     model=self.model,
-        #     messages=[
-        #         {
-        #             "role": "system",
-        #             "content": """
-        #                 You are an expert at structured data extraction.
-        #                 For each source column description provided, match it to the best variable name
-        #                 from the given list of enums. If no good match exists, use null.
-
-        #                 Return output as a JSON array of objects, each with fields:
-        #                 - source_description (string)
-        #                 - variable_name (string or null)
-        #                 - value_col (one of "value_bool", "value_num", "value" or null)
-        #                 - phase (one of "presentation", "outcome", or null)
-        #                 - attribute_unit (string or null)
-
-        #                 Example input:
-
-        #                 Columns descriptions: ["Age", "Symptoms: Cough", "Admission Date"]
-        #                 Variable names: ["age", "cough", "aids_hiv"]
-
-        #                 Example output:
-        #                 [
-        #                 {"source_description": "Age", "variable_name": "age", "value_col": "value_num", "phase": "presentation", "attribute_unit": "years"},
-        #                 {"source_description": "Symptoms: Cough", "variable_name": "cough", "value_col": "value_bool", "phase": "presentation", "attribute_unit": ""},
-        #                 {"source_description": "Admission Date", "variable_name": null, "value_col": "", "phase": "", "attribute_unit": ""}
-        #                 ]
-        #                 """,
-        #         },
-        #         {
-        #             "role": "user",
-        #             "content": (
-        #                 f"Columns descriptions: {', '.join(descriptions)}"
-        #                 f"Variable names: {', '.join(enums)}"
-        #             ),
-        #         },
-        #     ],
-        #     response_format=LongTableRequest,
-        # )
         mappings = long_table_mapping.choices[0].message.parsed
         completion_tokens = long_table_mapping.usage.completion_tokens
         print("completion tokens: ", completion_tokens)

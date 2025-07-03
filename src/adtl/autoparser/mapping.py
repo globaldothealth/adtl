@@ -411,6 +411,29 @@ class LongMapper(BaseMapper):
     """
 
     @property
+    def common_cols(self) -> str:
+        """Returns the common columns for the long table"""
+        if not hasattr(self, "_common_cols"):
+            ccs = self.config["long_tables"][self.name].get("common_cols", None)
+            if ccs is None:
+                ccs = (
+                    self.config["long_tables"][self.name]
+                    .get("common_fields", {})
+                    .keys()
+                )
+
+            self._common_cols = ccs
+        return self._common_cols
+
+    @property
+    def common_fields(self) -> pd.Series:
+        if not hasattr(self, "_common_fields"):
+            self._common_fields = self.config["long_tables"][self.name].get(
+                "common_fields", {}
+            )
+        return self._common_fields
+
+    @property
     def schema_variable_col(self) -> str:
         """Returns the variable column for the long table"""
         return self.config["long_tables"][self.name]["variable_col"]
@@ -444,7 +467,10 @@ class LongMapper(BaseMapper):
         fields = {
             "source_description": (str, ...),
             "variable_name": (str, ...),
-            "value_col": (_enum_creator("ValueColEnum", self.schema_value_cols), None),
+            "value_col": (
+                Optional[_enum_creator("ValueColEnum", self.schema_value_cols)],
+                None,
+            ),
         }
 
         if self.schema_properties[self.schema_variable_col].get("enum", []):
@@ -460,12 +486,47 @@ class LongMapper(BaseMapper):
                 EnumType = _enum_creator(
                     f"{field}Enum", self.schema_properties[field]["enum"]
                 )
-                fields[field] = (EnumType, None)
+                fields[field] = (Optional[EnumType], None)
             else:
-                fields[field] = (str, None)
+                fields[field] = (Optional[str], None)
 
         SingleEntry = create_model("SingleEntry", **fields)
         return SingleEntry
+
+    def _check_config(self):
+        """
+        Check that the config file has the correct fields for the long table.
+        """
+        if "long_tables" not in self.config:
+            raise ValueError(
+                "No long tables defined in config file. Please set 'long_tables' in the config file."
+            )
+        if self.name not in self.config["long_tables"]:
+            raise ValueError(
+                f"Long table {self.name} not defined in config file. "
+                "Please set 'long_tables' in the config file."
+            )
+
+        if "variable_col" not in self.config["long_tables"][self.name]:
+            raise ValueError(
+                f"Variable column not set in config for long table {self.name}. "
+                "Please set 'variable_col' in the config file."
+            )
+
+    def set_common_fields(self, common_fields: dict[str, str]):
+        """
+        Function to assign fields to the common fields of the long table - i.e. fields
+        which should be filled by the same text or source field in every row of the long
+        table.
+        """
+        if self.common_cols != list(common_fields.keys()):
+            raise ValueError(
+                f"Common columns {self.common_cols} set in the config file do not"
+                f" match provided common fields {common_fields.keys()}"
+            )
+
+        self._common_fields = common_fields
+        self._common_cols = list(common_fields.keys())
 
     def match_fields_to_schema(self) -> pd.DataFrame:
         """
@@ -479,8 +540,8 @@ class LongMapper(BaseMapper):
 
         mappings = self.model.map_long_table(
             data_format,
-            source_descriptions,
-            self.schema["properties"][self.schema_variable_col].get("enum", []),
+            source_descriptions.tolist(),
+            self.schema_properties[self.schema_variable_col].get("enum", []),
             self.schema,
         )
 
@@ -516,7 +577,6 @@ class LongMapper(BaseMapper):
         self,
         save=True,
         file_name="mapping_file",
-        common_fields: dict[str, str] | None = None,
     ) -> pd.DataFrame:
         """
         Creates an intermediate mapping dataframe linking the data dictionary to schema
@@ -539,10 +599,20 @@ class LongMapper(BaseMapper):
             The name to use for the CSV file
         """
 
-        self.common_fields = common_fields or {}
-        self.uncommon_data_dict = self.data_dictionary[
-            ~self.data_dictionary.source_field.isin(self.common_fields.values())
-        ].drop(columns=["source_type"])
+        self._check_config()
+
+        if self.common_cols and not self.common_fields:
+            raise ValueError(
+                "Common fields must be set in the config file or set using the"
+                " `set_common_fields` method before mapping."
+            )
+
+        if self.common_cols:
+            self.uncommon_data_dict = self.data_dictionary[
+                ~self.data_dictionary.source_field.isin(self.common_cols)
+            ].drop(columns=["source_type"])
+        else:
+            self.uncommon_data_dict = self.data_dictionary.drop(columns=["source_type"])
 
         mapping_dict = self.match_fields_to_schema()
 
@@ -554,7 +624,7 @@ class LongMapper(BaseMapper):
             )
 
         # Add in the common columns to the file
-        for col, value in common_fields.items():
+        for col, value in self.common_fields.items():
             mapping_dict[col] = value
 
         mapping_dict.rename(

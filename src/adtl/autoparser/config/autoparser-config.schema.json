@@ -110,6 +110,10 @@
               "type": "string"
             }
           },
+          "common_fields": {
+            "type": "object",
+            "description": "Columns that are common across all long tables, already mapped to fields."
+          },
           "variable_col": {
             "type": "string"
           },
@@ -121,7 +125,6 @@
           }
         },
         "required": [
-          "common_cols",
           "variable_col",
           "value_cols"
         ],
