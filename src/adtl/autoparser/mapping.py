@@ -8,6 +8,7 @@ import abc
 import argparse
 import warnings
 from enum import Enum
+from functools import cached_property
 from pathlib import Path
 from typing import Literal, Optional, Union
 
@@ -94,6 +95,86 @@ class BaseMapper(abc.ABC):
     def create_mapping(self, save=True, file_name="mapping_file") -> pd.DataFrame:
         pass
 
+    @cached_property
+    def common_values(self) -> pd.Series:
+        """
+        Returns the commonly repeated values in the source data
+        Usually this indicates that the source field is an enum or boolean
+        """
+        if "common_values" in self.data_dictionary.columns:
+            cv = self.data_dictionary.common_values
+            cv.index = self.data_dictionary.source_field
+            return cv
+        elif "choices" in self.data_dictionary.columns:
+            choices = self.data_dictionary.choices
+            cv = choices.apply(
+                lambda x: list(x.values()) if isinstance(x, dict) else None
+            )
+            cv.index = self.data_dictionary.source_field
+            return cv
+        else:
+            # pandera schema validation means this should never be reached
+            raise ValueError(
+                "No common values or choices column found in data dictionary"
+            )  # pragma: no cover
+
+    @cached_property
+    def common_values_mapped(self) -> pd.Series:
+        try:
+            filtered_dict = self.filtered_data_dict
+        except AttributeError:
+            raise AttributeError(
+                "fields have to be mapped using the `match_fields_to_schema` method"
+                " first"
+            )
+        cv = self.common_values
+        return filtered_dict.source_field.apply(
+            lambda x: cv.loc[x] if isinstance(x, str) else None
+        )
+
+    @property
+    def mapped_fields(self):
+        try:
+            return self._mapped_fields
+        except AttributeError:
+            raise AttributeError(
+                "mapped_fields have to be created using `match_fields_to_schema` method"
+            )
+
+    @mapped_fields.setter
+    def mapped_fields(self, value: pd.Series):
+        self._mapped_fields = value
+
+    def post_process_mapping(self, mapping_dict, save, file_name) -> pd.DataFrame:
+        # turn lists & dicts into strings for consistancy with saved CSV
+        for col in ["common_values", "target_values"]:
+            if col in mapping_dict.columns:
+                mapping_dict[col] = mapping_dict[col].apply(
+                    lambda x: (
+                        ", ".join(str(item) for item in x)
+                        if isinstance(x, (list, np.ndarray))
+                        else x
+                    )
+                )
+        for col in ["choices", "value_mapping"]:
+            if col in mapping_dict.columns:
+                mapping_dict[col] = mapping_dict[col].apply(
+                    lambda x: (
+                        ", ".join(f"{k}={v}" for k, v in x.items())
+                        if isinstance(x, dict)
+                        else x
+                    )
+                )
+
+        if save is False:
+            return mapping_dict
+        else:
+            # Write to CSV
+            if not file_name.endswith(".csv"):
+                file_name += ".csv"
+            mapping_dict.to_csv(file_name)
+            return mapping_dict
+
 
 class WideMapper(BaseMapper):
     """
@@ -147,64 +228,19 @@ class WideMapper(BaseMapper):
 
             return self._target_values
 
-    @property
-    def common_values(self) -> pd.Series:
-        """
-        Returns the commonly repeated values in the source data
-        Usually this indicates that the source field is an enum or boolean
-        """
-        try:
-            return self._common_values
-        except AttributeError:
-            if "common_values" in self.data_dictionary.columns:
-                cv = self.data_dictionary.common_values
-                cv.index = self.data_dictionary.source_field
-                self._common_values = cv
-            elif "choices" in self.data_dictionary.columns:
-                choices = self.data_dictionary.choices
-                cv = choices.apply(
-                    lambda x: list(x.values()) if isinstance(x, dict) else None
-                )
-                cv.index = self.data_dictionary.source_field
-                self._common_values = cv
-            else:
-                # pandera schema validation means this should never be reached
-                raise ValueError(
-                    "No common values or choices column found in data dictionary"
-                )  # pragma: no cover
-            return self._common_values
-
-    @property
+    @cached_property
     def common_values_mapped(self) -> pd.Series:
         try:
-            return self._common_values_mapped
-        except AttributeError:
-            try:
-                filtered_dict = self.filtered_data_dict
-            except AttributeError:
-                raise AttributeError(
-                    "fields have to be mapped using the `match_fields_to_schema` method"
-                    " first"
-                )
-            cv = self.common_values
-            cv_mapped = filtered_dict.source_field.apply(
-                lambda x: cv.loc[x] if isinstance(x, str) else None
-            )
-            self._common_values_mapped = cv_mapped
-            return self._common_values_mapped
-
-    @property
-    def mapped_fields(self):
-        try:
-            return self._mapped_fields
+            filtered_dict = self.filtered_data_dict
         except AttributeError:
             raise AttributeError(
-                "mapped_fields have to be created using `match_fields_to_schema` method"
+                "fields have to be mapped using the `match_fields_to_schema` method"
+                " first"
             )
-
-    @mapped_fields.setter
-    def mapped_fields(self, value: pd.Series):
-        self._mapped_fields = value
+        cv = self.common_values
+        return filtered_dict.source_field.apply(
+            lambda x: cv.loc[x] if isinstance(x, str) else None
+        )
 
     def _relabel_choices(self, map_df):
         """
@@ -374,34 +410,7 @@ class WideMapper(BaseMapper):
         if "choices" in self.data_dictionary:
             mapping_dict = self._relabel_choices(mapping_dict)
 
-        # turn lists & dicts into strings for consistancy with saved CSV
-        for col in ["common_values", "target_values"]:
-            if col in mapping_dict.columns:
-                mapping_dict[col] = mapping_dict[col].apply(
-                    lambda x: (
-                        ", ".join(str(item) for item in x)
-                        if isinstance(x, (list, np.ndarray))
-                        else x
-                    )
-                )
-        for col in ["choices", "value_mapping"]:
-            if col in mapping_dict.columns:
-                mapping_dict[col] = mapping_dict[col].apply(
-                    lambda x: (
-                        ", ".join(f"{k}={v}" for k, v in x.items())
-                        if isinstance(x, dict)
-                        else x
-                    )
-                )
-
-        if save is False:
-            return mapping_dict
-        else:
-            # Write to CSV
-            if not file_name.endswith(".csv"):
-                file_name += ".csv"
-            mapping_dict.to_csv(file_name)
-            return mapping_dict
+        return self.post_process_mapping(mapping_dict, save=save, file_name=file_name)
 
 
 class LongMapper(BaseMapper):
@@ -433,6 +442,18 @@ class LongMapper(BaseMapper):
             )
         return self._common_fields
 
+    @cached_property
+    def common_values_mapped(self) -> pd.Series:
+        try:
+            filtered_dict = self.filtered_data_dict
+        except AttributeError:
+            raise AttributeError(
+                "fields have to be mapped using the `match_fields_to_schema` method"
+                " first"
+            )
+        cv = self.common_values
+        return cv.loc[filtered_dict[filtered_dict["variable_name"].notna()].index]
+
     @property
     def schema_variable_col(self) -> str:
         """Returns the variable column for the long table"""
@@ -456,6 +477,25 @@ class LongMapper(BaseMapper):
                 *self.schema_value_cols,
             ]
         ]
+
+    @cached_property
+    def target_values(self) -> pd.Series:
+        """Returns the enum values or boolean options for the target schema"""
+
+        def _value_options(f):
+            if "boolean" in self.schema_properties[f].get("type", ["str", "null"]):
+                return ["True", "False", "None"]
+            elif "string" in self.schema_properties[f].get("type", ["str", "null"]):
+                return self.schema_properties[f].get("enum", np.nan)
+            elif "array" in self.schema_properties[f].get("type", ["str", "null"]):
+                return self.schema_properties[f].get("items", {}).get("enum", np.nan)
+            else:
+                return np.nan
+
+        return pd.Series(
+            {f: _value_options(f) for f in self.schema_value_cols},
+            self.schema_value_cols,
+        )
 
     def _create_data_structure(self) -> pd.DataFrame:
         def _enum_creator(name: str, enums: list[str]) -> dict:
@@ -571,7 +611,38 @@ class LongMapper(BaseMapper):
         df_merged.set_index("source_field", inplace=True, drop=True)
 
         self.mapped_fields = df_merged.index
+        self.filtered_data_dict = df_merged
         return df_merged
+
+    def match_values_to_schema(self) -> pd.DataFrame:
+        """
+        Use the LLM to match the common values from the data dictionary to the target
+        values in the schema - i.e. enum or boolean options.
+        """
+
+        values_tuples = []
+        for f in self.mapped_fields:
+            s = self.common_values_mapped.get(f)
+            t = self.target_values.get(self.filtered_data_dict.loc[f, "value_col"])
+            if s is not None and t is not None:
+                values_tuples.append((f, s, t))
+
+        # to LLM
+        value_pairs = self.model.map_values(values_tuples, self.language)
+
+        value_mapping = {}
+
+        for p in value_pairs.values:
+            f = p.field_name
+            value_dict = {
+                pair.source_value: pair.target_value for pair in p.mapped_values
+            }
+            value_mapping[f] = value_dict
+
+        self.mapped_values = pd.Series(value_mapping, name="value_mapping")
+        self.mapped_values.index.name = "source_field"
+
+        return self.mapped_values
 
     def create_mapping(
         self,
@@ -623,6 +694,10 @@ class LongMapper(BaseMapper):
                 UserWarning,
             )
 
+        mapped_vals = self.match_values_to_schema()
+
+        mapping_dict = pd.concat([mapping_dict, mapped_vals], axis=1)
+
         # Add in the common columns to the file
         for col, value in self.common_fields.items():
             mapping_dict[col] = value
@@ -631,14 +706,7 @@ class LongMapper(BaseMapper):
             columns={"variable_name": self.schema_variable_col}, inplace=True
         )
 
-        if save is False:
-            return mapping_dict
-        else:
-            # Write to CSV
-            if not file_name.endswith(".csv"):
-                file_name += ".csv"
-            mapping_dict.to_csv(file_name)
-            return mapping_dict
+        return self.post_process_mapping(mapping_dict, save=save, file_name=file_name)
 
 
 def create_mapping(

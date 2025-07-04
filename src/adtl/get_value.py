@@ -226,10 +226,10 @@ def parse_if(
     "Parse conditional statements and return a boolean"
 
     n_keys = len(rule.keys())
-    assert n_keys == 1 or n_keys == 2
-    if n_keys == 2:
-        assert "can_skip" in rule
-        can_skip = True
+    assert 1 <= n_keys <= 3
+    if n_keys > 1:
+        if "can_skip" in rule:
+            can_skip = True
     key = next(iter(rule.keys()))
     if key == "not" and isinstance(rule[key], dict):
         return not parse_if(row, rule[key], ctx, can_skip)
@@ -238,7 +238,7 @@ def parse_if(
     elif key == "all" and isinstance(rule[key], list):
         return all(parse_if(row, r, ctx, can_skip) for r in rule[key])
     try:
-        attr_value = row[key]
+        attr_value = row[key].lower() if "case_insensitive" in rule else row[key]
     except KeyError:
         if can_skip is True:
             return False

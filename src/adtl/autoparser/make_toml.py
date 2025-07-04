@@ -8,6 +8,7 @@ import abc
 import argparse
 import json
 import logging
+from functools import cached_property
 from pathlib import Path
 from typing import Any, Union
 
@@ -171,6 +172,13 @@ class LongTableParser(TableParser):
     Class for generating a long table from the mappings.
     """
 
+    @cached_property
+    def parsed_choices(self) -> pd.Series:
+        """Returns the mapped values for each target field"""
+        values = self.mapping.value_mapping.map(parse_llm_mapped_values)
+        values.index = self.mapping.source_field
+        return values
+
     @property
     def other_fields(self) -> list[str]:
         """Returns the other fields in the schema that are not target fields"""
@@ -230,7 +238,7 @@ class LongTableParser(TableParser):
                 f"Mapping dataframe must not contain NaN values in '{self.value_col}' column."
             )
 
-    def single_entry_mapping(self, match: pd.DataFrame) -> dict[str, Any]:
+    def single_entry_mapping(self, data: pd.DataFrame) -> dict[str, Any]:
         """Make a single entry mapping from a single row of the mappings dataframe"""
 
         def add_field(field, text: str) -> Any:
@@ -240,14 +248,23 @@ class LongTableParser(TableParser):
             return {"field": text}
 
         out = {
-            self.variable_col: match[self.variable_col],
-            match.value_col: add_field(match.value_col, match.source_field),
-            **{field: add_field(field, match[field]) for field in self.common_cols},
+            self.variable_col: data[self.variable_col],
+            data.value_col: add_field(data.value_col, data.source_field),
+            **{field: add_field(field, data[field]) for field in self.common_cols},
         }
 
+        choices = self.parsed_choices[data.source_field]
+        if choices:
+            out[data.value_col].update(
+                {
+                    "values": choices,
+                    "caseInsensitive": True,
+                }
+            )
+
         for field in self.other_fields:
-            if not pd.isna(match[field]):
-                out[field] = add_field(field, match[field])
+            if not pd.isna(data[field]):
+                out[field] = add_field(field, data[field])
 
         return out
 
