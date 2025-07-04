@@ -32,7 +32,7 @@ class TableParser(abc.ABC):
 
     def make_toml_table(self) -> dict[str, Any]: ...
 
-    @property
+    @cached_property
     def static_field(self) -> dict[str, bool]: ...
 
     @property
@@ -40,13 +40,11 @@ class TableParser(abc.ABC):
         """Returns all the fields for `table` and their properties"""
         return self.schema["properties"]
 
-    @property
+    @cached_property
     def field_types(self) -> dict[str, list[str]]:
         """Returns the field types of the target schema"""
-        if not hasattr(self, "_field_types"):
-            s = self.schema_fields
-            self._field_types = {f: s[f].get("type", ["string", "null"]) for f in s}
-        return self._field_types
+        s = self.schema_fields
+        return {f: s[f].get("type", ["string", "null"]) for f in s}
 
     def update_static_fields(self, fields: dict[str, bool]) -> None:
         """Update the static fields for the long table"""
@@ -63,38 +61,27 @@ class WideTableParser(TableParser):
     Class for generating a wide table from the mappings.
     """
 
-    @property
+    @cached_property
     def static_field(self) -> dict[str, bool]:
         """
         If a column in the mapping file should be pulled from a schema field, True,
         otherwise False
         """
-        if not hasattr(self, "_static_field"):
-            self._static_field = {col: False for col in self.schema_fields}
+        return {col: False for col in self.schema_fields}
 
-        return self._static_field
-
-    @property
+    @cached_property
     def parsed_choices(self) -> pd.Series:
         """Returns the mapped values for each target field"""
-        if not hasattr(self, "_parsed_choices"):
-            self._parsed_choices = self.mapping.value_mapping.map(
-                parse_llm_mapped_values
-            )
-            self._parsed_choices.index = self.mapping.target_field
-        return self._parsed_choices
+        choices = self.mapping.value_mapping.map(parse_llm_mapped_values)
+        choices.index = self.mapping.target_field
+        return choices
 
-    @property
+    @cached_property
     def references_definitions(self) -> tuple[dict[str, str], dict[str, dict]]:
         """Finds and returns the references and definitions for the mappings"""
-        if not hasattr(self, "_references_definitions"):
-            # use value_counts() on parsed_choices normalise various flavours of Y/N/NK
-            value_counts = self.parsed_choices.value_counts()
-
-            self._references_definitions = self.refs_defs(
-                value_counts, self.config["num_refs"]
-            )
-        return self._references_definitions
+        # use value_counts() on parsed_choices normalise various flavours of Y/N/NK
+        value_counts = self.parsed_choices.value_counts()
+        return self.refs_defs(value_counts, self.config["num_refs"])
 
     def refs_defs(self, choices, num_refs):
         references = {}
@@ -214,18 +201,16 @@ class LongTableParser(TableParser):
         """Returns the value columns for the long table"""
         return self.config["long_tables"][self.name]["value_cols"]
 
-    @property
+    @cached_property
     def static_field(self) -> dict[str, bool]:
         """If a column in the mapping file should be pulled from a schema field, True, otherwise False"""
-        if not hasattr(self, "_static_field"):
-            config = {col: False for col in self.schema_fields}
-            config[self.variable_col] = True
+        config = {col: False for col in self.schema_fields}
+        config[self.variable_col] = True
 
-            for col in self.other_fields:
-                config[col] = True
+        for col in self.other_fields:
+            config[col] = True
 
-            self._static_field = config
-        return self._static_field
+        return config
 
     def _validate_mapping(self):
         """Validate the mapping dataframe for the long table"""

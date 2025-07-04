@@ -182,51 +182,36 @@ class WideMapper(BaseMapper):
     a wide schema fields and values.
     """
 
-    @property
+    @cached_property
     def target_fields(self) -> list[str]:
         """Returns a list of fields in the target schema"""
-        try:
-            return self._target_fields
-        except AttributeError:
-            self._target_fields = list(self.schema_properties.keys())
-            return self._target_fields
+        return list(self.schema_properties.keys())
 
-    @property
+    @cached_property
     def target_types(self) -> dict[str, list[str]]:
         """Returns the field types of the target schema"""
-        try:
-            return self._target_types
-        except AttributeError:
-            self._target_types = {
-                f: self.schema_properties[f].get("type", ["string", "null"])
-                for f in self.target_fields
-            }
-            return self._target_types
+        return {
+            f: self.schema_properties[f].get("type", ["string", "null"])
+            for f in self.target_fields
+        }
 
-    @property
+    @cached_property
     def target_values(self) -> pd.Series:
         """Returns the enum values or boolean options for the target schema"""
-        try:
-            return self._target_values
-        except AttributeError:
 
-            def _value_options(f):
-                if "boolean" in self.target_types[f]:
-                    return ["True", "False", "None"]
-                elif "string" in self.target_types[f]:
-                    return self.schema_properties[f].get("enum", np.nan)
-                elif "array" in self.target_types[f]:
-                    return (
-                        self.schema_properties[f].get("items", {}).get("enum", np.nan)
-                    )
-                else:
-                    return np.nan
+        def _value_options(f):
+            if "boolean" in self.target_types[f]:
+                return ["True", "False", "None"]
+            elif "string" in self.target_types[f]:
+                return self.schema_properties[f].get("enum", np.nan)
+            elif "array" in self.target_types[f]:
+                return self.schema_properties[f].get("items", {}).get("enum", np.nan)
+            else:
+                return np.nan
 
-            self._target_values = pd.Series(
-                {f: _value_options(f) for f in self.target_fields}, self.target_fields
-            )
-
-            return self._target_values
+        return pd.Series(
+            {f: _value_options(f) for f in self.target_fields}, self.target_fields
+        )
 
     @cached_property
     def common_values_mapped(self) -> pd.Series:
@@ -419,28 +404,18 @@ class LongMapper(BaseMapper):
     long-format schema's fields and values.
     """
 
-    @property
+    @cached_property
     def common_cols(self) -> str:
         """Returns the common columns for the long table"""
-        if not hasattr(self, "_common_cols"):
-            ccs = self.config["long_tables"][self.name].get("common_cols", None)
-            if ccs is None:
-                ccs = (
-                    self.config["long_tables"][self.name]
-                    .get("common_fields", {})
-                    .keys()
-                )
+        ccs = self.config["long_tables"][self.name].get("common_cols", None)
+        if ccs is None:
+            ccs = self.config["long_tables"][self.name].get("common_fields", {}).keys()
 
-            self._common_cols = ccs
-        return self._common_cols
+        return ccs
 
-    @property
+    @cached_property
     def common_fields(self) -> pd.Series:
-        if not hasattr(self, "_common_fields"):
-            self._common_fields = self.config["long_tables"][self.name].get(
-                "common_fields", {}
-            )
-        return self._common_fields
+        return self.config["long_tables"][self.name].get("common_fields", {})
 
     @cached_property
     def common_values_mapped(self) -> pd.Series:
@@ -454,17 +429,17 @@ class LongMapper(BaseMapper):
         cv = self.common_values
         return cv.loc[filtered_dict[filtered_dict["variable_name"].notna()].index]
 
-    @property
+    @cached_property
     def schema_variable_col(self) -> str:
         """Returns the variable column for the long table"""
         return self.config["long_tables"][self.name]["variable_col"]
 
-    @property
+    @cached_property
     def schema_value_cols(self) -> list[str]:
         """Returns the value columns for the long table"""
         return self.config["long_tables"][self.name]["value_cols"]
 
-    @property
+    @cached_property
     def other_fields(self) -> list[str]:
         """Returns the other fields in the schema that are not target fields"""
         return [
