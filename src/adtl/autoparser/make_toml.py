@@ -32,6 +32,9 @@ class TableParser(abc.ABC):
     def make_toml_table(self) -> dict[str, Any]: ...
 
     @property
+    def static_field(self) -> dict[str, bool]: ...
+
+    @property
     def schema_fields(self):
         """Returns all the fields for `table` and their properties"""
         return self.schema["properties"]
@@ -44,11 +47,31 @@ class TableParser(abc.ABC):
             self._field_types = {f: s[f].get("type", ["string", "null"]) for f in s}
         return self._field_types
 
+    def update_static_fields(self, fields: dict[str, bool]) -> None:
+        """Update the static fields for the long table"""
+        for field, value in fields.items():
+            if field not in self.static_field:
+                raise ValueError(f"Field '{field}' is not a valid schema field.")
+            if value not in [True, False]:
+                raise ValueError(f"Value for field '{field}' must be True or False.")
+            self.static_field[field] = value
+
 
 class WideTableParser(TableParser):
     """
     Class for generating a wide table from the mappings.
     """
+
+    @property
+    def static_field(self) -> dict[str, bool]:
+        """
+        If a column in the mapping file should be pulled from a schema field, True,
+        otherwise False
+        """
+        if not hasattr(self, "_static_field"):
+            self._static_field = {col: False for col in self.schema_fields}
+
+        return self._static_field
 
     @property
     def parsed_choices(self) -> pd.Series:
@@ -183,6 +206,19 @@ class LongTableParser(TableParser):
         """Returns the value columns for the long table"""
         return self.config["long_tables"][self.name]["value_cols"]
 
+    @property
+    def static_field(self) -> dict[str, bool]:
+        """If a column in the mapping file should be pulled from a schema field, True, otherwise False"""
+        if not hasattr(self, "_static_field"):
+            config = {col: False for col in self.schema_fields}
+            config[self.variable_col] = True
+
+            for col in self.other_fields:
+                config[col] = True
+
+            self._static_field = config
+        return self._static_field
+
     def _validate_mapping(self):
         """Validate the mapping dataframe for the long table"""
         if any(self.mapping[self.variable_col].isna()):
@@ -194,19 +230,24 @@ class LongTableParser(TableParser):
                 f"Mapping dataframe must not contain NaN values in '{self.value_col}' column."
             )
 
-    def single_field_mapping(self, match: pd.DataFrame) -> dict[str, Any]:
-        """Make a single field mapping from a single row of the mappings dataframe"""
+    def single_entry_mapping(self, match: pd.DataFrame) -> dict[str, Any]:
+        """Make a single entry mapping from a single row of the mappings dataframe"""
 
-        # need a way to differentiate between 'field' options and text/float values
+        def add_field(field, text: str) -> Any:
+            """Check if a field should be added to the output"""
+            if self.static_field.get(field, False):
+                return text
+            return {"field": text}
+
         out = {
             self.variable_col: match[self.variable_col],
-            match.value_col: {"field": match.source_field},
-            **{field: {"field": match[field]} for field in self.common_cols},
+            match.value_col: add_field(match.value_col, match.source_field),
+            **{field: add_field(field, match[field]) for field in self.common_cols},
         }
 
         for field in self.other_fields:
             if not pd.isna(match[field]):
-                out[field] = match[field]
+                out[field] = add_field(field, match[field])
 
         return out
 
@@ -218,7 +259,7 @@ class LongTableParser(TableParser):
         outmap = []
 
         for _, row in self.mapping.iterrows():
-            outmap.append(self.single_field_mapping(row))
+            outmap.append(self.single_entry_mapping(row))
 
         return {self.name: outmap}, None
 
@@ -251,6 +292,7 @@ class ParserGenerator:
         parser_name: str,
         description: Union[str, None] = None,
         config: Union[Path, None] = None,
+        static_fields: Union[dict[str, dict[str, bool]], None] = None,
     ):
         if not isinstance(mappings, dict):
             # if not a dict, assume a single mapping file
@@ -288,6 +330,8 @@ class ParserGenerator:
             t: "wide" if "target_field" in m.columns else "long"
             for t, m in self.mappings.items()
         }
+
+        self.static_fields = static_fields or {}
 
     def header(self) -> dict[str, Any]:
         "The ADTL-specific header for the TOML file"
@@ -327,19 +371,19 @@ class ParserGenerator:
         data = self.header()
         for table in self.tables:
             if self.table_types[table] == "wide":
-                table_parser, references = WideTableParser(
-                    self.mappings[table],
-                    self.schemas[table],
-                    table,
-                    self.config,
-                ).make_toml_table()
+                parser_class = WideTableParser
             else:
-                table_parser, references = LongTableParser(
-                    self.mappings[table],
-                    self.schemas[table],
-                    table,
-                    self.config,
-                ).make_toml_table()
+                parser_class = LongTableParser
+            parser_class = parser_class(
+                self.mappings[table],
+                self.schemas[table],
+                table,
+                self.config,
+            )
+            if self.static_fields:
+                parser_class.update_static_fields(self.static_fields.get(table, {}))
+
+            table_parser, references = parser_class.make_toml_table()
             data.update(table_parser)
             if references:
                 data["adtl"]["defs"].update(references)
