@@ -53,6 +53,8 @@ class BaseMapper(abc.ABC):
         The path to the configuration file to use if not using the default configuration
     """
 
+    INDEX_FIELD = "target_field"
+
     def __init__(
         self,
         data_dictionary: Union[str, pd.DataFrame],
@@ -150,6 +152,31 @@ class BaseMapper(abc.ABC):
     def mapped_fields(self, value: pd.Series):
         self._mapped_fields = value
 
+    def match_values_to_schema(self) -> pd.DataFrame:
+        """
+        Use the LLM to match the common values from the data dictionary to the target
+        values in the schema - i.e. enum or boolean options.
+        """
+
+        values_tuples = list(self._iter_value_tuples())
+
+        # to LLM
+        value_pairs = self.model.map_values(values_tuples, self.language)
+
+        value_mapping = {}
+
+        for p in value_pairs.values:
+            f = p.field_name
+            value_dict = {
+                pair.source_value: pair.target_value for pair in p.mapped_values
+            }
+            value_mapping[f] = value_dict
+
+        self.mapped_values = pd.Series(value_mapping, name="value_mapping")
+        self.mapped_values.index.name = self.INDEX_FIELD
+
+        return self.mapped_values
+
     def post_process_mapping(self, mapping_dict, save, file_name) -> pd.DataFrame:
         """
         Turn lists & dicts into strings for consistancy with saved CSV, then save.
@@ -223,20 +250,6 @@ class WideMapper(BaseMapper):
         )
         target_vals.index.name = "target_field"
         return target_vals
-
-    @cached_property
-    def common_values_mapped(self) -> pd.Series:
-        try:
-            filtered_dict = self.filtered_data_dict
-        except AttributeError:
-            raise AttributeError(
-                "fields have to be mapped using the `match_fields_to_schema` method"
-                " first"
-            )
-        cv = self.common_values
-        return filtered_dict.source_field.apply(
-            lambda x: cv.loc[x] if isinstance(x, str) else None
-        )
 
     def _iter_value_tuples(self):
         for f in self.target_fields:
@@ -341,31 +354,6 @@ class WideMapper(BaseMapper):
         self.filtered_data_dict = df_merged
         return df_merged
 
-    def match_values_to_schema(self) -> pd.DataFrame:
-        """
-        Use the LLM to match the common values from the data dictionary to the target
-        values in the schema - i.e. enum or boolean options.
-        """
-
-        values_tuples = list(self._iter_value_tuples())
-
-        # to LLM
-        value_pairs = self.model.map_values(values_tuples, self.language)
-
-        value_mapping = {}
-
-        for p in value_pairs.values:
-            f = p.field_name
-            value_dict = {
-                pair.source_value: pair.target_value for pair in p.mapped_values
-            }
-            value_mapping[f] = value_dict
-
-        self.mapped_values = pd.Series(value_mapping, name="value_mapping")
-        self.mapped_values.index.name = "target_field"
-
-        return self.mapped_values
-
     def create_mapping(self, save=True, file_name="mapping_file") -> pd.DataFrame:
         """
         Creates an intermediate mapping dataframe linking the data dictionary to schema
@@ -418,6 +406,8 @@ class LongMapper(BaseMapper):
     Class for creating an intermediate mapping file linking the data dictionary to
     long-format schema's fields and values.
     """
+
+    INDEX_FIELD = "source_field"
 
     @cached_property
     def common_cols(self) -> str:
@@ -610,31 +600,6 @@ class LongMapper(BaseMapper):
         self.mapped_fields = df_merged.index
         self.filtered_data_dict = df_merged
         return df_merged
-
-    def match_values_to_schema(self) -> pd.DataFrame:
-        """
-        Use the LLM to match the common values from the data dictionary to the target
-        values in the schema - i.e. enum or boolean options.
-        """
-
-        values_tuples = list(self._iter_value_tuples())
-
-        # to LLM
-        value_pairs = self.model.map_values(values_tuples, self.language)
-
-        value_mapping = {}
-
-        for p in value_pairs.values:
-            f = p.field_name
-            value_dict = {
-                pair.source_value: pair.target_value for pair in p.mapped_values
-            }
-            value_mapping[f] = value_dict
-
-        self.mapped_values = pd.Series(value_mapping, name="value_mapping")
-        self.mapped_values.index.name = "source_field"
-
-        return self.mapped_values
 
     def create_mapping(
         self,
