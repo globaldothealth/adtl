@@ -1,0 +1,98 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema",
+    "$id": "https://example.org/schemas/vet_observations_long.schema.json",
+    "title": "Vet Observations - Long Format",
+    "description": "Each row is an observation or intervention recorded for an animal during a vet visit.",
+    "type": "object",
+    "required": [
+        "animal_id",
+        "visit_date",
+        "observation"
+    ],
+    "oneOf": [
+        {
+            "required": [
+                "string_value"
+            ]
+        },
+        {
+            "required": [
+                "boolean_value"
+            ]
+        },
+        {
+            "required": [
+                "numeric_value"
+            ]
+        }
+    ],
+    "properties": {
+        "animal_id": {
+            "type": [
+                "string",
+                "integer"
+            ],
+            "description": "Unique identifier for the animal"
+        },
+        "visit_date": {
+            "type": [
+                "string"
+            ],
+            "format": "date",
+            "description": "Date of the vet visit"
+        },
+        "observation": {
+            "type": "string",
+            "enum": [
+                "weight",
+                "temperature",
+                "vaccinated",
+                "neutered",
+                "pregnant",
+                "arthritis",
+                "behavioural_issue"
+            ],
+            "description": "The type of observation"
+        },
+        "string_value": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "description": "Used for free-text or categorical responses (e.g. diagnosis, treatment)"
+        },
+        "boolean_value": {
+            "type": [
+                "boolean",
+                "null"
+            ],
+            "description": "Used for yes/no flags (e.g. vaccinated)"
+        },
+        "numeric_value": {
+            "type": [
+                "number",
+                "null"
+            ],
+            "description": "Used for numerical measurements (e.g. weight, temperature)"
+        },
+        "vet_name": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "description": "Name of the vet recording the observation"
+        },
+        "clinic": {
+            "type": [
+                "string"
+            ],
+            "description": "Clinic or location where the observation was recorded",
+            "enum": [
+                "summertown",
+                "jericho",
+                "cowley",
+                "botley"
+            ]
+        }
+    }
+}

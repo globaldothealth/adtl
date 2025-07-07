@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from enum import Enum
+from typing import Optional
+
+from pydantic import BaseModel, create_model
+
 from adtl.autoparser.language_models.base_llm import LLMBase
 from adtl.autoparser.language_models.data_structures import (
     ColumnDescriptionRequest,
@@ -121,6 +126,101 @@ def map_values(*args):
     return mapping
 
 
+long_mapping = [
+    {
+        "source_description": "Weight in kg",
+        "variable_name": "weight",
+        "value_col": "numeric_value",
+        "vet_name": "Dr. Lopez",
+    },
+    {
+        "source_description": "Vaccination Status",
+        "variable_name": "vaccinated",
+        "value_col": "boolean_value",
+        "vet_name": "Dr. Lopez",
+    },
+    {
+        "source_description": "Reported issues",
+        "variable_name": "behavioural_issue",
+        "value_col": "string_value",
+        "vet_name": "Dr. Lopez",
+    },
+    {
+        "source_description": "Temperature in Celsius",
+        "variable_name": "temperature",
+        "value_col": "numeric_value",
+        "vet_name": "Dr. Kamau",
+    },
+]
+
+
+def map_long_table(*args):
+    """
+    Dummy function to simulate mapping a long table.
+    """
+    fields = {
+        "source_description": (str, ...),
+        "variable_name": (
+            Optional[
+                Enum(
+                    "VarColEnum",
+                    {
+                        v.upper(): v
+                        for v in [
+                            "weight",
+                            "temperature",
+                            "vaccinated",
+                            "neutered",
+                            "pregnant",
+                            "arthritis",
+                            "behavioural_issue",
+                        ]
+                    },
+                )
+            ],
+            None,
+        ),
+        "value_col": (
+            Optional[
+                Enum(
+                    "ValueColEnum",
+                    {
+                        v.upper(): v
+                        for v in ["string_value", "boolean_value", "numeric_value"]
+                    },
+                )
+            ],
+            None,
+        ),
+        "vet_name": (Optional[str], None),
+    }
+    SingleEntry = create_model("SingleEntry", **fields)
+
+    fm = []
+
+    for i in long_mapping:
+        fm.append(SingleEntry.model_validate(i))
+
+    class LongTableRequest(BaseModel):
+        long_table: list[SingleEntry]
+
+    mapping = LongTableRequest(long_table=fm)
+    return mapping
+
+
+long_value_mapping = ValuesRequest(
+    values=[
+        FieldMapping(
+            field_name="vaccinated",
+            mapped_values=[
+                ValueMapping(source_value="true", target_value="True"),
+                ValueMapping(source_value="false", target_value="False"),
+            ],
+        )
+    ]
+)
+
+
 class TestLLM(LLMBase):
     __test__ = False  # Prevent pytest from collecting this class
 
@@ -148,3 +248,10 @@ class TestLLM(LLMBase):
         """
         value_mapping = map_values(values, language)
         return value_mapping
+
+    def map_long_table(self, data_dictionary, table_name, api_key, config=None):
+        """
+        Calls the OpenAI API to generate a mapping for a long table.
+        """
+        mapping = map_long_table(data_dictionary, table_name, api_key, config)
+        return mapping

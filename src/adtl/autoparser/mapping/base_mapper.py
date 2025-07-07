@@ -87,13 +87,10 @@ class BaseMapper(abc.ABC):
     # Abstract methods ---------------------------------------
 
     @abc.abstractmethod
-    def _iter_value_tuples(self) -> list[tuple[str, list[str], list[str]]]:
-        "Yield (field_name, source_values, target_values) triples for the LLM."
-        pass
+    def _iter_value_tuples(self) -> list[tuple[str, list[str], list[str]]]: ...
 
     @abc.abstractmethod
-    def create_mapping(self, save=True, file_name="mapping_file") -> pd.DataFrame:
-        pass
+    def create_mapping(self, save=True, file_name="mapping_file") -> pd.DataFrame: ...
 
     # Common properties ---------------------------------------
 

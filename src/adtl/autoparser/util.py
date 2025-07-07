@@ -20,7 +20,10 @@ from adtl.autoparser.language_models.openai import OpenAILanguageModel
 DEFAULT_CONFIG = "config/autoparser.toml"
 
 
-def read_config_schema(path: str | Path) -> Dict:
+def read_config_schema(path: dict | str | Path) -> Dict:
+    if isinstance(path, dict):
+        return path
+
     if isinstance(path, str):
         path = Path(path)
 

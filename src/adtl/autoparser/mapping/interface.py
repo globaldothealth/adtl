@@ -1,3 +1,7 @@
+"""
+Easy access interface for creating mappings between data dictionaries and schemas.
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -129,4 +133,4 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pragma: no cover

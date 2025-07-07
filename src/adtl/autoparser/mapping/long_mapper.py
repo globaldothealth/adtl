@@ -29,9 +29,14 @@ class LongMapper(BaseMapper):
 
         return ccs
 
-    @cached_property
+    @property
     def common_fields(self) -> pd.Series:
-        return self.config["long_tables"][self.name].get("common_fields", {})
+        if not hasattr(self, "_common_fields"):
+            self._common_fields = self.config["long_tables"][self.name].get(
+                "common_fields", {}
+            )
+
+        return self._common_fields
 
     @cached_property
     def common_values_mapped(self) -> pd.Series:
@@ -174,6 +179,13 @@ class LongMapper(BaseMapper):
 
         data_format = self._create_data_structure()
 
+        if self.common_cols:
+            self.uncommon_data_dict = self.data_dictionary[
+                ~self.data_dictionary.source_field.isin(self.common_cols)
+            ].drop(columns=["source_type"])
+        else:
+            self.uncommon_data_dict = self.data_dictionary.drop(columns=["source_type"])
+
         source_descriptions = self.uncommon_data_dict.source_description
 
         mappings = self.model.map_long_table(
@@ -245,13 +257,6 @@ class LongMapper(BaseMapper):
                 "Common fields must be set in the config file or set using the"
                 " `set_common_fields` method before mapping."
             )
-
-        if self.common_cols:
-            self.uncommon_data_dict = self.data_dictionary[
-                ~self.data_dictionary.source_field.isin(self.common_cols)
-            ].drop(columns=["source_type"])
-        else:
-            self.uncommon_data_dict = self.data_dictionary.drop(columns=["source_type"])
 
         mapping_dict = self.match_fields_to_schema()
 
