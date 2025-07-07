@@ -131,7 +131,9 @@ def test_target_values(mapper):
             "owner",
             "underlying_conditions",
         ],
+        name="target_values",
     )
+    target_vals.index.name = "target_field"
 
     pd.testing.assert_series_equal(mapper.target_values, target_vals)
 

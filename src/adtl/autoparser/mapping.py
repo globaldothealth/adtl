@@ -95,6 +95,11 @@ class BaseMapper(abc.ABC):
     def create_mapping(self, save=True, file_name="mapping_file") -> pd.DataFrame:
         pass
 
+    @abc.abstractmethod
+    def _iter_value_tuples(self) -> list[tuple[str, list[str], list[str]]]:
+        "Yield (field_name, source_values, target_values) triples for the LLM."
+        pass
+
     @cached_property
     def common_values(self) -> pd.Series:
         """
@@ -146,7 +151,9 @@ class BaseMapper(abc.ABC):
         self._mapped_fields = value
 
     def post_process_mapping(self, mapping_dict, save, file_name) -> pd.DataFrame:
-        # turn lists & dicts into strings for consistancy with saved CSV
+        """
+        Turn lists & dicts into strings for consistancy with saved CSV, then save.
+        """
         for col in ["common_values", "target_values"]:
             if col in mapping_dict.columns:
                 mapping_dict[col] = mapping_dict[col].apply(
@@ -209,9 +216,13 @@ class WideMapper(BaseMapper):
             else:
                 return np.nan
 
-        return pd.Series(
-            {f: _value_options(f) for f in self.target_fields}, self.target_fields
+        target_vals = pd.Series(
+            {f: _value_options(f) for f in self.target_fields},
+            self.target_fields,
+            name="target_values",
         )
+        target_vals.index.name = "target_field"
+        return target_vals
 
     @cached_property
     def common_values_mapped(self) -> pd.Series:
@@ -226,6 +237,13 @@ class WideMapper(BaseMapper):
         return filtered_dict.source_field.apply(
             lambda x: cv.loc[x] if isinstance(x, str) else None
         )
+
+    def _iter_value_tuples(self):
+        for f in self.target_fields:
+            s = self.common_values_mapped.get(f)
+            t = self.target_values[f]
+            if s is not None and t is not None:
+                yield (f, s, t)
 
     def _relabel_choices(self, map_df):
         """
@@ -329,12 +347,7 @@ class WideMapper(BaseMapper):
         values in the schema - i.e. enum or boolean options.
         """
 
-        values_tuples = []
-        for f in self.target_fields:
-            s = self.common_values_mapped.get(f)
-            t = self.target_values[f]
-            if s is not None and t is not None:
-                values_tuples.append((f, s, t))
+        values_tuples = list(self._iter_value_tuples())
 
         # to LLM
         value_pairs = self.model.map_values(values_tuples, self.language)
@@ -348,7 +361,8 @@ class WideMapper(BaseMapper):
             }
             value_mapping[f] = value_dict
 
-        self.mapped_values = pd.Series(value_mapping, name="mapped_values")
+        self.mapped_values = pd.Series(value_mapping, name="value_mapping")
+        self.mapped_values.index.name = "target_field"
 
         return self.mapped_values
 
@@ -382,8 +396,9 @@ class WideMapper(BaseMapper):
         # reindex to add in any schema fields that weren't returned by the LLM
         mapping_dict = mapping_dict.reindex(self.target_fields)
 
-        mapping_dict["target_values"] = mapping_dict.index.map(self.target_values)
-        mapping_dict["value_mapping"] = mapping_dict.index.map(mapped_vals)
+        mapping_dict = pd.concat(
+            [mapping_dict, self.target_values, mapped_vals], axis=1
+        )
 
         unmapped = mapping_dict[mapping_dict["source_field"].isna()].index
         if any(unmapped):
@@ -471,6 +486,13 @@ class LongMapper(BaseMapper):
             {f: _value_options(f) for f in self.schema_value_cols},
             self.schema_value_cols,
         )
+
+    def _iter_value_tuples(self):
+        for f in self.mapped_fields:
+            s = self.common_values_mapped.get(f)
+            t = self.target_values.get(self.filtered_data_dict.loc[f, "value_col"])
+            if s is not None and t is not None:
+                yield (f, s, t)
 
     def _create_data_structure(self) -> pd.DataFrame:
         def _enum_creator(name: str, enums: list[str]) -> dict:
@@ -595,12 +617,7 @@ class LongMapper(BaseMapper):
         values in the schema - i.e. enum or boolean options.
         """
 
-        values_tuples = []
-        for f in self.mapped_fields:
-            s = self.common_values_mapped.get(f)
-            t = self.target_values.get(self.filtered_data_dict.loc[f, "value_col"])
-            if s is not None and t is not None:
-                values_tuples.append((f, s, t))
+        values_tuples = list(self._iter_value_tuples())
 
         # to LLM
         value_pairs = self.model.map_values(values_tuples, self.language)
