@@ -1,0 +1,251 @@
+from __future__ import annotations
+
+import abc
+from functools import cached_property
+from pathlib import Path
+from typing import Literal, Union
+
+import numpy as np
+import pandas as pd
+
+from ..dict_reader import format_dict
+from ..util import (
+    DEFAULT_CONFIG,
+    read_config_schema,
+    read_json,
+    setup_llm,
+)
+
+CONFIG = "../" + DEFAULT_CONFIG
+
+
+class BaseMapper(abc.ABC):
+    """
+    Abstract class for creating an intermediate mapping file linking the data dictionary to
+    a schema's fields and values. Will be used to create Wide and Long mapping formats.
+
+    Use `create_mapping()` to write out the mapping file, as the function equivalent
+    of the command line `create-mapping` script.
+
+    Parameters
+    ----------
+    data_dictionary
+        The data dictionary to use
+    table_name
+        The name of the table to map to
+    language
+        The language of the raw data (e.g. 'fr', 'en', 'es')
+    api_key
+        The API key to use for the LLM
+    llm_provider
+        The LLM API to use, currently only 'openai' and 'gemini' are supported
+    llm_model
+        The LLM model to use. If not provided, a default for the given provider will be
+        used.
+    config
+        The path to the configuration file to use if not using the default configuration
+    """
+
+    INDEX_FIELD = "target_field"
+
+    def __init__(
+        self,
+        data_dictionary: Union[str, pd.DataFrame],
+        table_name: str,
+        *,
+        api_key: str,
+        language: Union[str, None] = None,
+        llm_provider: Union[Literal["openai", "gemini"], None] = None,
+        llm_model: Union[str, None] = None,
+        config: Union[Path, None] = None,
+    ):
+        self.name = table_name
+
+        self.config = read_config_schema(config or Path(Path(__file__).parent, CONFIG))
+
+        self.language = language or self.config.get("language", None)
+        self.llm_provider = llm_provider or self.config.get("llm_provider", None)
+        self.llm_model = llm_model or self.config.get("llm_model", None)
+
+        if self.language is None:
+            raise ValueError(
+                "Language must be specified either in the config file or as an argument"
+            )
+
+        if self.llm_provider is None and self.llm_model is None:
+            self.model = None
+        else:
+            self.model = setup_llm(
+                api_key, provider=self.llm_provider, model=self.llm_model
+            )
+
+        self.schema = read_json(self.config["schemas"][table_name])
+        self.schema_properties = self.schema["properties"]
+
+        self.data_dictionary = format_dict(data_dictionary, config=self.config)
+
+    # Abstract methods ---------------------------------------
+
+    @abc.abstractmethod
+    def _iter_value_tuples(self) -> list[tuple[str, list[str], list[str]]]:
+        "Yield (field_name, source_values, target_values) triples for the LLM."
+        pass
+
+    @abc.abstractmethod
+    def create_mapping(self, save=True, file_name="mapping_file") -> pd.DataFrame:
+        pass
+
+    # Common properties ---------------------------------------
+
+    @cached_property
+    def common_values(self) -> pd.Series:
+        """
+        Returns the commonly repeated values in the source data
+        Usually this indicates that the source field is an enum or boolean
+        """
+        if "common_values" in self.data_dictionary.columns:
+            cv = self.data_dictionary.common_values
+            cv.index = self.data_dictionary.source_field
+            return cv
+        elif "choices" in self.data_dictionary.columns:
+            choices = self.data_dictionary.choices
+            cv = choices.apply(
+                lambda x: list(x.values()) if isinstance(x, dict) else None
+            )
+            cv.index = self.data_dictionary.source_field
+            return cv
+        else:
+            # pandera schema validation means this should never be reached
+            raise ValueError(
+                "No common values or choices column found in data dictionary"
+            )  # pragma: no cover
+
+    @cached_property
+    def common_values_mapped(self) -> pd.Series:
+        try:
+            filtered_dict = self.filtered_data_dict
+        except AttributeError:
+            raise AttributeError(
+                "fields have to be mapped using the `match_fields_to_schema` method"
+                " first"
+            )
+        cv = self.common_values
+        return filtered_dict.source_field.apply(
+            lambda x: cv.loc[x] if isinstance(x, str) else None
+        )
+
+    @property
+    def mapped_fields(self):
+        try:
+            return self._mapped_fields
+        except AttributeError:
+            raise AttributeError(
+                "mapped_fields have to be created using `match_fields_to_schema` method"
+            )
+
+    @mapped_fields.setter
+    def mapped_fields(self, value: pd.Series):
+        self._mapped_fields = value
+
+    def _relabel_choices(self, map_df):
+        """
+        If 'choices' are present in the data dictionary, relabel the choices
+        in the mapping dataframe to match the source field names.
+        e.g.
+        if the data dictionary indicates {1: Man, 2:Female, 3:Unknown}, and the LLM maps
+        {Man:male, Female:female, Unknown:unknown}, then `relabel_choices` should give
+        {1:male, 2:female, 3:unknown}
+        """
+
+        filtered_dict = self.data_dictionary[
+            self.data_dictionary["source_field"].isin(map_df["source_field"])
+        ][["source_field", "choices"]]
+
+        mapping_choices = map_df[["source_field", "value_mapping"]]
+
+        choices = filtered_dict.merge(mapping_choices, on="source_field")
+        choices["combined_choices"] = choices.apply(
+            lambda x: (
+                {k: x["value_mapping"].get(v) for k, v in x["choices"].items()}
+                if isinstance(x["choices"], dict)
+                else None
+            ),
+            axis=1,
+        )
+
+        merged_mapping_dict = (
+            map_df.reset_index()
+            .merge(
+                choices[["source_field", "combined_choices"]],
+                on="source_field",
+                how="left",
+            )
+            .drop_duplicates(subset="target_field")
+            .set_index("target_field")
+        )
+        mmd = merged_mapping_dict.drop(columns=["value_mapping"]).rename(
+            columns={"combined_choices": "value_mapping"}
+        )
+
+        return mmd
+
+    def post_process_mapping(self, mapping_dict, save, file_name) -> pd.DataFrame:
+        """
+        Turn lists & dicts into strings for consistency with saved CSV, then save.
+        """
+
+        if "choices" in self.data_dictionary:
+            mapping_dict = self._relabel_choices(mapping_dict)
+
+        for col in ["common_values", "target_values"]:
+            if col in mapping_dict.columns:
+                mapping_dict[col] = mapping_dict[col].apply(
+                    lambda x: (
+                        ", ".join(str(item) for item in x)
+                        if isinstance(x, (list, np.ndarray))
+                        else x
+                    )
+                )
+        for col in ["choices", "value_mapping"]:
+            if col in mapping_dict.columns:
+                mapping_dict[col] = mapping_dict[col].apply(
+                    lambda x: (
+                        ", ".join(f"{k}={v}" for k, v in x.items())
+                        if isinstance(x, dict)
+                        else x
+                    )
+                )
+
+        if save is False:
+            return mapping_dict
+        else:
+            # Write to CSV
+            if not file_name.endswith(".csv"):
+                file_name += ".csv"
+            mapping_dict.to_csv(file_name)
+            return mapping_dict
+
+    def match_values_to_schema(self) -> pd.DataFrame:
+        """
+        Use the LLM to match the common values from the data dictionary to the target
+        values in the schema - i.e. enum or boolean options.
+        """
+
+        values_tuples = list(self._iter_value_tuples())
+
+        # to LLM
+        value_pairs = self.model.map_values(values_tuples, self.language)
+
+        value_mapping = {}
+
+        for p in value_pairs.values:
+            f = p.field_name
+            value_dict = {
+                pair.source_value: pair.target_value for pair in p.mapped_values
+            }
+            value_mapping[f] = value_dict
+
+        self.mapped_values = pd.Series(value_mapping, name="value_mapping")
+        self.mapped_values.index.name = self.INDEX_FIELD
+
+        return self.mapped_values

@@ -12,7 +12,7 @@ from testing_data_animals import TestLLM
 
 from adtl.autoparser import create_mapping
 from adtl.autoparser.language_models.openai import OpenAILanguageModel
-from adtl.autoparser.mapping import WideMapper, main
+from adtl.autoparser.mapping.interface import WideMapper, main
 
 CONFIG_PATH = "tests/test_autoparser/test_config.toml"
 
@@ -399,7 +399,7 @@ def test_class_create_mapping_save(tmp_path, mapper):
 
 @pytest.mark.filterwarnings("ignore:The following schema fields have not been mapped")
 def test_create_mapping(monkeypatch, tmp_path):
-    monkeypatch.setattr("adtl.autoparser.mapping.WideMapper", MapperTest)
+    monkeypatch.setattr("adtl.autoparser.mapping.interface.WideMapper", MapperTest)
 
     create_mapping(
         "tests/test_autoparser/sources/animals_dd_described.parquet",
@@ -427,7 +427,7 @@ def test_main_cli(monkeypatch, tmp_path):
         CONFIG_PATH,
     ]
 
-    monkeypatch.setattr("adtl.autoparser.mapping.WideMapper", MapperTest)
+    monkeypatch.setattr("adtl.autoparser.mapping.interface.WideMapper", MapperTest)
 
     main(ARGV)
 

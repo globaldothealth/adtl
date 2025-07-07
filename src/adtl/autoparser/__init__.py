@@ -5,7 +5,7 @@ try:
     from .dict_reader import DictReader, format_dict
     from .dict_writer import DictWriter, create_dict, generate_descriptions
     from .make_toml import ParserGenerator, create_parser
-    from .mapping import LongMapper, WideMapper, create_mapping
+    from .mapping.interface import LongMapper, WideMapper, create_mapping
 except ImportError:  # pragma: no cover
     raise ImportError(
         "autoparser is not available. Import as 'adtl[autoparser]' to use."
@@ -28,7 +28,7 @@ __all__ = [
 from .dict_reader import main as format_dict_main
 from .dict_writer import main as make_dd_main
 from .make_toml import main as make_toml_main
-from .mapping import main as csv_mapping_main
+from .mapping.interface import main as csv_mapping_main
 
 
 def main():
