@@ -97,22 +97,6 @@ def mock_config():
     }
 
 
-# @pytest.fixture
-# def mock_model():
-#     model = MagicMock()
-#     model.map_long_table.return_value.model_dump.return_value = {
-#         "long_table": [
-#             {
-#                 "source_description": "Number of cases",
-#                 "variable_name": "cases",
-#                 "value_col": "value_col",
-#             }
-#         ]
-#     }
-#     model.map_values.return_value.values = []  # mock for match_values_to_schema
-#     return model
-
-
 @pytest.fixture
 def mapper(mock_data_dict, mock_config):
     mapper = LongMapper(
@@ -234,48 +218,7 @@ def test_create_mapping_success(common_fields_mapper):
     ):
         result = common_fields_mapper.create_mapping(save=False)
         assert isinstance(result, pd.DataFrame)
-        # assert "country" in result.columns
-        # assert "variable_name" in result.columns
         assert result.index.name == "source_field"
-
-
-# def test_create_mapping_warns_on_unmapped(mapper):
-#     mapper.model.map_long_table.return_value.model_dump.return_value = {
-#         "long_table": []
-#     }
-#     mapper.set_common_fields({"country": "DRC", "year": "2023"})
-#     with pytest.warns(UserWarning, match="have not been mapped to the new schema"):
-#         mapper.create_mapping(save=False)
-
-
-# def test_missing_long_tables_raises(mock_data_dict, mock_schema):
-#     config = {"language": "en", "schemas": {"test_table": "fake_schema.json"}}
-#     with (
-#         patch("adtl.autoparser.util.read_config_schema", return_value=config),
-#         patch("adtl.autoparser.util.read_json", return_value=mock_schema),
-#         patch("adtl.autoparser.dict_reader.format_dict", return_value=mock_data_dict),
-#     ):
-
-#         with pytest.raises(ValueError, match="No long tables defined in config file"):
-#             LongMapper(
-#                 data_dictionary=mock_data_dict,
-#                 table_name="test_table",
-#                 api_key="fake",
-#                 language="en",
-#             )._check_config()
-
-
-# def test_missing_table_name_raises(mock_data_dict):
-#     with pytest.raises(ValueError, match="not defined in config file"):
-#         LongMapper(
-#             data_dictionary=mock_data_dict,
-#             table_name="missing_table",
-#             language="en",
-#             api_key="1234",  # dummy API key
-#             llm_provider=None,
-#             llm_model=None,
-#             config="tests/test_autoparser/test_config.toml",
-#         )._check_config()
 
 
 def test_missing_variable_col_raises(mock_data_dict, mock_config):

@@ -151,7 +151,6 @@ class LongMapper(BaseMapper, LongTableMixin):
             data_format,
             source_descriptions.tolist(),
             self.schema_fields[self.variable_col].get("enum", []),
-            self.schema,
         )
 
         mapping_dict = pd.DataFrame(mappings.model_dump(mode="json")["long_table"])

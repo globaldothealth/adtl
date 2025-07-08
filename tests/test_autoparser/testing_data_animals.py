@@ -154,10 +154,7 @@ long_mapping = [
 ]
 
 
-def map_long_table(*args):
-    """
-    Dummy function to simulate mapping a long table.
-    """
+def long_table_class():
     fields = {
         "source_description": (str, ...),
         "variable_name": (
@@ -194,7 +191,18 @@ def map_long_table(*args):
         ),
         "vet_name": (Optional[str], None),
     }
-    SingleEntry = create_model("SingleEntry", **fields)
+    return create_model("SingleEntry", **fields)
+
+
+SingleEntry = long_table_class()
+
+
+def map_long_table(*args):
+    """
+    Dummy function to simulate mapping a long table.
+    """
+
+    SingleEntry = long_table_class()
 
     class LongTableRequest(BaseModel):
         long_table: list[SingleEntry]
@@ -249,9 +257,9 @@ class TestLLM(LLMBase):
         value_mapping = map_values(values, language)
         return value_mapping
 
-    def map_long_table(self, data_dictionary, table_name, api_key, config=None):
+    def map_long_table(self, single_field_format, descriptions, enums):
         """
         Calls the OpenAI API to generate a mapping for a long table.
         """
-        mapping = map_long_table(data_dictionary, table_name, api_key, config)
+        mapping = map_long_table(single_field_format, descriptions, enums)
         return mapping
