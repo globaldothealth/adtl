@@ -1,0 +1,5 @@
+source_field,source_description,common_values,observation,value_col,vet_name,value_mapping,animal_id,visit_date,clinic
+weight_kg,Weight in kg,,weight,numeric_value,Dr. Lopez,,subjid,date,jericho
+temperature_C,Temperature in Celsius,,temperature,numeric_value,Dr. Kamau,,subjid,date,jericho
+vacc_status,Vaccination Status,"false, none, true",vaccinated,boolean_value,Dr. Lopez,"true=True, false=False",subjid,date,jericho
+reported_issues,Reported issues,,behavioural_issue,string_value,Dr. Lopez,,subjid,date,jericho

@@ -1,0 +1,68 @@
+# serializer version: 1
+# name: test_make_table
+  dict({
+    'vet_observations': list([
+      dict({
+        'animal_id': dict({
+          'field': 'subjid',
+        }),
+        'clinic': 'jericho',
+        'numeric_value': dict({
+          'field': 'weight_kg',
+        }),
+        'observation': 'weight',
+        'vet_name': 'Dr. Lopez',
+        'visit_date': dict({
+          'field': 'date',
+        }),
+      }),
+      dict({
+        'animal_id': dict({
+          'field': 'subjid',
+        }),
+        'clinic': 'jericho',
+        'numeric_value': dict({
+          'field': 'temperature_C',
+        }),
+        'observation': 'temperature',
+        'vet_name': 'Dr. Kamau',
+        'visit_date': dict({
+          'field': 'date',
+        }),
+      }),
+      dict({
+        'animal_id': dict({
+          'field': 'subjid',
+        }),
+        'boolean_value': dict({
+          'caseInsensitive': True,
+          'field': 'vacc_status',
+          'values': dict({
+            'false': False,
+            'true': True,
+          }),
+        }),
+        'clinic': 'jericho',
+        'observation': 'vaccinated',
+        'vet_name': 'Dr. Lopez',
+        'visit_date': dict({
+          'field': 'date',
+        }),
+      }),
+      dict({
+        'animal_id': dict({
+          'field': 'subjid',
+        }),
+        'clinic': 'jericho',
+        'observation': 'behavioural_issue',
+        'string_value': dict({
+          'field': 'reported_issues',
+        }),
+        'vet_name': 'Dr. Lopez',
+        'visit_date': dict({
+          'field': 'date',
+        }),
+      }),
+    ]),
+  })
+# ---

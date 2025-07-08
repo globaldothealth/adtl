@@ -211,7 +211,7 @@ def map_long_table(*args):
 long_value_mapping = ValuesRequest(
     values=[
         FieldMapping(
-            field_name="vaccinated",
+            field_name="vacc_status",
             mapped_values=[
                 ValueMapping(source_value="true", target_value="True"),
                 ValueMapping(source_value="false", target_value="False"),

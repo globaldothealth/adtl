@@ -183,7 +183,7 @@ class LongTableParser(TableParser, LongTableMixin):
             )
         if any(self.mapping["value_col"].isna()):
             raise ValueError(
-                f"Mapping dataframe must not contain NaN values in '{self.value_col}' column."
+                "Mapping dataframe must not contain NaN values in the 'value_col' column."
             )
 
     def single_entry_mapping(self, data: pd.DataFrame) -> dict[str, Any]:
