@@ -19,17 +19,53 @@ ANIMAL_PARSER = ParserGenerator(
     "animals",
     config=Path(CONFIG_PATH),
 )
-WIDE_TABLE_PARSER = WideTableParser(
-    mapping=pd.read_csv("tests/test_autoparser/sources/animals_mapping.csv"),
-    schema=ANIMAL_PARSER.schemas["animals"],
-    table_name="animals",
-    config=ANIMAL_PARSER.config,
-)
 
 
-def test_parsed_choices():
-    parser = WIDE_TABLE_PARSER
+@pytest.fixture
+def wide_parser():
+    return WideTableParser(
+        mapping=pd.read_csv("tests/test_autoparser/sources/animals_mapping.csv"),
+        schema=ANIMAL_PARSER.schemas["animals"],
+        table_name="animals",
+        config=ANIMAL_PARSER.config,
+    )
 
+
+def test_constant_fields(wide_parser):
+    expected = {
+        "identity": False,
+        "name": False,
+        "loc_admin_1": False,
+        "country_iso3": False,
+        "notification_date": False,
+        "classification": False,
+        "case_status": False,
+        "date_of_death": False,
+        "age_years": False,
+        "age_months": False,
+        "sex": False,
+        "pet": False,
+        "chipped": False,
+        "owner": False,
+        "underlying_conditions": False,
+    }
+
+    assert wide_parser.constant_field == expected
+
+
+def test_update_constant_fields(wide_parser):
+    with pytest.raises(ValueError, match="is not a valid schema field"):
+        wide_parser.update_constant_fields({"unknown_field": True})
+
+    with pytest.raises(ValueError, match="must be True or False"):
+        wide_parser.update_constant_fields({"name": "Betty"})
+
+    wide_parser.update_constant_fields({"country_iso3": True})
+
+    assert wide_parser.constant_field["country_iso3"] is True
+
+
+def test_parsed_choices(wide_parser):
     choices = pd.Series(
         data=[
             None,
@@ -81,18 +117,18 @@ def test_parsed_choices():
         ],
     )
 
-    pd.testing.assert_series_equal(choices, parser.parsed_choices, check_names=False)
+    pd.testing.assert_series_equal(
+        choices, wide_parser.parsed_choices, check_names=False
+    )
 
 
-def test_references_definitions():
-    parser = WIDE_TABLE_PARSER
-
+def test_references_definitions(wide_parser):
     ref_def = (
         {'{"non": false, "oui": true}': "Y/N/NK"},
         {"Y/N/NK": {"caseInsensitive": True, "values": {"oui": True, "non": False}}},
     )
 
-    assert parser.references_definitions == ref_def
+    assert wide_parser.references_definitions == ref_def
 
 
 s1 = pd.Series(
@@ -136,19 +172,17 @@ s1 = pd.Series(
         )
     ],
 )
-def test_ref_def(source, expected):
+def test_ref_def(source, expected, wide_parser):
     choices = source.value_counts()
 
     # provide a different dataset than the one in the class
-    answer = WIDE_TABLE_PARSER.refs_defs(choices, 3)
+    answer = wide_parser.refs_defs(choices, 3)
 
     assert answer == expected
 
 
-def test_schema_fields(snapshot):
-    parser = WIDE_TABLE_PARSER
-
-    assert parser.schema_fields == snapshot
+def test_schema_fields(wide_parser, snapshot):
+    assert wide_parser.schema_fields == snapshot
 
 
 @pytest.mark.parametrize(
@@ -221,10 +255,8 @@ def test_schema_fields(snapshot):
         ),
     ],
 )
-def test_single_field_mapping(row, expected):
-    parser = WIDE_TABLE_PARSER
-
-    assert parser.single_field_mapping(row) == expected
+def test_single_field_mapping(row, expected, wide_parser):
+    assert wide_parser.single_field_mapping(row) == expected
 
 
 def test_create_parser(tmp_path, snapshot):

@@ -9,34 +9,17 @@ import numpy as np
 import pandas as pd
 from pydantic import create_model
 
+from ..mixin import LongTableMixin
 from .base_mapper import BaseMapper
 
 
-class LongMapper(BaseMapper):
+class LongMapper(BaseMapper, LongTableMixin):
     """
     Class for creating an intermediate mapping file linking the data dictionary to
     long-format schema's fields and values.
     """
 
     INDEX_FIELD = "source_field"
-
-    @cached_property
-    def common_cols(self) -> str:
-        """Returns the common columns for the long table"""
-        ccs = self.config["long_tables"][self.name].get("common_cols", None)
-        if ccs is None:
-            ccs = self.config["long_tables"][self.name].get("common_fields", {}).keys()
-
-        return ccs
-
-    @property
-    def common_fields(self) -> pd.Series:
-        if not hasattr(self, "_common_fields"):
-            self._common_fields = self.config["long_tables"][self.name].get(
-                "common_fields", {}
-            )
-
-        return self._common_fields
 
     @cached_property
     def common_values_mapped(self) -> pd.Series:
@@ -51,46 +34,22 @@ class LongMapper(BaseMapper):
         return cv.loc[filtered_dict[filtered_dict["variable_name"].notna()].index]
 
     @cached_property
-    def schema_variable_col(self) -> str:
-        """Returns the variable column for the long table"""
-        return self.config["long_tables"][self.name]["variable_col"]
-
-    @cached_property
-    def schema_value_cols(self) -> list[str]:
-        """Returns the value columns for the long table"""
-        return self.config["long_tables"][self.name]["value_cols"]
-
-    @cached_property
-    def other_fields(self) -> list[str]:
-        """Returns the other fields in the schema that are not target fields"""
-        return [
-            f
-            for f in self.schema_properties.keys()
-            if f
-            not in [
-                *self.common_fields.keys(),
-                self.schema_variable_col,
-                *self.schema_value_cols,
-            ]
-        ]
-
-    @cached_property
     def target_values(self) -> pd.Series:
         """Returns the enum values or boolean options for the target schema"""
 
         def _value_options(f):
-            if "boolean" in self.schema_properties[f].get("type", ["str", "null"]):
+            if "boolean" in self.schema_fields[f].get("type", ["str", "null"]):
                 return ["True", "False", "None"]
-            elif "string" in self.schema_properties[f].get("type", ["str", "null"]):
-                return self.schema_properties[f].get("enum", np.nan)
-            elif "array" in self.schema_properties[f].get("type", ["str", "null"]):
-                return self.schema_properties[f].get("items", {}).get("enum", np.nan)
+            elif "string" in self.schema_fields[f].get("type", ["str", "null"]):
+                return self.schema_fields[f].get("enum", np.nan)
+            elif "array" in self.schema_fields[f].get("type", ["str", "null"]):
+                return self.schema_fields[f].get("items", {}).get("enum", np.nan)
             else:
                 return np.nan
 
         return pd.Series(
-            {f: _value_options(f) for f in self.schema_value_cols},
-            self.schema_value_cols,
+            {f: _value_options(f) for f in self.value_cols},
+            self.value_cols,
         )
 
     def _iter_value_tuples(self):
@@ -111,23 +70,23 @@ class LongMapper(BaseMapper):
             "source_description": (str, ...),
             "variable_name": (str, ...),
             "value_col": (
-                Optional[_enum_creator("ValueColEnum", self.schema_value_cols)],
+                Optional[_enum_creator("ValueColEnum", self.value_cols)],
                 None,
             ),
         }
 
-        if self.schema_properties[self.schema_variable_col].get("enum", []):
+        if self.schema_fields[self.variable_col].get("enum", []):
             VarColEnum = _enum_creator(
-                "VarColEnum", self.schema_properties[self.schema_variable_col]["enum"]
+                "VarColEnum", self.schema_fields[self.variable_col]["enum"]
             )
             fields["variable_name"] = (Optional[VarColEnum], None)
 
         # Add arbitrary fields from CSV headers
         for field in self.other_fields:
-            if self.schema_properties[field].get("enum", []):
+            if self.schema_fields[field].get("enum", []):
                 # If the field has an enum, create an Enum type for it
                 EnumType = _enum_creator(
-                    f"{field}Enum", self.schema_properties[field]["enum"]
+                    f"{field}Enum", self.schema_fields[field]["enum"]
                 )
                 fields[field] = (Optional[EnumType], None)
             else:
@@ -191,7 +150,7 @@ class LongMapper(BaseMapper):
         mappings = self.model.map_long_table(
             data_format,
             source_descriptions.tolist(),
-            self.schema_properties[self.schema_variable_col].get("enum", []),
+            self.schema_fields[self.variable_col].get("enum", []),
             self.schema,
         )
 
@@ -275,8 +234,6 @@ class LongMapper(BaseMapper):
         for col, value in self.common_fields.items():
             mapping_dict[col] = value
 
-        mapping_dict.rename(
-            columns={"variable_name": self.schema_variable_col}, inplace=True
-        )
+        mapping_dict.rename(columns={"variable_name": self.variable_col}, inplace=True)
 
         return self.post_process_mapping(mapping_dict, save=save, file_name=file_name)

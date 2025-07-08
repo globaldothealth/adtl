@@ -19,13 +19,13 @@ class WideMapper(BaseMapper):
     @cached_property
     def target_fields(self) -> list[str]:
         """Returns a list of fields in the target schema"""
-        return list(self.schema_properties.keys())
+        return list(self.schema_fields.keys())
 
     @cached_property
     def target_types(self) -> dict[str, list[str]]:
         """Returns the field types of the target schema"""
         return {
-            f: self.schema_properties[f].get("type", ["string", "null"])
+            f: self.schema_fields[f].get("type", ["string", "null"])
             for f in self.target_fields
         }
 
@@ -37,9 +37,9 @@ class WideMapper(BaseMapper):
             if "boolean" in self.target_types[f]:
                 return ["True", "False", "None"]
             elif "string" in self.target_types[f]:
-                return self.schema_properties[f].get("enum", np.nan)
+                return self.schema_fields[f].get("enum", np.nan)
             elif "array" in self.target_types[f]:
-                return self.schema_properties[f].get("items", {}).get("enum", np.nan)
+                return self.schema_fields[f].get("items", {}).get("enum", np.nan)
             else:
                 return np.nan
 

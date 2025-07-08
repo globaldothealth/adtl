@@ -196,13 +196,13 @@ def map_long_table(*args):
     }
     SingleEntry = create_model("SingleEntry", **fields)
 
+    class LongTableRequest(BaseModel):
+        long_table: list[SingleEntry]
+
     fm = []
 
     for i in long_mapping:
         fm.append(SingleEntry.model_validate(i))
-
-    class LongTableRequest(BaseModel):
-        long_table: list[SingleEntry]
 
     mapping = LongTableRequest(long_table=fm)
     return mapping

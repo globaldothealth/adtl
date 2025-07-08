@@ -80,7 +80,7 @@ class BaseMapper(abc.ABC):
             )
 
         self.schema = read_json(self.config["schemas"][table_name])
-        self.schema_properties = self.schema["properties"]
+        self.schema_fields = self.schema["properties"]
 
         self.data_dictionary = format_dict(data_dictionary, config=self.config)
 

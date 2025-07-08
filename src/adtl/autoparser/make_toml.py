@@ -14,6 +14,7 @@ from typing import Any, Union
 
 import pandas as pd
 
+from .mixin import LongTableMixin
 from .toml_writer import dump
 from .util import DEFAULT_CONFIG, parse_llm_mapped_values, read_config_schema, read_data
 
@@ -22,6 +23,8 @@ INPUT_FORMAT = Union[pd.DataFrame, str, Path]
 
 
 class TableParser(abc.ABC):
+    INDEX_FIELD = "target_field"
+
     def __init__(self, mapping: pd.DataFrame, schema: dict, table_name: str, config):
         self.mapping = mapping
         self.schema = schema
@@ -33,7 +36,7 @@ class TableParser(abc.ABC):
     def make_toml_table(self) -> dict[str, Any]: ...
 
     @cached_property
-    def static_field(self) -> dict[str, bool]: ...
+    def constant_field(self) -> dict[str, bool]: ...
 
     @property
     def schema_fields(self):
@@ -46,14 +49,21 @@ class TableParser(abc.ABC):
         s = self.schema_fields
         return {f: s[f].get("type", ["string", "null"]) for f in s}
 
-    def update_static_fields(self, fields: dict[str, bool]) -> None:
-        """Update the static fields for the long table"""
+    @cached_property
+    def parsed_choices(self) -> pd.Series:
+        """Returns the mapped values for each target field"""
+        values = self.mapping.value_mapping.map(parse_llm_mapped_values)
+        values.index = self.mapping[self.INDEX_FIELD]
+        return values
+
+    def update_constant_fields(self, fields: dict[str, bool]) -> None:
+        """Update the constant fields for the long table"""
         for field, value in fields.items():
-            if field not in self.static_field:
+            if field not in self.constant_field:
                 raise ValueError(f"Field '{field}' is not a valid schema field.")
             if value not in [True, False]:
                 raise ValueError(f"Value for field '{field}' must be True or False.")
-            self.static_field[field] = value
+            self.constant_field[field] = value
 
 
 class WideTableParser(TableParser):
@@ -62,19 +72,12 @@ class WideTableParser(TableParser):
     """
 
     @cached_property
-    def static_field(self) -> dict[str, bool]:
+    def constant_field(self) -> dict[str, bool]:
         """
         If a column in the mapping file should be pulled from a schema field, True,
         otherwise False
         """
         return {col: False for col in self.schema_fields}
-
-    @cached_property
-    def parsed_choices(self) -> pd.Series:
-        """Returns the mapped values for each target field"""
-        choices = self.mapping.value_mapping.map(parse_llm_mapped_values)
-        choices.index = self.mapping.target_field
-        return choices
 
     @cached_property
     def references_definitions(self) -> tuple[dict[str, str], dict[str, dict]]:
@@ -138,7 +141,7 @@ class WideTableParser(TableParser):
                 if not any(field_matches["source_field"].isna()):
                     outmap[field] = self.single_field_mapping(field_matches.iloc[0])
 
-            else:  # combinedType
+            else:  # pragma: no cover
                 raise NotImplementedError("CombinedType not supported")
 
         # check for missing required fields
@@ -154,55 +157,15 @@ class WideTableParser(TableParser):
         return {self.name: outmap}, self.references_definitions[1]
 
 
-class LongTableParser(TableParser):
+class LongTableParser(TableParser, LongTableMixin):
     """
     Class for generating a long table from the mappings.
     """
 
-    @cached_property
-    def parsed_choices(self) -> pd.Series:
-        """Returns the mapped values for each target field"""
-        values = self.mapping.value_mapping.map(parse_llm_mapped_values)
-        values.index = self.mapping.source_field
-        return values
-
-    @property
-    def other_fields(self) -> list[str]:
-        """Returns the other fields in the schema that are not target fields"""
-        return [
-            f
-            for f in self.schema_fields
-            # shouldn't hard code these, but for now this is fine
-            if f not in [*self.common_cols, self.variable_col, *self.value_cols]
-        ]
-
-    @property
-    def common_cols(self) -> str:
-        """Returns the common columns for the long table"""
-        if not hasattr(self, "_common_cols"):
-            ccs = self.config["long_tables"][self.name].get("common_cols", None)
-            if ccs is None:
-                ccs = (
-                    self.config["long_tables"][self.name]
-                    .get("common_fields", {})
-                    .keys()
-                )
-
-            self._common_cols = ccs
-        return self._common_cols
-
-    @property
-    def variable_col(self) -> str:
-        """Returns the variable column for the long table"""
-        return self.config["long_tables"][self.name]["variable_col"]
-
-    @property
-    def value_cols(self) -> list[str]:
-        """Returns the value columns for the long table"""
-        return self.config["long_tables"][self.name]["value_cols"]
+    INDEX_FIELD = "source_field"
 
     @cached_property
-    def static_field(self) -> dict[str, bool]:
+    def constant_field(self) -> dict[str, bool]:
         """If a column in the mapping file should be pulled from a schema field, True, otherwise False"""
         config = {col: False for col in self.schema_fields}
         config[self.variable_col] = True
@@ -228,7 +191,7 @@ class LongTableParser(TableParser):
 
         def add_field(field, text: str) -> Any:
             """Check if a field should be added to the output"""
-            if self.static_field.get(field, False):
+            if self.constant_field.get(field, False):
                 return text
             return {"field": text}
 
@@ -294,7 +257,7 @@ class ParserGenerator:
         parser_name: str,
         description: Union[str, None] = None,
         config: Union[Path, None] = None,
-        static_fields: Union[dict[str, dict[str, bool]], None] = None,
+        constant_fields: Union[dict[str, dict[str, bool]], None] = None,
     ):
         if not isinstance(mappings, dict):
             # if not a dict, assume a single mapping file
@@ -333,7 +296,7 @@ class ParserGenerator:
             for t, m in self.mappings.items()
         }
 
-        self.static_fields = static_fields or {}
+        self.constant_fields = constant_fields or {}
 
     def header(self) -> dict[str, Any]:
         "The ADTL-specific header for the TOML file"
@@ -382,8 +345,8 @@ class ParserGenerator:
                 table,
                 self.config,
             )
-            if self.static_fields:
-                parser_class.update_static_fields(self.static_fields.get(table, {}))
+            if self.constant_fields:
+                parser_class.update_constant_fields(self.constant_fields.get(table, {}))
 
             table_parser, references = parser_class.make_toml_table()
             data.update(table_parser)
@@ -490,4 +453,4 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pragma: no cover
