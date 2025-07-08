@@ -27,7 +27,7 @@ class LongMapper(BaseMapper, LongTableMixin):
             filtered_dict = self.filtered_data_dict
         except AttributeError:
             raise AttributeError(
-                "fields have to be mapped using the `match_fields_to_schema` method"
+                "Fields have to be mapped using the `match_fields_to_schema` method"
                 " first"
             )
         cv = self.common_values

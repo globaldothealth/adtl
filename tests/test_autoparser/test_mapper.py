@@ -414,6 +414,20 @@ def test_create_mapping(monkeypatch, tmp_path):
     assert (tmp_path / "test_animals_mapping.csv").exists()
 
 
+def test_create_mapping_wrong_table_format():
+    with pytest.raises(ValueError, match="Invalid table format"):
+        create_mapping(
+            "",
+            "",
+            language="fr",
+            api_key="1a2b3c4d",
+            save=True,
+            file_name="",
+            table_format="fish",  # invalid format
+            config=None,
+        )
+
+
 @pytest.mark.filterwarnings("ignore:The following schema fields have not been mapped")
 def test_main_cli(monkeypatch, tmp_path):
     ARGV = [

@@ -144,6 +144,14 @@ def test_set_common_fields_mismatch_raises(mapper):
         mapper.set_common_fields({"wrong_field": "DRC"})
 
 
+def test_common_values_mapped_missing(mapper):
+    with pytest.raises(
+        AttributeError,
+        match="Fields have to be mapped using the `match_fields_to_schema`",
+    ):
+        mapper.common_values_mapped
+
+
 def test_target_values(mapper):
     pd.testing.assert_series_equal(
         mapper.target_values,
@@ -219,6 +227,11 @@ def test_create_mapping_success(common_fields_mapper):
         result = common_fields_mapper.create_mapping(save=False)
         assert isinstance(result, pd.DataFrame)
         assert result.index.name == "source_field"
+
+
+def test_create_mapping_failure(mapper):
+    with pytest.raises(ValueError, match="Common fields must be set"):
+        mapper.create_mapping(save=False)
 
 
 def test_missing_variable_col_raises(mock_data_dict, mock_config):
