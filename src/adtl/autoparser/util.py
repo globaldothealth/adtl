@@ -20,7 +20,7 @@ from adtl.autoparser.language_models.openai import OpenAILanguageModel
 DEFAULT_CONFIG = "config/autoparser.toml"
 
 
-def read_config_schema(path: dict | str | Path) -> Dict:
+def read_schema(path: dict | str | Path) -> Dict:
     if isinstance(path, dict):
         return path
 
@@ -33,9 +33,7 @@ def read_config_schema(path: dict | str | Path) -> Dict:
         with path.open("rb") as fp:
             return tomli.load(fp)
     else:
-        raise ValueError(
-            f"read_config_schema(): Unsupported file format: {path.suffix}"
-        )
+        raise ValueError(f"read_schema(): Unsupported file format: {path.suffix}")
 
 
 def read_json(file: str | Path) -> dict:

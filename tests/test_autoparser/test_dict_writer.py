@@ -1,14 +1,13 @@
 # tests the `DictWriter` class
 from __future__ import annotations
 
-from pathlib import Path
-
 import pandas as pd
 import pytest
 from pandera.errors import SchemaError
 from testing_data_animals import TestLLM
 
 import adtl.autoparser as autoparser
+from adtl.autoparser import setup_config
 from adtl.autoparser.dict_writer import DictWriter, main
 from adtl.autoparser.language_models.openai import OpenAILanguageModel
 
@@ -18,8 +17,21 @@ SCHEMAS = "tests/test_autoparser/schemas/"
 
 
 @pytest.fixture
-def writer():
-    return DictWriter(config=CONFIG_PATH)
+def config():
+    """Fixture to load the configuration for the autoparser."""
+    setup_config(
+        {
+            "name": "test_autoparser",
+            "choice_delimiter": ",",
+            "max_common_count": 8,
+            "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
+        }
+    )
+
+
+@pytest.fixture
+def writer(config):
+    return DictWriter()
 
 
 def test_unsupported_data_format_txt(writer):
@@ -32,11 +44,6 @@ def test_data_not_df_or_path(writer):
         writer.create_dict(None)
 
 
-def test_error_config_missing_max_common_count():
-    with pytest.raises(ValueError, match="'max_common_count' not found in config file"):
-        DictWriter(config=SOURCES + "config_missing_common_count.toml")
-
-
 def test_dictionary_creation_no_descrip(writer):
     df = writer.create_dict(SOURCES + "animal_data.csv")
 
@@ -45,8 +52,8 @@ def test_dictionary_creation_no_descrip(writer):
     pd.testing.assert_frame_equal(df, df_desired)
 
 
-def test_create_dict_no_descrip():
-    df = autoparser.create_dict(SOURCES + "animal_data.csv", config=CONFIG_PATH)
+def test_create_dict_no_descrip(config):
+    df = autoparser.create_dict(SOURCES + "animal_data.csv")
 
     df_desired = pd.read_csv(SOURCES + "animals_dd.csv")
 
@@ -90,21 +97,19 @@ def test_dictionary_description(writer):
 
 def test_missing_key_error():
     with pytest.raises(ValueError, match="API key required"):
-        DictWriter(config=Path(CONFIG_PATH)).generate_descriptions(
-            "fr", SOURCES + "animals_dd.csv"
-        )
+        DictWriter().generate_descriptions("fr", SOURCES + "animals_dd.csv")
 
 
 def test_wrong_llm_error():
     with pytest.raises(ValueError, match="Unsupported LLM provider: fish"):
-        DictWriter(config=Path(CONFIG_PATH)).generate_descriptions(
+        DictWriter().generate_descriptions(
             "fr", SOURCES + "animals_dd.csv", key="a12b3c", llm_provider="fish"
         )
 
 
 def test_init_with_llm():
     # test no errors occur
-    writer = DictWriter(config=Path(CONFIG_PATH), api_key="1234", llm_provider="openai")
+    writer = DictWriter(api_key="1234", llm_provider="openai")
     assert isinstance(writer.model, OpenAILanguageModel)
 
 
@@ -198,9 +203,8 @@ def test_main_cli_error_descrip_no_apikey(tmp_path):
 class DictTest(DictWriter):
     # override the __init__ method to avoid calling any LLM API's, and fill with dummy
     # data from testing_data.py
-    def __init__(self, config, llm_provider=None, api_key=None):
+    def __init__(self, llm_provider=None, api_key=None):
         super().__init__(
-            config,
             llm_provider,
             api_key,
         )

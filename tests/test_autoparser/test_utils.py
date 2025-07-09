@@ -12,32 +12,13 @@ from adtl.autoparser.util import (
     check_matches,
     load_data_dict,
     parse_llm_mapped_values,
-    read_config_schema,
+    read_schema,
     setup_llm,
 )
 
-CONFIG = read_config_schema(Path("tests/test_autoparser/test_config.toml"))
 
-
-def test_read_config_schema():
-    data = read_config_schema(Path("tests/test_autoparser/test_config.toml"))
-    assert isinstance(data, dict)
-    npt.assert_array_equal(
-        list(data.keys()),
-        [
-            "name",
-            "description",
-            "llm_provider",
-            "choice_delimiter",
-            "choice_delimiter_map",
-            "num_refs",
-            "max_common_count",
-            "schemas",
-            "column_mappings",
-        ],
-    )
-
-    data = read_config_schema(Path("tests/test_autoparser/schemas/animals.schema.json"))
+def test_read_schema():
+    data = read_schema(Path("tests/test_autoparser/schemas/animals.schema.json"))
     assert isinstance(data, dict)
     npt.assert_array_equal(
         ["$schema", "$id", "title", "description", "required", "properties"],
@@ -45,9 +26,7 @@ def test_read_config_schema():
     )
 
     with pytest.raises(ValueError, match="Unsupported file format: .csv"):
-        read_config_schema(
-            Path("tests/test_autoparser/sources/animals_dd_described.csv")
-        )
+        read_schema(Path("tests/test_autoparser/sources/animals_dd_described.csv"))
 
 
 @pytest.mark.parametrize(

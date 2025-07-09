@@ -13,10 +13,7 @@ from pandera.typing.pandas import DataFrame
 
 from .config.config import get_config
 from .data_dict_schema import DataDictionaryEntry, DataDictionaryProcessed
-from .util import (
-    DEFAULT_CONFIG,
-    read_data,
-)
+from .util import DEFAULT_CONFIG, read_data
 
 
 class DictReader:

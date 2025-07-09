@@ -10,12 +10,9 @@ import pandas as pd
 from ..config.config import get_config
 from ..dict_reader import format_dict
 from ..util import (
-    DEFAULT_CONFIG,
     read_json,
     setup_llm,
 )
-
-CONFIG = "../" + DEFAULT_CONFIG
 
 
 class BaseMapper(abc.ABC):
