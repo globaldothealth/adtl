@@ -115,6 +115,12 @@ class LongMapper(BaseMapper, LongTableMixin):
                 "Please set 'variable_col' in the config file."
             )
 
+        if self.schema_fields[self.variable_col].get("enum") is None:
+            raise ValueError(
+                f"Variable column '{self.variable_col}' in schema does not have an enum set. "
+                "Please set 'enum' in the schema for this field."
+            )
+
     def set_common_fields(self, common_fields: dict[str, str]):
         """
         Function to assign fields to the common fields of the long table - i.e. fields

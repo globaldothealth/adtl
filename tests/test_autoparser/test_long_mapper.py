@@ -89,7 +89,7 @@ def mock_config():
         },
         "long_tables": {
             "vet_observations": {
-                "common_cols": ["animal_id", "visit_date", "clinic"],
+                "common_cols": ["animal_id", "visit_date"],
                 "variable_col": "observation",
                 "value_cols": ["string_value", "boolean_value", "numeric_value"],
             }
@@ -115,9 +115,7 @@ def mapper(mock_data_dict, mock_config):
 
 @pytest.fixture
 def common_fields_mapper(mapper):
-    mapper.set_common_fields(
-        {"animal_id": "subjid", "visit_date": "date", "clinic": "jericho"}
-    )
+    mapper.set_common_fields({"animal_id": "subjid", "visit_date": "Yesterday"})
     return mapper
 
 
@@ -133,10 +131,9 @@ def test_check_config_valid(mapper):
 def test_set_common_fields_valid(common_fields_mapper):
     assert common_fields_mapper.common_fields == {
         "animal_id": "subjid",
-        "visit_date": "date",
-        "clinic": "jericho",
+        "visit_date": "Yesterday",
     }
-    assert common_fields_mapper.common_cols == ["animal_id", "visit_date", "clinic"]
+    assert common_fields_mapper.common_cols == ["animal_id", "visit_date"]
 
 
 def test_set_common_fields_mismatch_raises(mapper):
@@ -192,6 +189,10 @@ def test_create_data_structure(common_fields_mapper):
             None,
         ),
         "vet_name": (Optional[str], None),
+        "clinic": (
+            Optional[Enum("clinicEnum", ["summertown", "jericho", "cowley", "botley"])],
+            None,
+        ),
     }
     SingleEntry = create_model("SingleEntry", **fields)
     data_structure = common_fields_mapper._create_data_structure()
@@ -229,9 +230,18 @@ def test_create_mapping_success(common_fields_mapper):
         assert result.index.name == "source_field"
 
 
-def test_create_mapping_failure(mapper):
+def test_create_mapping_failure_fields_not_set(mapper):
     with pytest.raises(ValueError, match="Common fields must be set"):
         mapper.create_mapping(save=False)
+
+
+def test_create_mapping_failure_no_enum_fields(common_fields_mapper):
+    del common_fields_mapper.schema_fields[common_fields_mapper.variable_col]["enum"]
+
+    with pytest.raises(
+        ValueError, match="'observation' in schema does not have an enum set"
+    ):
+        common_fields_mapper.create_mapping(save=False)
 
 
 def test_missing_variable_col_raises(mock_data_dict, mock_config):
