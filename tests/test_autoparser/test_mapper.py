@@ -10,7 +10,7 @@ import pytest
 from pandera.errors import SchemaError
 from testing_data_animals import TestLLM
 
-from adtl.autoparser import create_mapping
+from adtl.autoparser import create_mapping, setup_config
 from adtl.autoparser.language_models.openai import OpenAILanguageModel
 from adtl.autoparser.mapping.interface import WideMapper, main
 
@@ -28,7 +28,6 @@ class MapperTest(WideMapper):
         api_key="1234",  # dummy API key
         llm_provider=None,
         llm_model=None,
-        config=CONFIG_PATH,
     ):
         super().__init__(
             data_dictionary,
@@ -37,14 +36,25 @@ class MapperTest(WideMapper):
             api_key=api_key,  # dummy API key
             llm_provider=llm_provider,
             llm_model=llm_model,
-            config=config,
         )
 
         self.model = TestLLM()
 
 
 @pytest.fixture
-def mapper():
+def config():
+    """Fixture to load the configuration for the autoparser."""
+    setup_config(
+        {
+            "name": "test_autoparser",
+            "max_common_count": 8,
+            "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
+        }
+    )
+
+
+@pytest.fixture
+def mapper(config):
     return MapperTest(
         "tests/test_autoparser/sources/animals_dd_described.parquet",
         "animals",
@@ -241,13 +251,12 @@ def test_mapper_class_init_raises():
         )
 
 
-def test_mapper_class_init_with_llm():
+def test_mapper_class_init_with_llm(config):
     mapper = WideMapper(
         "tests/test_autoparser/sources/animals_dd_described.parquet",
         "animals",
         language="fr",
         api_key="abcd",
-        config=CONFIG_PATH,
     )
 
     assert mapper.language == "fr"
@@ -328,12 +337,11 @@ def test_match_values_to_schema_dummy_data(mapper):
     }
 
 
-def test_match_values_to_schema_choices():
+def test_match_values_to_schema_choices(config):
     mapper = MapperTest(
         "tests/test_autoparser/sources/animals_dd_choices.csv",
         "animals",
         "fr",
-        config="tests/test_autoparser/test_config.toml",
     )
 
     with pytest.warns(UserWarning, match="schema fields have not been mapped"):
@@ -398,7 +406,7 @@ def test_class_create_mapping_save(tmp_path, mapper):
 
 
 @pytest.mark.filterwarnings("ignore:The following schema fields have not been mapped")
-def test_create_mapping(monkeypatch, tmp_path):
+def test_create_mapping(monkeypatch, tmp_path, config):
     monkeypatch.setattr("adtl.autoparser.mapping.interface.WideMapper", MapperTest)
 
     create_mapping(
@@ -408,7 +416,6 @@ def test_create_mapping(monkeypatch, tmp_path):
         api_key="1a2b3c4d",
         save=True,
         file_name=str(tmp_path / "test_animals_mapping.csv"),
-        config=CONFIG_PATH,
     )
 
     assert (tmp_path / "test_animals_mapping.csv").exists()
@@ -424,7 +431,6 @@ def test_create_mapping_wrong_table_format():
             save=True,
             file_name="",
             table_format="fish",  # invalid format
-            config=None,
         )
 
 

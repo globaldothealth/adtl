@@ -10,6 +10,7 @@ from typing import Literal, Union
 
 import pandas as pd
 
+from ..config.config import setup_config
 from ..util import DEFAULT_CONFIG
 from .long_mapper import LongMapper
 from .wide_mapper import WideMapper
@@ -21,7 +22,6 @@ def create_mapping(
     data_dictionary: Union[str, pd.DataFrame],
     table_name: str,
     api_key: str,
-    config: Union[Path, None] = None,
     save: bool = True,
     file_name: str = "mapping_file",
     table_format: Literal["wide", "long"] = "wide",
@@ -78,7 +78,6 @@ def create_mapping(
         api_key=api_key,
         llm_provider=llm_provider,
         llm_model=llm_model,
-        config=config,
     ).create_mapping(save=save, file_name=file_name)
 
     return df
@@ -118,6 +117,9 @@ def main(argv=None):
         "--long-table", help="The target table has a long format", action="store_true"
     )
     args = parser.parse_args(argv)
+
+    setup_config(args.config or CONFIG)
+
     create_mapping(
         data_dictionary=args.dictionary,
         table_name=args.table_name,
@@ -125,7 +127,6 @@ def main(argv=None):
         api_key=args.api_key,
         llm_provider=args.llm_provider,
         llm_model=args.llm_model,
-        config=args.config,
         save=True,
         file_name=args.output,
         table_format="long" if args.long_table else "wide",

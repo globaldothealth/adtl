@@ -99,17 +99,17 @@ class LongMapper(BaseMapper, LongTableMixin):
         """
         Check that the config file has the correct fields for the long table.
         """
-        if "long_tables" not in self.config:
+        if self.config.long_tables is None:
             raise ValueError(
                 "No long tables defined in config file. Please set 'long_tables' in the config file."
             )
-        if self.name not in self.config["long_tables"]:
+        if self.name not in self.config.long_tables:
             raise ValueError(
                 f"Long table {self.name} not defined in config file. "
                 "Please set 'long_tables' in the config file."
             )
 
-        if "variable_col" not in self.config["long_tables"][self.name]:
+        if self.config.long_tables[self.name].variable_col is None:
             raise ValueError(
                 f"Variable column not set in config for long table {self.name}. "
                 "Please set 'variable_col' in the config file."

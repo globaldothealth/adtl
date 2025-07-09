@@ -2,16 +2,15 @@ from __future__ import annotations
 
 import abc
 from functools import cached_property
-from pathlib import Path
 from typing import Literal, Union
 
 import numpy as np
 import pandas as pd
 
+from ..config.config import get_config
 from ..dict_reader import format_dict
 from ..util import (
     DEFAULT_CONFIG,
-    read_config_schema,
     read_json,
     setup_llm,
 )
@@ -57,15 +56,14 @@ class BaseMapper(abc.ABC):
         language: Union[str, None] = None,
         llm_provider: Union[Literal["openai", "gemini"], None] = None,
         llm_model: Union[str, None] = None,
-        config: Union[Path, None] = None,
     ):
         self.name = table_name
 
-        self.config = read_config_schema(config or Path(Path(__file__).parent, CONFIG))
+        self.config = get_config()
 
-        self.language = language or self.config.get("language", None)
-        self.llm_provider = llm_provider or self.config.get("llm_provider", None)
-        self.llm_model = llm_model or self.config.get("llm_model", None)
+        self.language = language or self.config.language
+        self.llm_provider = llm_provider or self.config.llm_provider
+        self.llm_model = llm_model or self.config.llm_model
 
         if self.language is None:
             raise ValueError(
@@ -79,10 +77,10 @@ class BaseMapper(abc.ABC):
                 api_key, provider=self.llm_provider, model=self.llm_model
             )
 
-        self.schema = read_json(self.config["schemas"][table_name])
+        self.schema = read_json(self.config.schemas[table_name])
         self.schema_fields = self.schema["properties"]
 
-        self.data_dictionary = format_dict(data_dictionary, config=self.config)
+        self.data_dictionary = format_dict(data_dictionary)
 
     # Abstract methods ---------------------------------------
 

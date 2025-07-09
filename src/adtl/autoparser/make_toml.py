@@ -14,6 +14,7 @@ from typing import Any, Union
 
 import pandas as pd
 
+from .config.config import get_config, setup_config
 from .mixin import LongTableMixin
 from .toml_writer import dump
 from .util import DEFAULT_CONFIG, parse_llm_mapped_values, read_config_schema, read_data
@@ -25,11 +26,11 @@ INPUT_FORMAT = Union[pd.DataFrame, str, Path]
 class TableParser(abc.ABC):
     INDEX_FIELD = "target_field"
 
-    def __init__(self, mapping: pd.DataFrame, schema: dict, table_name: str, config):
+    def __init__(self, mapping: pd.DataFrame, schema: dict, table_name: str):
         self.mapping = mapping
         self.schema = schema
         self.name = table_name
-        self.config = config
+        self.config = get_config()
 
     def single_field_mapping(self): ...
 
@@ -84,7 +85,7 @@ class WideTableParser(TableParser):
         """Finds and returns the references and definitions for the mappings"""
         # use value_counts() on parsed_choices normalise various flavours of Y/N/NK
         value_counts = self.parsed_choices.value_counts()
-        return self.refs_defs(value_counts, self.config["num_refs"])
+        return self.refs_defs(value_counts, self.config.num_refs)
 
     def refs_defs(self, choices, num_refs):
         references = {}
@@ -256,7 +257,6 @@ class ParserGenerator:
         schema_path: Union[Path, str],
         parser_name: str,
         description: Union[str, None] = None,
-        config: Union[Path, None] = None,
         constant_fields: Union[dict[str, dict[str, bool]], None] = None,
     ):
         if not isinstance(mappings, dict):
@@ -267,10 +267,8 @@ class ParserGenerator:
         self.parser_name = parser_name
         self.parser_description = description or parser_name
 
-        self.config = read_config_schema(
-            config or Path(Path(__file__).parent, DEFAULT_CONFIG)
-        )
-        self.tables = list(self.config["schemas"].keys())
+        self.config = get_config()
+        self.tables = list(self.config.schemas.keys())
 
         if len(self.tables) == 1:
             # if only one table, use the singular form
@@ -287,7 +285,7 @@ class ParserGenerator:
             }
 
         self.schemas = {
-            t: read_config_schema(Path(schema_path, self.config["schemas"][t]))
+            t: read_config_schema(Path(schema_path, self.config.schemas[t]))
             for t in self.tables
         }
 
@@ -306,7 +304,7 @@ class ParserGenerator:
                 "kind": (
                     "oneToOne" if self.table_types[table] == "wide" else "oneToMany"
                 ),
-                "schema": f"{self.schema_path / Path(self.config['schemas'][table])}",
+                "schema": f"{self.schema_path / Path(self.config.schemas[table])}",
             }
 
         return {
@@ -343,7 +341,6 @@ class ParserGenerator:
                 self.mappings[table],
                 self.schemas[table],
                 table,
-                self.config,
             )
             if self.constant_fields:
                 parser_class.update_constant_fields(self.constant_fields.get(table, {}))
@@ -384,7 +381,6 @@ def create_parser(
     schema_path: Path,
     parser_name: str,
     description: Union[str, None] = None,
-    config=DEFAULT_CONFIG,
 ):
     """
     Takes the csv mapping file created by `create_mapping` and writes out a TOML parser
@@ -415,7 +411,6 @@ def create_parser(
         schema_path,
         parser_name,
         description,
-        Path(config),
     ).create_parser(parser_name)
 
 
@@ -443,12 +438,13 @@ def main(argv=None):
 
     schema_path = Path(args.schema_path)
 
+    setup_config(args.config or DEFAULT_CONFIG)
+
     ParserGenerator(
         args.mappings,
         schema_path,
         args.output,
         args.description or None,
-        args.config or None,
     ).create_parser()
 
 

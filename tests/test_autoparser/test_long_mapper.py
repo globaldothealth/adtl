@@ -8,7 +8,8 @@ import pytest
 from pydantic import create_model
 from testing_data_animals import TestLLM, long_value_mapping
 
-from adtl.autoparser import LongMapper
+from adtl.autoparser import LongMapper, setup_config
+from adtl.autoparser.config.config import get_config
 
 # --------------------------
 # Fixtures
@@ -67,38 +68,28 @@ def mock_data_dict():
     )
 
 
-@pytest.fixture
-def mock_config():
-    return {
-        "name": "Test Config",
-        "description": "A test configuration for LongMapper",
-        "llm_provider": "openai",
-        "choice_delimiter": ", ",
-        "choice_delimiter_map": "=",
-        "num_refs": 3,
-        "max_common_count": 8,
-        "schemas": {
-            "vet_observations": "tests/test_autoparser/schemas/vet-obs.schema.json"
-        },
-        "column_mappings": {
-            "source_field": "Field Name",
-            "source_description": "Description",
-            "source_type": "Type",
-            "common_values": "Common Values",
-            "choices": "Choices",
-        },
-        "long_tables": {
-            "vet_observations": {
-                "common_cols": ["animal_id", "visit_date"],
-                "variable_col": "observation",
-                "value_cols": ["string_value", "boolean_value", "numeric_value"],
-            }
-        },
-    }
+@pytest.fixture(autouse=True)
+def config():
+    setup_config(
+        {
+            "name": "Test Config",
+            "max_common_count": 8,
+            "schemas": {
+                "vet_observations": "tests/test_autoparser/schemas/vet-obs.schema.json"
+            },
+            "long_tables": {
+                "vet_observations": {
+                    "common_cols": ["animal_id", "visit_date"],
+                    "variable_col": "observation",
+                    "value_cols": ["string_value", "boolean_value", "numeric_value"],
+                }
+            },
+        }
+    )
 
 
 @pytest.fixture
-def mapper(mock_data_dict, mock_config):
+def mapper(mock_data_dict):
     mapper = LongMapper(
         data_dictionary=mock_data_dict,
         table_name="vet_observations",
@@ -106,7 +97,6 @@ def mapper(mock_data_dict, mock_config):
         api_key="1234",  # dummy API key
         llm_provider=None,
         llm_model=None,
-        config=mock_config,
     )
 
     mapper.model = TestLLM()
@@ -244,9 +234,9 @@ def test_create_mapping_failure_no_enum_fields(common_fields_mapper):
         common_fields_mapper.create_mapping(save=False)
 
 
-def test_missing_variable_col_raises(mock_data_dict, mock_config):
-    config = mock_config
-    del config["long_tables"]["vet_observations"]["variable_col"]
+def test_missing_variable_col_raises(mock_data_dict):
+    config = get_config()
+    config.long_tables["vet_observations"].variable_col = None
 
     with pytest.raises(ValueError, match="Variable column not set in config"):
         LongMapper(
@@ -256,5 +246,4 @@ def test_missing_variable_col_raises(mock_data_dict, mock_config):
             api_key="1234",  # dummy API key
             llm_provider=None,
             llm_model=None,
-            config=config,
         )._check_config()

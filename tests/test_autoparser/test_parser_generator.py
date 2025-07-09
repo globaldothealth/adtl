@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pathlib import Path
+import json
 
 import numpy as np
 import pandas as pd
@@ -8,26 +8,32 @@ import pytest
 import tomli
 
 import adtl.autoparser as autoparser
-from adtl.autoparser import ParserGenerator
+from adtl.autoparser import ParserGenerator, setup_config
 from adtl.autoparser import make_toml_main as main
 from adtl.autoparser.make_toml import WideTableParser
 
-CONFIG_PATH = "tests/test_autoparser/test_config.toml"
-ANIMAL_PARSER = ParserGenerator(
-    "tests/test_autoparser/sources/animals_mapping.csv",
-    "",
-    "animals",
-    config=Path(CONFIG_PATH),
-)
+
+@pytest.fixture(autouse=True)
+def config():
+    """Fixture to load the configuration for the autoparser."""
+    setup_config(
+        {
+            "name": "test_autoparser",
+            "max_common_count": 8,
+            "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
+        }
+    )
 
 
 @pytest.fixture
 def wide_parser():
+    with open("tests/test_autoparser/schemas/animals.schema.json", "r") as f:
+        schema = json.load(f)
+
     return WideTableParser(
         mapping=pd.read_csv("tests/test_autoparser/sources/animals_mapping.csv"),
-        schema=ANIMAL_PARSER.schemas["animals"],
+        schema=schema,
         table_name="animals",
-        config=ANIMAL_PARSER.config,
     )
 
 
@@ -260,7 +266,11 @@ def test_single_field_mapping(row, expected, wide_parser):
 
 
 def test_create_parser(tmp_path, snapshot):
-    parser = ANIMAL_PARSER
+    parser = ParserGenerator(
+        "tests/test_autoparser/sources/animals_mapping.csv",
+        "",
+        "animals",
+    )
 
     file = tmp_path / "test.toml"
 
@@ -280,7 +290,6 @@ def test_create_parser_ap_access(tmp_path, snapshot):
         "tests/test_autoparser/sources/animals_mapping.csv",
         "",
         str(file),
-        config=CONFIG_PATH,
     )
 
     with file.open("rb") as fp:
@@ -297,7 +306,7 @@ def test_main_cli(tmp_path):
         "-o",
         str(tmp_path / "animals"),
         "-c",
-        CONFIG_PATH,
+        "tests/test_autoparser/test_config.toml",
     ]
 
     main(ARGV)
