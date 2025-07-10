@@ -73,6 +73,7 @@ def config():
         {
             "name": "Test Config",
             "max_common_count": 8,
+            "api_key": "1234",  # dummy API key
             "schemas": {
                 "vet_observations": "tests/test_autoparser/schemas/vet-obs.schema.json"
             },
@@ -92,7 +93,6 @@ def mapper(mock_data_dict):
     mapper = LongMapper(
         data_dictionary=mock_data_dict,
         table_name="vet_observations",
-        api_key="1234",  # dummy API key
     )
 
     mapper.model = TestLLM()

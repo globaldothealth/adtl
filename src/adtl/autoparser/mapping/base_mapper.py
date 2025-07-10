@@ -9,7 +9,7 @@ import pandas as pd
 
 from ..config.config import get_config
 from ..dict_reader import format_dict
-from ..util import read_json, setup_llm
+from ..util import read_json
 
 
 class BaseMapper(abc.ABC):
@@ -26,35 +26,17 @@ class BaseMapper(abc.ABC):
         The data dictionary to use
     table_name
         The name of the table to map to
-    language
-        The language of the raw data (e.g. 'fr', 'en', 'es')
-    api_key
-        The API key to use for the LLM
-    llm_provider
-        The LLM API to use, currently only 'openai' and 'gemini' are supported
-    llm_model
-        The LLM model to use. If not provided, a default for the given provider will be
-        used.
     """
 
     INDEX_FIELD = "target_field"
 
-    def __init__(
-        self,
-        data_dictionary: Union[str, pd.DataFrame],
-        table_name: str,
-        *,
-        api_key: str,
-    ):
+    def __init__(self, data_dictionary: Union[str, pd.DataFrame], table_name: str):
         self.name = table_name
 
         self.config = get_config()
 
         self.language = self.config.language
-        self.llm_provider = self.config.llm_provider
-        self.llm_model = self.config.llm_model
-
-        self.model = setup_llm(api_key, self.config)
+        self.model = self.config._llm
 
         self.schema = read_json(self.config.schemas[table_name])
         self.schema_fields = self.schema["properties"]

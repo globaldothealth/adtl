@@ -10,6 +10,7 @@ description = "Autoparser config for generating CSV mappings and TOML"
 
 # provide one, other or both of these
 llm_provider = "openai"
+api_key = "1a2s3c4d"
 
 choice_delimiter = ","
 choice_delimiter_map = "="

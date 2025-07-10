@@ -1,6 +1,8 @@
 # tests the `DictWriter` class
 from __future__ import annotations
 
+import json
+
 import pandas as pd
 import pytest
 from pandera.errors import SchemaError
@@ -24,6 +26,8 @@ def config():
         {
             "name": "test_autoparser",
             "language": "fr",
+            "llm_provider": "openai",
+            "api_key": "1234",
             "choice_delimiter": ",",
             "max_common_count": 8,
             "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
@@ -97,9 +101,9 @@ def test_dictionary_description(writer):
     pd.testing.assert_frame_equal(df, df_desired)
 
 
-def test_missing_key_error():
-    with pytest.raises(ValueError, match="API key required"):
-        DictWriter().generate_descriptions(data_dict=SOURCES + "animals_dd.csv")
+# def test_missing_key_error():
+#     with pytest.raises(ValueError, match="API key required"):
+#         DictWriter().generate_descriptions(data_dict=SOURCES + "animals_dd.csv")
 
 
 def test_wrong_llm_error():
@@ -107,9 +111,9 @@ def test_wrong_llm_error():
         setup_config({"llm_provider": "fish"})
 
 
-def test_init_with_llm():
+def test_init_with_llm(config):
     # test no errors occur
-    writer = DictWriter(api_key="1234")
+    writer = DictWriter()
     assert isinstance(writer.model, OpenAILanguageModel)
 
 
@@ -185,11 +189,21 @@ def test_main_cli(tmp_path):
 
 
 def test_main_cli_error_descrip_no_apikey(tmp_path):
+    conf = {
+        "name": "test_autoparser",
+        "language": "fr",
+        "llm_provider": "openai",
+        "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
+    }
+
+    with open(str(tmp_path / "config.json"), "w") as fp:
+        json.dump(conf, fp)
+
     ARGV = [
         SOURCES + "animal_data.csv",
         "-d",
         "-c",
-        CONFIG_PATH,
+        str(tmp_path / "config.json"),
         "-o",
         str(tmp_path / "test_animals_dd"),
     ]
@@ -201,8 +215,8 @@ def test_main_cli_error_descrip_no_apikey(tmp_path):
 class DictTest(DictWriter):
     # override the __init__ method to avoid calling any LLM API's, and fill with dummy
     # data from testing_data.py
-    def __init__(self, api_key=None):
-        super().__init__(api_key)
+    def __init__(self):
+        super().__init__()
 
         self.model = TestLLM()
 
@@ -211,8 +225,6 @@ def test_main_cli_with_descrip(monkeypatch, tmp_path):
     ARGV = [
         SOURCES + "animal_data.csv",
         "-d",
-        "-k",
-        "1a2s3c4d",
         "-c",
         CONFIG_PATH,
         "-o",

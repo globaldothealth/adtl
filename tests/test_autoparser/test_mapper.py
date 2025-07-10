@@ -22,12 +22,10 @@ class MapperTest(WideMapper):
         self,
         data_dictionary,
         name,
-        api_key="1234",  # dummy API key
     ):
         super().__init__(
             data_dictionary,
             name,
-            api_key=api_key,  # dummy API key
         )
 
         self.model = TestLLM()
@@ -40,6 +38,8 @@ def config():
         {
             "name": "test_autoparser",
             "language": "fr",
+            "api_key": "1234",
+            "llm_provider": "openai",
             "max_common_count": 8,
             "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
         }
@@ -199,7 +199,6 @@ def test_missing_common_values():
         MapperTest(
             df,
             "animals",
-            "fr",
         )
 
 
@@ -213,11 +212,7 @@ def test_choices():
         }
     )
 
-    cv = MapperTest(
-        df,
-        "animals",
-        "fr",
-    ).common_values
+    cv = MapperTest(df, "animals").common_values
 
     npt.assert_array_equal(cv.iloc[0], ["test", "test2"])
 
@@ -234,9 +229,7 @@ def test_common_values_mapped_fields_error(mapper):
 
 def test_mapper_class_init_with_llm(config):
     mapper = WideMapper(
-        "tests/test_autoparser/sources/animals_dd_described.parquet",
-        "animals",
-        api_key="abcd",
+        "tests/test_autoparser/sources/animals_dd_described.parquet", "animals"
     )
 
     assert mapper.language == "fr"
@@ -328,9 +321,7 @@ def test_match_values_to_schema_choices():
     )
 
     mapper = MapperTest(
-        "tests/test_autoparser/sources/animals_dd_choices.csv",
-        "animals",
-        "fr",
+        "tests/test_autoparser/sources/animals_dd_choices.csv", "animals"
     )
 
     with pytest.warns(UserWarning, match="schema fields have not been mapped"):
@@ -401,7 +392,6 @@ def test_create_mapping(monkeypatch, tmp_path, config):
     create_mapping(
         "tests/test_autoparser/sources/animals_dd_described.parquet",
         "animals",
-        api_key="1a2b3c4d",
         save=True,
         file_name=str(tmp_path / "test_animals_mapping.csv"),
     )
@@ -414,7 +404,6 @@ def test_create_mapping_wrong_table_format():
         create_mapping(
             "",
             "",
-            api_key="1a2b3c4d",
             save=True,
             file_name="",
             table_format="fish",  # invalid format
@@ -426,7 +415,6 @@ def test_main_cli(monkeypatch, tmp_path):
     ARGV = [
         "tests/test_autoparser/sources/animals_dd_described.parquet",
         "animals",
-        "1a2b3c4d",
         "-o",
         str(tmp_path / "test_animals_mapping.csv"),
         "-c",

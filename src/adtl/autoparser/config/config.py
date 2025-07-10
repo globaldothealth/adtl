@@ -1,10 +1,13 @@
 import json
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 import tomli
 from pydantic import BaseModel, SecretStr, model_validator
 from typing_extensions import Self
+
+from adtl.autoparser.language_models.gemini import GeminiLanguageModel
+from adtl.autoparser.language_models.openai import OpenAILanguageModel
 
 
 class ColumnMappingConfig(BaseModel):
@@ -24,6 +27,11 @@ class ColumnMappingConfig(BaseModel):
         if self.common_values is not None and self.choices is not None:
             raise ValueError(
                 "Only one from 'common values' and 'choices' can be set at once"
+            )
+
+        elif self.common_values is None and self.choices is None:
+            raise ValueError(
+                "Either 'common values' or 'choices' must be set in column mappings"
             )
         return self
 
@@ -51,8 +59,10 @@ class LongTableConfig(BaseModel):
 class Config(BaseModel):
     name: str = "autoparser"
     description: str = "Configuration for ADTL autoparser"
-    language: str = "en"
-    llm_provider: Optional[Literal["openai", "gemini"]] = "openai"
+    language: str = "en"  # TODO: remove the default at the end
+    schemas: dict[str, str]
+    column_mappings: ColumnMappingConfig = ColumnMappingConfig()
+    llm_provider: Optional[Literal["openai", "gemini"]] = None
     llm_model: Optional[str] = None
     api_key: Optional[SecretStr] = None
     choice_delimiter: str = ", "
@@ -60,17 +70,35 @@ class Config(BaseModel):
     num_refs: int = 3
     max_common_count: int = 25
     min_common_frequency: Optional[float] = None
-    schemas: dict[str, str]
-    column_mappings: ColumnMappingConfig = ColumnMappingConfig()
     long_tables: Optional[dict[str, LongTableConfig]] = None
 
-    @model_validator(mode="after")
-    def check_llm_model_provider(self) -> Self:
-        if not self.llm_provider and not self.llm_model:
-            raise ValueError(
-                "Either a provider, a model or both must be provided to set up the LLM"
-            )
-        return self
+    _llm: Optional[OpenAILanguageModel | GeminiLanguageModel]
+
+    def model_post_init(self, context: Any) -> None:
+        """
+        Set up the LLM.
+        """
+        if self.api_key and (self.llm_provider or self.llm_model):
+            kwargs = {"api_key": self.api_key}
+            if self.llm_model is not None:
+                kwargs["model"] = self.llm_model
+
+            if (
+                self.llm_provider == "openai"
+                or self.llm_model in OpenAILanguageModel.valid_models()
+            ):
+                self._llm = OpenAILanguageModel(**kwargs)
+            elif (
+                self.llm_provider == "gemini"
+                or self.llm_model in GeminiLanguageModel.valid_models()
+            ):
+                self._llm = GeminiLanguageModel(**kwargs)
+            else:
+                raise ValueError(
+                    f"Could not set up LLM with provider '{self.llm_provider}' and model '{self.llm_model}'."
+                )
+        else:
+            self._llm = None
 
     @model_validator(mode="after")
     def check_common_cols_fields(self) -> Self:
@@ -81,6 +109,19 @@ class Config(BaseModel):
                         f"Table '{table}' in 'long_tables' not found in 'schemas'"
                     )
         return self
+
+    def check_llm_setup(self) -> None:
+        """
+        Check if the LLM is set up correctly.
+        Raises an error if the LLM is not configured, and points to the potential error.
+        """
+        if self._llm is None:
+            if self.api_key is None:
+                raise ValueError("Config: API key required to set up an LLM")
+            if self.llm_provider is None and self.llm_model is None:
+                raise ValueError(
+                    "Config: LLM provider or model must be specified to set up an LLM"
+                )
 
 
 def _config():

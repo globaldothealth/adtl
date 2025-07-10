@@ -19,7 +19,6 @@ from .util import (
     check_matches,
     load_data_dict,
     read_data,
-    setup_llm,
 )
 
 
@@ -40,16 +39,9 @@ class DictWriter:
         API key corresponsing to the chosen LLM provider/model
     """
 
-    def __init__(
-        self,
-        api_key: str | None = None,
-    ):
+    def __init__(self):
         self.config = get_config()
-
-        if api_key:
-            self.model = setup_llm(api_key, self.config)
-        else:
-            self.model = None
+        self.model = self.config._llm
 
     def _reset_headers_and_validate(self, data_dict: pd.DataFrame) -> pd.DataFrame:
         """
@@ -193,9 +185,7 @@ class DictWriter:
         return dd
 
     def generate_descriptions(
-        self,
-        data_dict: pd.DataFrame | str | None = None,
-        key: str | None = None,
+        self, data_dict: pd.DataFrame | str | None = None
     ) -> pd.DataFrame:
         """
         Generate descriptions for the columns in the dataset.
@@ -209,8 +199,6 @@ class DictWriter:
             Data dictionary containing the column headers, either as a dataframe or a
             path to the dictionary as a csv/xlsx file. Can be None if the data dict
             has already been created using `create_dict()`.
-        key
-            OpenAI API key.
 
         Returns
         -------
@@ -225,10 +213,10 @@ class DictWriter:
                     "No data dictionary found. Please create a data dictionary first."
                 )
 
-        df = self._load_dict(data_dict)
+        if self.model is None:
+            self.config.check_llm_setup()
 
-        if not self.model:
-            self.model = setup_llm(key, self.config)
+        df = self._load_dict(data_dict)
 
         headers = df.source_field
 
@@ -285,10 +273,7 @@ def create_dict(data: pd.DataFrame | str) -> pd.DataFrame:
     return dd
 
 
-def generate_descriptions(
-    data_dict: pd.DataFrame | str,
-    key: str | None = None,
-) -> pd.DataFrame:
+def generate_descriptions(data_dict: pd.DataFrame | str) -> pd.DataFrame:
     """
     Generate descriptions for the columns in the dataset.
 
@@ -300,8 +285,6 @@ def generate_descriptions(
     data_dict
         Data dictionary containing the column headers, either as a dataframe or a path
         to the dictionary as a csv/xlsx file.
-    key
-        OpenAI API key.
 
     Returns
     -------
@@ -309,7 +292,7 @@ def generate_descriptions(
         Data dictionary with descriptions added
     """
 
-    dd = DictWriter().generate_descriptions(data_dict, key)
+    dd = DictWriter().generate_descriptions(data_dict)
 
     return dd
 
@@ -326,7 +309,6 @@ def main(argv=None):
         help="Use an LLM to generate descriptions from file headers",
         action="store_true",
     )
-    parser.add_argument("-k", "--api-key", help="LLM API key to generate descriptions")
     parser.add_argument(
         "-c",
         "--config",
@@ -339,14 +321,15 @@ def main(argv=None):
 
     args = parser.parse_args(argv)
 
-    if args.descriptions and not args.api_key:
-        raise ValueError("API key required for generating descriptions")
-
     setup_config(args.config or DEFAULT_CONFIG)
+
+    config = get_config()
+    if args.descriptions and not config._llm:
+        config.check_llm_setup()
 
     df = create_dict(args.data)
     if args.descriptions:
-        df = generate_descriptions(df, args.api_key)
+        df = generate_descriptions(df)
 
     df.to_csv(f"{args.output}.csv", index=False)
 

@@ -13,10 +13,7 @@ from typing import Any, Dict
 import pandas as pd
 import tomli
 
-from adtl.autoparser.config.config import Config
 from adtl.autoparser.data_dict_schema import DataDictionaryProcessed
-from adtl.autoparser.language_models.gemini import GeminiLanguageModel
-from adtl.autoparser.language_models.openai import OpenAILanguageModel
 
 DEFAULT_CONFIG = "config/autoparser.toml"
 
@@ -119,41 +116,6 @@ def load_data_dict(
     schema.validate(dd, lazy=True)
 
     return dd
-
-
-def setup_llm(api_key: str, config: Config):
-    """
-    Setup the LLM to use to generate descriptions.
-
-    Separate from the __init__ method to allow for extra barrier between raw data &
-    LLM.
-
-    Parameters
-    ----------
-    api_key
-        API key
-    """
-    if api_key is None:
-        raise ValueError("API key required to set up an LLM")
-
-    kwargs = {"api_key": api_key}
-    if config.llm_model is not None:
-        kwargs["model"] = config.llm_model
-
-    if (
-        config.llm_provider == "openai"
-        or config.llm_model in OpenAILanguageModel.valid_models()
-    ):
-        return OpenAILanguageModel(**kwargs)
-    elif (
-        config.llm_provider == "gemini"
-        or config.llm_model in GeminiLanguageModel.valid_models()
-    ):
-        return GeminiLanguageModel(**kwargs)
-    else:
-        raise ValueError(
-            f"Could not set up LLM with provider '{config.llm_provider}' and model '{config.llm_model}'."
-        )
 
 
 def check_matches(llm: str, source: list[str], cutoff=0.8) -> str | None:

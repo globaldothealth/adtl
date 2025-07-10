@@ -21,7 +21,6 @@ CONFIG = "../" + DEFAULT_CONFIG
 def create_mapping(
     data_dictionary: Union[str, pd.DataFrame],
     table_name: str,
-    api_key: str,
     save: bool = True,
     file_name: str = "mapping_file",
     table_format: Literal["wide", "long"] = "wide",
@@ -39,8 +38,6 @@ def create_mapping(
         Path to a CSV or XLSX file, or a DataFrame, containing the data dictionary.
     schema
         Path to a JSON schema file.
-    api_key
-        API key for the API defined in `llm_provider`
     save
         Whether to save the mapping to a CSV file.
     file_name
@@ -59,11 +56,9 @@ def create_mapping(
         raise ValueError(
             f"Invalid table format: {table_format}. Must be either 'wide' or 'long'."
         )
-    df = MapperClass(
-        data_dictionary,
-        table_name,
-        api_key=api_key,
-    ).create_mapping(save=save, file_name=file_name)
+    df = MapperClass(data_dictionary, table_name).create_mapping(
+        save=save, file_name=file_name
+    )
 
     return df
 
@@ -78,7 +73,6 @@ def main(argv=None):
     )
     parser.add_argument("dictionary", help="Data dictionary to use")
     parser.add_argument("table_name", help="Name of the table being mapped")
-    parser.add_argument("api_key", help="OpenAI API key to use")
     parser.add_argument(
         "-c",
         "--config",
@@ -98,7 +92,6 @@ def main(argv=None):
     create_mapping(
         data_dictionary=args.dictionary,
         table_name=args.table_name,
-        api_key=args.api_key,
         save=True,
         file_name=args.output,
         table_format="long" if args.long_table else "wide",
