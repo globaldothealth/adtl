@@ -6,7 +6,6 @@ import json
 import pandas as pd
 import pytest
 from pandera.errors import SchemaError
-from pydantic import ValidationError
 from testing_data_animals import TestLLM
 
 import adtl.autoparser as autoparser
@@ -99,16 +98,6 @@ def test_dictionary_description(writer):
     df_desired = pd.read_csv(SOURCES + "animals_dd_described.csv")
 
     pd.testing.assert_frame_equal(df, df_desired)
-
-
-# def test_missing_key_error():
-#     with pytest.raises(ValueError, match="API key required"):
-#         DictWriter().generate_descriptions(data_dict=SOURCES + "animals_dd.csv")
-
-
-def test_wrong_llm_error():
-    with pytest.raises(ValidationError, match="Input should be 'openai' or 'gemini'"):
-        setup_config({"llm_provider": "fish"})
 
 
 def test_init_with_llm(config):

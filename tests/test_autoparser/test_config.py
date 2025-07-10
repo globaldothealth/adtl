@@ -27,6 +27,9 @@ def test_get_config_not_set_up():
                     "animals": "tests/test_autoparser/schemas/animals.schema.json"
                 },
                 "column_mappings": {
+                    "source_field": "Field Name",
+                    "source_description": "Description",
+                    "source_type": "Field Type",
                     "common_values": "Common Values",
                     "choices": "Choices",
                 },
@@ -40,6 +43,9 @@ def test_get_config_not_set_up():
                     "animals": "tests/test_autoparser/schemas/animals.schema.json"
                 },
                 "column_mappings": {
+                    "source_field": "Field Name",
+                    "source_description": "Description",
+                    "source_type": "Field Type",
                     "common_values": None,
                     "choices": None,
                 },

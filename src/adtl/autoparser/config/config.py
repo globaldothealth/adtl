@@ -1,9 +1,10 @@
 import json
+import os
 from pathlib import Path
 from typing import Any, Literal, Optional
 
 import tomli
-from pydantic import BaseModel, SecretStr, model_validator
+from pydantic import BaseModel, SecretStr, field_validator, model_validator
 from typing_extensions import Self
 
 from adtl.autoparser.language_models.gemini import GeminiLanguageModel
@@ -16,10 +17,10 @@ class ColumnMappingConfig(BaseModel):
     This class defines the structure and fields required for column mapping.
     """
 
-    source_field: str = "Field Name"
-    source_type: str = "Field Type"
-    source_description: str = "Description"
-    common_values: Optional[str] = "Common Values"
+    source_field: str
+    source_type: str
+    source_description: str
+    common_values: Optional[str] = None
     choices: Optional[str] = None
 
     @model_validator(mode="after")
@@ -34,6 +35,18 @@ class ColumnMappingConfig(BaseModel):
                 "Either 'common values' or 'choices' must be set in column mappings"
             )
         return self
+
+
+class DefaultColumnMappingConfig(ColumnMappingConfig):
+    """
+    Default configuration for column mapping in ADTL autoparser.
+    This class provides default values for the column mapping fields.
+    """
+
+    source_field: str = "Field Name"
+    source_type: str = "Field Type"
+    source_description: str = "Description"
+    common_values: Optional[str] = "Common Values"
 
 
 class LongTableConfig(BaseModel):
@@ -61,7 +74,7 @@ class Config(BaseModel):
     description: str = "Configuration for ADTL autoparser"
     language: str
     schemas: dict[str, str]
-    column_mappings: ColumnMappingConfig = ColumnMappingConfig()
+    column_mappings: ColumnMappingConfig = DefaultColumnMappingConfig()
     llm_provider: Optional[Literal["openai", "gemini"]] = None
     llm_model: Optional[str] = None
     api_key: Optional[SecretStr] = None
@@ -79,7 +92,7 @@ class Config(BaseModel):
         Set up the LLM.
         """
         if self.api_key and (self.llm_provider or self.llm_model):
-            kwargs = {"api_key": self.api_key}
+            kwargs = {"api_key": self.api_key.get_secret_value()}
             if self.llm_model is not None:
                 kwargs["model"] = self.llm_model
 
@@ -99,6 +112,16 @@ class Config(BaseModel):
                 )
         else:
             self._llm = None
+
+    @field_validator("api_key", mode="after")
+    @classmethod
+    def retrieve_api_key(cls, k) -> Optional[SecretStr]:
+        if k is not None:
+            try:
+                return SecretStr(os.environ[k.get_secret_value()])
+            except KeyError:
+                return k
+        return k
 
     @model_validator(mode="after")
     def check_common_cols_fields(self) -> Self:
