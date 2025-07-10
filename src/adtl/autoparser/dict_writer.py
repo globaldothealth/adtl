@@ -36,8 +36,6 @@ class DictWriter:
 
     Parameters
     ----------
-    config
-        The path to the configuration file to use if not using the default configuration
     llm_provider
         The LLM API to use (currently only OpenAI & Google Gemini are supported)
     llm_model
@@ -294,8 +292,6 @@ def create_dict(data: pd.DataFrame | str) -> pd.DataFrame:
     ----------
     data
         Path to a CSV or XLSX file, or a DataFrame, containing the raw data.
-    config
-        Path to the configuration file to use if not using the default configuration
 
     Returns
     -------

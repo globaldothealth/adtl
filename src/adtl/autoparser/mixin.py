@@ -7,6 +7,8 @@ from typing import Protocol
 
 import pandas as pd
 
+from .config.config import Config
+
 
 class LongTableMixin(Protocol):
     """
@@ -18,7 +20,7 @@ class LongTableMixin(Protocol):
         - self.schema_fields: The schema 'properties' list for the current table
     """
 
-    config: dict
+    config: Config
     name: str
     schema_fields: list[dict]
 

@@ -109,12 +109,6 @@ class LongMapper(BaseMapper, LongTableMixin):
                 "Please set 'long_tables' in the config file."
             )
 
-        if self.config.long_tables[self.name].variable_col is None:
-            raise ValueError(
-                f"Variable column not set in config for long table {self.name}. "
-                "Please set 'variable_col' in the config file."
-            )
-
         if self.schema_fields[self.variable_col].get("enum") is None:
             raise ValueError(
                 f"Variable column '{self.variable_col}' in schema does not have an enum set. "

@@ -9,7 +9,6 @@ from pydantic import create_model
 from testing_data_animals import TestLLM, long_value_mapping
 
 from adtl.autoparser import LongMapper, setup_config
-from adtl.autoparser.config.config import get_config
 
 # --------------------------
 # Fixtures
@@ -232,18 +231,3 @@ def test_create_mapping_failure_no_enum_fields(common_fields_mapper):
         ValueError, match="'observation' in schema does not have an enum set"
     ):
         common_fields_mapper.create_mapping(save=False)
-
-
-def test_missing_variable_col_raises(mock_data_dict):
-    config = get_config()
-    config.long_tables["vet_observations"].variable_col = None
-
-    with pytest.raises(ValueError, match="Variable column not set in config"):
-        LongMapper(
-            data_dictionary=mock_data_dict,
-            table_name="vet_observations",
-            language="en",
-            api_key="1234",  # dummy API key
-            llm_provider=None,
-            llm_model=None,
-        )._check_config()

@@ -51,8 +51,6 @@ def create_mapping(
     llm_model
         Specify an LLM model to use. If not provided, a default for the given provider
         will be used.
-    config
-        Path to a JSON file containing the configuration for autoparser.
     save
         Whether to save the mapping to a CSV file.
     file_name

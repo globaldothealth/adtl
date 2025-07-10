@@ -337,7 +337,16 @@ def test_match_values_to_schema_dummy_data(mapper):
     }
 
 
-def test_match_values_to_schema_choices(config):
+def test_match_values_to_schema_choices():
+    setup_config(
+        {
+            "name": "test_autoparser",
+            "max_common_count": 8,
+            "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
+            "column_mappings": {"common_values": None, "choices": "Choices"},
+        }
+    )
+
     mapper = MapperTest(
         "tests/test_autoparser/sources/animals_dd_choices.csv",
         "animals",

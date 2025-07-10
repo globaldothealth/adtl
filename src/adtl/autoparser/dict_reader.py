@@ -42,9 +42,9 @@ class DictReader:
 
         self.data_dict = read_data(data_dict, "Data Dictionary")
 
-    def _parse_choices(self, choice_col: pd.Series, config) -> pd.Series:
-        sep = config.choice_delimiter
-        link = config.choice_delimiter_map
+    def _parse_choices(self, choice_col: pd.Series) -> pd.Series:
+        sep = self.config.choice_delimiter
+        link = self.config.choice_delimiter_map
 
         def parse(x):
             if not isinstance(x, str):
@@ -77,7 +77,7 @@ class DictReader:
             dd["common_values"] = dd["common_values"].apply(_lower_string)
 
         elif "choices" in dd.columns:
-            dd.loc[:, "choices"] = self._parse_choices(dd["choices"], self.config)
+            dd.loc[:, "choices"] = self._parse_choices(dd["choices"])
 
         return dd
 
@@ -223,4 +223,4 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pragma: no cover

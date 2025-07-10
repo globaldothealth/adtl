@@ -58,7 +58,7 @@ class TableParser(abc.ABC):
         return values
 
     def update_constant_fields(self, fields: dict[str, bool]) -> None:
-        """Update the constant fields for the long table"""
+        """Update the constant fields"""
         for field, value in fields.items():
             if field not in self.constant_field:
                 raise ValueError(f"Field '{field}' is not a valid schema field.")
@@ -247,8 +247,14 @@ class ParserGenerator:
         The name of the parser
     description : str, optional
         The description of the parser
-    config : Path, optional
-        The path to the configuration file to use if not using the default configuration
+    constant_fields : dict[str, dict[str, bool]], optional
+        Constant fields are those which are single values, rather than taken from a field from the source data.
+        For example, if an entire dataset is from the DRC, but a country field is in the target schema, there may not be a
+        field in the dataset stating the country.
+        A dictionary of constant fields for each table, where the keys are the table names
+        and the values are boolean True/False values indicating whether the field should be pulled from the source data
+        or not. All fields in wide tables default to False, while long tables default to True for all columns except
+        the value column(s).
     """
 
     def __init__(
@@ -399,8 +405,6 @@ def create_parser(
         Name of the parser to create
     description
         Description of the parser. Defaults to the parser name.
-    config
-        Path to the configuration file to use. Default is `config/autoparser.toml`.
 
     Returns
     -------

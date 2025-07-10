@@ -38,8 +38,6 @@ class BaseMapper(abc.ABC):
     llm_model
         The LLM model to use. If not provided, a default for the given provider will be
         used.
-    config
-        The path to the configuration file to use if not using the default configuration
     """
 
     INDEX_FIELD = "target_field"

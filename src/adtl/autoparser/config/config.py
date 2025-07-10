@@ -3,7 +3,8 @@ from pathlib import Path
 from typing import Literal, Optional
 
 import tomli
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
+from typing_extensions import Self
 
 
 class ColumnMappingConfig(BaseModel):
@@ -16,7 +17,15 @@ class ColumnMappingConfig(BaseModel):
     source_type: str = "Field Type"
     source_description: str = "Description"
     common_values: Optional[str] = "Common Values"
-    choices: Optional[str] = "Choices"
+    choices: Optional[str] = None
+
+    @model_validator(mode="after")
+    def check_common_values_and_choices(self) -> Self:
+        if self.common_values is not None and self.choices is not None:
+            raise ValueError(
+                "Only one from 'common values' and 'choices' can be set at once"
+            )
+        return self
 
 
 class LongTableConfig(BaseModel):
@@ -29,6 +38,14 @@ class LongTableConfig(BaseModel):
     value_cols: list[str]
     common_cols: Optional[list[str]] = None
     common_fields: Optional[dict[str, str]] = None
+
+    @model_validator(mode="after")
+    def check_common_cols_fields(self) -> Self:
+        if self.common_cols is not None and self.common_fields is not None:
+            raise ValueError(
+                "Only one from 'common_cols' and 'common_fields' can be set at once"
+            )
+        return self
 
 
 class Config(BaseModel):
@@ -46,6 +63,16 @@ class Config(BaseModel):
     schemas: dict[str, str]
     column_mappings: ColumnMappingConfig = ColumnMappingConfig()
     long_tables: Optional[dict[str, LongTableConfig]] = None
+
+    @model_validator(mode="after")
+    def check_common_cols_fields(self) -> Self:
+        if self.long_tables:
+            for table in self.long_tables.keys():
+                if table not in self.schemas:
+                    raise ValueError(
+                        f"Table '{table}' in 'long_tables' not found in 'schemas'"
+                    )
+        return self
 
 
 def _config():
