@@ -92,10 +92,7 @@ def mapper(mock_data_dict):
     mapper = LongMapper(
         data_dictionary=mock_data_dict,
         table_name="vet_observations",
-        language="en",
         api_key="1234",  # dummy API key
-        llm_provider=None,
-        llm_model=None,
     )
 
     mapper.model = TestLLM()

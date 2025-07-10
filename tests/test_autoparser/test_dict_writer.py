@@ -4,6 +4,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 from pandera.errors import SchemaError
+from pydantic import ValidationError
 from testing_data_animals import TestLLM
 
 import adtl.autoparser as autoparser
@@ -22,6 +23,7 @@ def config():
     setup_config(
         {
             "name": "test_autoparser",
+            "language": "fr",
             "choice_delimiter": ",",
             "max_common_count": 8,
             "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
@@ -86,9 +88,9 @@ def test_dictionary_description(writer):
 
     # check descriptions aren't generated without a dictionary
     with pytest.raises(ValueError, match="No data dictionary found"):
-        writer.generate_descriptions("fr")
+        writer.generate_descriptions()
 
-    df = writer.generate_descriptions("fr", SOURCES + "animals_dd.csv")
+    df = writer.generate_descriptions(data_dict=SOURCES + "animals_dd.csv")
 
     df_desired = pd.read_csv(SOURCES + "animals_dd_described.csv")
 
@@ -97,19 +99,17 @@ def test_dictionary_description(writer):
 
 def test_missing_key_error():
     with pytest.raises(ValueError, match="API key required"):
-        DictWriter().generate_descriptions("fr", SOURCES + "animals_dd.csv")
+        DictWriter().generate_descriptions(data_dict=SOURCES + "animals_dd.csv")
 
 
 def test_wrong_llm_error():
-    with pytest.raises(ValueError, match="Unsupported LLM provider: fish"):
-        DictWriter().generate_descriptions(
-            "fr", SOURCES + "animals_dd.csv", key="a12b3c", llm_provider="fish"
-        )
+    with pytest.raises(ValidationError, match="Input should be 'openai' or 'gemini'"):
+        setup_config({"llm_provider": "fish"})
 
 
 def test_init_with_llm():
     # test no errors occur
-    writer = DictWriter(api_key="1234", llm_provider="openai")
+    writer = DictWriter(api_key="1234")
     assert isinstance(writer.model, OpenAILanguageModel)
 
 
@@ -173,7 +173,6 @@ def test_reset_headers_and_validate_duplicate_fields(writer):
 def test_main_cli(tmp_path):
     ARGV = [
         SOURCES + "animal_data.csv",
-        "fr",
         "-c",
         CONFIG_PATH,
         "-o",
@@ -188,7 +187,6 @@ def test_main_cli(tmp_path):
 def test_main_cli_error_descrip_no_apikey(tmp_path):
     ARGV = [
         SOURCES + "animal_data.csv",
-        "fr",
         "-d",
         "-c",
         CONFIG_PATH,
@@ -203,11 +201,8 @@ def test_main_cli_error_descrip_no_apikey(tmp_path):
 class DictTest(DictWriter):
     # override the __init__ method to avoid calling any LLM API's, and fill with dummy
     # data from testing_data.py
-    def __init__(self, llm_provider=None, api_key=None):
-        super().__init__(
-            llm_provider,
-            api_key,
-        )
+    def __init__(self, api_key=None):
+        super().__init__(api_key)
 
         self.model = TestLLM()
 
@@ -215,7 +210,6 @@ class DictTest(DictWriter):
 def test_main_cli_with_descrip(monkeypatch, tmp_path):
     ARGV = [
         SOURCES + "animal_data.csv",
-        "fr",
         "-d",
         "-k",
         "1a2s3c4d",

@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Literal, Optional
 
 import tomli
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, SecretStr, model_validator
 from typing_extensions import Self
 
 
@@ -54,7 +54,7 @@ class Config(BaseModel):
     language: str = "en"
     llm_provider: Optional[Literal["openai", "gemini"]] = "openai"
     llm_model: Optional[str] = None
-    api_key: Optional[str] = None
+    api_key: Optional[SecretStr] = None
     choice_delimiter: str = ", "
     choice_delimiter_map: str = "="
     num_refs: int = 3
@@ -63,6 +63,14 @@ class Config(BaseModel):
     schemas: dict[str, str]
     column_mappings: ColumnMappingConfig = ColumnMappingConfig()
     long_tables: Optional[dict[str, LongTableConfig]] = None
+
+    @model_validator(mode="after")
+    def check_llm_model_provider(self) -> Self:
+        if not self.llm_provider and not self.llm_model:
+            raise ValueError(
+                "Either a provider, a model or both must be provided to set up the LLM"
+            )
+        return self
 
     @model_validator(mode="after")
     def check_common_cols_fields(self) -> Self:

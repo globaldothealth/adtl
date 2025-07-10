@@ -25,13 +25,15 @@ def test_main_help(monkeypatch):
 
 
 def test_main_passes_args_to_subfunction(monkeypatch, capsys):
-    monkeypatch.setattr("sys.argv", ["adtl-autoparser", "create-dict", "fish"])
+    monkeypatch.setattr(
+        "sys.argv", ["adtl-autoparser", "create-mapping", "dict", "table"]
+    )
 
     with pytest.raises(SystemExit, match="2"):
         autoparser.main()
 
     captured = capsys.readouterr()
     assert (
-        "autoparser create-dict: error: the following arguments are required: language"
+        "autoparser create-mapping: error: the following arguments are required: api_key"
         in captured.err
     )

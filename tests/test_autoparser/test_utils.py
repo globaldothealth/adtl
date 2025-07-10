@@ -7,6 +7,7 @@ import pandas as pd
 import pandera.pandas as pa
 import pytest
 
+from adtl.autoparser.config.config import get_config, setup_config
 from adtl.autoparser.language_models.gemini import GeminiLanguageModel
 from adtl.autoparser.util import (
     check_matches,
@@ -76,31 +77,58 @@ def test_load_data_dict_invalid():
 
 
 def test_setup_llm_no_key():
+    setup_config(
+        {
+            "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
+        }
+    )
+    config = get_config()
+
     with pytest.raises(ValueError, match="API key required to set up an LLM"):
-        setup_llm(None, provider="openai")
+        setup_llm(None, config)
 
 
-def test_setup_llm_bad_provider():
-    with pytest.raises(ValueError, match="Unsupported LLM provider: fish"):
-        setup_llm("abcd", provider="fish")
+# def test_setup_llm_bad_provider():
+#     setup_config(
+#         {
+#             "llm_provider": "fish",
+#             "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
+#         }
+#     )
+
+#     with pytest.raises(ValueError, match="Unsupported LLM provider: fish"):
+#         setup_llm("abcd", provider="fish")
 
 
 def test_setup_llm_provide_model():
-    model = setup_llm("abcd", provider="gemini", model="gemini-2.0-flash")
+    setup_config(
+        {
+            "llm_provider": "gemini",
+            "llm_model": "gemini-2.0-flash",
+            "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
+        }
+    )
+
+    config = get_config()
+
+    model = setup_llm("abcd", config)
     assert model.model == "gemini-2.0-flash"
 
 
 def test_setup_llm_provide_model_no_provider():
-    model = setup_llm("abcd", model="gemini-2.0-flash")
+    setup_config(
+        {
+            "llm_provider": None,
+            "llm_model": "gemini-2.0-flash",
+            "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
+        }
+    )
+
+    config = get_config()
+
+    model = setup_llm("abcd", config)
     assert isinstance(model, GeminiLanguageModel)
     assert model.model == "gemini-2.0-flash"
-
-
-def test_setup_llm_no_provider_no_model():
-    with pytest.raises(
-        ValueError, match="Either a provider, a model or both must be provided"
-    ):
-        setup_llm("1234")
 
 
 @pytest.mark.parametrize(

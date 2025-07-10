@@ -2,17 +2,14 @@ from __future__ import annotations
 
 import abc
 from functools import cached_property
-from typing import Literal, Union
+from typing import Union
 
 import numpy as np
 import pandas as pd
 
 from ..config.config import get_config
 from ..dict_reader import format_dict
-from ..util import (
-    read_json,
-    setup_llm,
-)
+from ..util import read_json, setup_llm
 
 
 class BaseMapper(abc.ABC):
@@ -48,29 +45,16 @@ class BaseMapper(abc.ABC):
         table_name: str,
         *,
         api_key: str,
-        language: Union[str, None] = None,
-        llm_provider: Union[Literal["openai", "gemini"], None] = None,
-        llm_model: Union[str, None] = None,
     ):
         self.name = table_name
 
         self.config = get_config()
 
-        self.language = language or self.config.language
-        self.llm_provider = llm_provider or self.config.llm_provider
-        self.llm_model = llm_model or self.config.llm_model
+        self.language = self.config.language
+        self.llm_provider = self.config.llm_provider
+        self.llm_model = self.config.llm_model
 
-        if self.language is None:
-            raise ValueError(
-                "Language must be specified either in the config file or as an argument"
-            )
-
-        if self.llm_provider is None and self.llm_model is None:
-            self.model = None
-        else:
-            self.model = setup_llm(
-                api_key, provider=self.llm_provider, model=self.llm_model
-            )
+        self.model = setup_llm(api_key, self.config)
 
         self.schema = read_json(self.config.schemas[table_name])
         self.schema_fields = self.schema["properties"]
