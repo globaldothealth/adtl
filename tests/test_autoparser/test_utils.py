@@ -7,14 +7,11 @@ import pandas as pd
 import pandera.pandas as pa
 import pytest
 
-from adtl.autoparser.config.config import get_config, setup_config
-from adtl.autoparser.language_models.gemini import GeminiLanguageModel
 from adtl.autoparser.util import (
     check_matches,
     load_data_dict,
     parse_llm_mapped_values,
     read_schema,
-    setup_llm,
 )
 
 
@@ -74,61 +71,6 @@ def test_load_data_dict_invalid():
 
     with pytest.raises(pa.errors.SchemaErrors):
         load_data_dict("tests/test_autoparser/sources/animals_dd.csv")
-
-
-def test_setup_llm_no_key():
-    setup_config(
-        {
-            "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
-        }
-    )
-    config = get_config()
-
-    with pytest.raises(ValueError, match="API key required to set up an LLM"):
-        setup_llm(None, config)
-
-
-# def test_setup_llm_bad_provider():
-#     setup_config(
-#         {
-#             "llm_provider": "fish",
-#             "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
-#         }
-#     )
-
-#     with pytest.raises(ValueError, match="Unsupported LLM provider: fish"):
-#         setup_llm("abcd", provider="fish")
-
-
-def test_setup_llm_provide_model():
-    setup_config(
-        {
-            "llm_provider": "gemini",
-            "llm_model": "gemini-2.0-flash",
-            "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
-        }
-    )
-
-    config = get_config()
-
-    model = setup_llm("abcd", config)
-    assert model.model == "gemini-2.0-flash"
-
-
-def test_setup_llm_provide_model_no_provider():
-    setup_config(
-        {
-            "llm_provider": None,
-            "llm_model": "gemini-2.0-flash",
-            "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
-        }
-    )
-
-    config = get_config()
-
-    model = setup_llm("abcd", config)
-    assert isinstance(model, GeminiLanguageModel)
-    assert model.model == "gemini-2.0-flash"
 
 
 @pytest.mark.parametrize(

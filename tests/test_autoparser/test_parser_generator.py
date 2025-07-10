@@ -19,6 +19,7 @@ def config():
     setup_config(
         {
             "name": "test_autoparser",
+            "language": "en",
             "max_common_count": 8,
             "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
         }

@@ -17,6 +17,7 @@ def config():
     setup_config(
         {
             "name": "test_autoparser",
+            "language": "en",
             "max_common_count": 8,
             "schemas": {
                 "vet_observations": "tests/test_autoparser/schemas/vet-obs.schema.json"

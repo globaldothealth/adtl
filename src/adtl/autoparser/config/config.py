@@ -59,7 +59,7 @@ class LongTableConfig(BaseModel):
 class Config(BaseModel):
     name: str = "autoparser"
     description: str = "Configuration for ADTL autoparser"
-    language: str = "en"  # TODO: remove the default at the end
+    language: str
     schemas: dict[str, str]
     column_mappings: ColumnMappingConfig = ColumnMappingConfig()
     llm_provider: Optional[Literal["openai", "gemini"]] = None

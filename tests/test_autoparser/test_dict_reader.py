@@ -18,6 +18,7 @@ def config():
     setup_config(
         {
             "name": "Test Config",
+            "language": "en",
             "choice_delimiter": "|",
             "choice_delimiter_map": ",",
             "max_common_count": 8,
@@ -90,6 +91,7 @@ def test_process_dict():
     setup_config(
         {
             "name": "test_autoparser",
+            "language": "en",
             "max_common_count": 8,
             "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
         }

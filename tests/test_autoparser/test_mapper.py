@@ -315,6 +315,9 @@ def test_match_values_to_schema_choices():
         {
             "name": "test_autoparser",
             "max_common_count": 8,
+            "language": "fr",
+            "llm_provider": "openai",
+            "api_key": "1234",
             "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
             "column_mappings": {"common_values": None, "choices": "Choices"},
         }

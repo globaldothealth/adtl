@@ -38,6 +38,9 @@ class BaseMapper(abc.ABC):
         self.language = self.config.language
         self.model = self.config._llm
 
+        if self.model is None:
+            self.config.check_llm_setup()
+
         self.schema = read_json(self.config.schemas[table_name])
         self.schema_fields = self.schema["properties"]
 
