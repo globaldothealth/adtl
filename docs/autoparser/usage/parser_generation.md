@@ -7,12 +7,12 @@ parser file.
 
 AutoParser exists to semi-automate the process of writing new parser files. This requires
 a data dictionary (which can be created if it does not already exist, see '[Create Data dictionary](data_dict)'),
-and the JSON schema of the target format.
+and the JSON schema(s) for the target table format(s).
 
 Parser generation is a 2-step process.
 
 ## Generate intermedaite mappings (CSV)
-First, an intermediate mapping file is created which can look like this:
+First, an intermediate mapping file is created which can look like this, for a wide-format table:
 
 | target_field      | source_description | source_field     | common_values                                            | target_values                                              | value_mapping                                                                            |
 |-------------------|--------------------|------------------|----------------------------------------------------------|------------------------------------------------------------|------------------------------------------------------------------------------------------|
@@ -35,6 +35,15 @@ in the converted file, and `vivant` should map to `alive`.
 should be manually curated, as the LLM may generate incorrect matches for either
 the field, or the values within that field.
 :::
+
+If your desired format has multiple tables, one mapping file should be produced for each
+table. A similar process is followed for long-format targets, but instead of 'target_field'
+as the table index, 'source_field' is used and any source fields which cannot be mapped
+to a provided variable will be left blank for the user to either map manually, or delete if
+that data is not required.
+
+Currently, all long-format schemas *must* provide a list of enums for the field denoted as the
+'variable' column.
 
 ## Generate TOML
 
