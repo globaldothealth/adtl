@@ -7,59 +7,44 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from adtl.autoparser import setup_config
 from adtl.autoparser.make_toml import LongTableParser
 
-# ANIMAL_PARSER = ParserGenerator(
-#     "tests/test_autoparser/sources/animals_mapping.csv",
-#     "",
-#     "animals",
-#     config=Path("tests/test_autoparser/test_config.toml"),
-# )
+
+@pytest.fixture(autouse=True)
+def config():
+    """Fixture to load the configuration for the autoparser."""
+    setup_config(
+        {
+            "name": "test_autoparser",
+            "language": "en",
+            "max_common_count": 8,
+            "schemas": {
+                "vet_observations": "tests/test_autoparser/schemas/vet-obs.schema.json"
+            },
+            "long_tables": {
+                "vet_observations": {
+                    "common_fields": {
+                        "animal_id": "subjid",
+                        "visit_date": "date",
+                        "clinic": "jericho",
+                    },
+                    "variable_col": "observation",
+                    "value_cols": ["string_value", "boolean_value", "numeric_value"],
+                }
+            },
+        }
+    )
 
 
 @pytest.fixture
-def mock_config():
-    return {
-        "name": "Test Config",
-        "description": "A test configuration for LongMapper",
-        "llm_provider": "openai",
-        "choice_delimiter": ", ",
-        "choice_delimiter_map": "=",
-        "num_refs": 3,
-        "max_common_count": 8,
-        "schemas": {
-            "vet_observations": "tests/test_autoparser/schemas/vet-obs.schema.json"
-        },
-        "column_mappings": {
-            "source_field": "Field Name",
-            "source_description": "Description",
-            "source_type": "Type",
-            "common_values": "Common Values",
-            "choices": "Choices",
-        },
-        "long_tables": {
-            "vet_observations": {
-                "common_fields": {
-                    "animal_id": "subjid",
-                    "visit_date": "date",
-                    "clinic": "jericho",
-                },
-                "variable_col": "observation",
-                "value_cols": ["string_value", "boolean_value", "numeric_value"],
-            }
-        },
-    }
-
-
-@pytest.fixture
-def long_parser(mock_config):
+def long_parser():
     return LongTableParser(
         mapping=pd.read_csv("tests/test_autoparser/sources/long-animal-mapper.csv"),
         schema=json.load(
             Path("tests/test_autoparser/schemas/vet-obs.schema.json").open()
         ),
         table_name="vet_observations",
-        config=mock_config,
     )
 
 
@@ -109,7 +94,7 @@ def test_update_constant_fields(long_parser):
         ),
     ],
 )
-def test_map_validation(mapping_dict, match, mock_config):
+def test_map_validation(mapping_dict, match):
     with pytest.raises(ValueError, match=match):
         LongTableParser(
             mapping=pd.DataFrame(mapping_dict),
@@ -117,7 +102,6 @@ def test_map_validation(mapping_dict, match, mock_config):
                 Path("tests/test_autoparser/schemas/vet-obs.schema.json").open()
             ),
             table_name="vet_observations",
-            config=mock_config,
         )._validate_mapping()
 
 

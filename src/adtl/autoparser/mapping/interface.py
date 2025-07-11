@@ -10,6 +10,7 @@ from typing import Literal, Union
 
 import pandas as pd
 
+from ..config.config import setup_config
 from ..util import DEFAULT_CONFIG
 from .long_mapper import LongMapper
 from .wide_mapper import WideMapper
@@ -20,14 +21,9 @@ CONFIG = "../" + DEFAULT_CONFIG
 def create_mapping(
     data_dictionary: Union[str, pd.DataFrame],
     table_name: str,
-    api_key: str,
-    config: Union[Path, None] = None,
     save: bool = True,
     file_name: str = "mapping_file",
     table_format: Literal["wide", "long"] = "wide",
-    language: Union[str, None] = None,
-    llm_provider: Union[str, None] = None,
-    llm_model: Union[str, None] = None,
 ) -> pd.DataFrame:
     """
     Creates a csv containing the mapping between a data dictionary and a schema.
@@ -42,17 +38,6 @@ def create_mapping(
         Path to a CSV or XLSX file, or a DataFrame, containing the data dictionary.
     schema
         Path to a JSON schema file.
-    language
-        Language of the source data (e.g. french, english, spanish).
-    api_key
-        API key for the API defined in `llm_provider`
-    llm_provider
-        Which LLM to use, currently 'openai' and 'gemini' are supported.
-    llm_model
-        Specify an LLM model to use. If not provided, a default for the given provider
-        will be used.
-    config
-        Path to a JSON file containing the configuration for autoparser.
     save
         Whether to save the mapping to a CSV file.
     file_name
@@ -71,15 +56,9 @@ def create_mapping(
         raise ValueError(
             f"Invalid table format: {table_format}. Must be either 'wide' or 'long'."
         )
-    df = MapperClass(
-        data_dictionary,
-        table_name,
-        language=language,
-        api_key=api_key,
-        llm_provider=llm_provider,
-        llm_model=llm_model,
-        config=config,
-    ).create_mapping(save=save, file_name=file_name)
+    df = MapperClass(data_dictionary, table_name).create_mapping(
+        save=save, file_name=file_name
+    )
 
     return df
 
@@ -94,17 +73,6 @@ def main(argv=None):
     )
     parser.add_argument("dictionary", help="Data dictionary to use")
     parser.add_argument("table_name", help="Name of the table being mapped")
-    parser.add_argument("language", help="Language of the original data")
-    parser.add_argument("api_key", help="OpenAI API key to use")
-    parser.add_argument(
-        "-l",
-        "--llm-provider",
-        help="LLM API to use, either 'openai' or 'gemini'",
-        default="openai",
-    )
-    parser.add_argument(
-        "-m", "--llm-model", help="LLM model to use, e.g. 'gpt-4o-mini'"
-    )
     parser.add_argument(
         "-c",
         "--config",
@@ -118,14 +86,12 @@ def main(argv=None):
         "--long-table", help="The target table has a long format", action="store_true"
     )
     args = parser.parse_args(argv)
+
+    setup_config(args.config or CONFIG)
+
     create_mapping(
         data_dictionary=args.dictionary,
         table_name=args.table_name,
-        language=args.language,
-        api_key=args.api_key,
-        llm_provider=args.llm_provider,
-        llm_model=args.llm_model,
-        config=args.config,
         save=True,
         file_name=args.output,
         table_format="long" if args.long_table else "wide",

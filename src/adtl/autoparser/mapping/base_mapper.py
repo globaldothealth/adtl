@@ -2,21 +2,14 @@ from __future__ import annotations
 
 import abc
 from functools import cached_property
-from pathlib import Path
-from typing import Literal, Union
+from typing import Union
 
 import numpy as np
 import pandas as pd
 
+from ..config.config import get_config
 from ..dict_reader import format_dict
-from ..util import (
-    DEFAULT_CONFIG,
-    read_config_schema,
-    read_json,
-    setup_llm,
-)
-
-CONFIG = "../" + DEFAULT_CONFIG
+from ..util import read_json
 
 
 class BaseMapper(abc.ABC):
@@ -33,56 +26,25 @@ class BaseMapper(abc.ABC):
         The data dictionary to use
     table_name
         The name of the table to map to
-    language
-        The language of the raw data (e.g. 'fr', 'en', 'es')
-    api_key
-        The API key to use for the LLM
-    llm_provider
-        The LLM API to use, currently only 'openai' and 'gemini' are supported
-    llm_model
-        The LLM model to use. If not provided, a default for the given provider will be
-        used.
-    config
-        The path to the configuration file to use if not using the default configuration
     """
 
     INDEX_FIELD = "target_field"
 
-    def __init__(
-        self,
-        data_dictionary: Union[str, pd.DataFrame],
-        table_name: str,
-        *,
-        api_key: str,
-        language: Union[str, None] = None,
-        llm_provider: Union[Literal["openai", "gemini"], None] = None,
-        llm_model: Union[str, None] = None,
-        config: Union[Path, None] = None,
-    ):
+    def __init__(self, data_dictionary: Union[str, pd.DataFrame], table_name: str):
         self.name = table_name
 
-        self.config = read_config_schema(config or Path(Path(__file__).parent, CONFIG))
+        self.config = get_config()
 
-        self.language = language or self.config.get("language", None)
-        self.llm_provider = llm_provider or self.config.get("llm_provider", None)
-        self.llm_model = llm_model or self.config.get("llm_model", None)
+        self.language = self.config.language
+        self.model = self.config._llm
 
-        if self.language is None:
-            raise ValueError(
-                "Language must be specified either in the config file or as an argument"
-            )
+        if self.model is None:
+            self.config.check_llm_setup()
 
-        if self.llm_provider is None and self.llm_model is None:
-            self.model = None
-        else:
-            self.model = setup_llm(
-                api_key, provider=self.llm_provider, model=self.llm_model
-            )
-
-        self.schema = read_json(self.config["schemas"][table_name])
+        self.schema = read_json(self.config.schemas[table_name])
         self.schema_fields = self.schema["properties"]
 
-        self.data_dictionary = format_dict(data_dictionary, config=self.config)
+        self.data_dictionary = format_dict(data_dictionary)
 
     # Abstract methods ---------------------------------------
 

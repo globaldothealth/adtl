@@ -2,6 +2,7 @@ import argparse
 import sys
 
 try:
+    from .config.config import setup_config
     from .dict_reader import DictReader, format_dict
     from .dict_writer import DictWriter, create_dict, generate_descriptions
     from .make_toml import ParserGenerator, create_parser
@@ -23,6 +24,7 @@ __all__ = [
     "create_mapping",
     "ParserGenerator",
     "create_parser",
+    "setup_config",
 ]
 
 from .dict_reader import main as format_dict_main

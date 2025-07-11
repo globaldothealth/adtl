@@ -8,8 +8,11 @@ description = "Autoparser config for generating CSV mappings and TOML"
 # to this TOML:
 #  { "oui" = True, "non" = False}
 
+language = "en"
+
 # provide one, other or both of these
 llm_provider = "openai"
+api_key = "1a2s3c4d"
 
 choice_delimiter = ","
 choice_delimiter_map = "="
@@ -40,4 +43,3 @@ max_common_count = 8
   source_description = "Description"
   source_type = "Field Type"
   common_values = "Common Values"
-  choices = "Choices"

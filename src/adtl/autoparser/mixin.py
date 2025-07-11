@@ -2,10 +2,14 @@
 Mixin class for handling long table mappings.
 """
 
+from __future__ import annotations
+
 from functools import cached_property
 from typing import Protocol
 
 import pandas as pd
+
+from .config.config import Config
 
 
 class LongTableMixin(Protocol):
@@ -18,37 +22,35 @@ class LongTableMixin(Protocol):
         - self.schema_fields: The schema 'properties' list for the current table
     """
 
-    config: dict
+    config: Config
     name: str
     schema_fields: list[dict]
 
     @cached_property
     def common_cols(self) -> str:
         """Returns the common columns for the long table"""
-        ccs = self.config["long_tables"][self.name].get("common_cols", None)
+        ccs = self.config.long_tables[self.name].common_cols
         if ccs is None:
-            ccs = self.config["long_tables"][self.name].get("common_fields", {}).keys()
+            ccs = self.config.long_tables[self.name].common_fields.keys()
 
         return ccs
 
     @property
     def common_fields(self) -> pd.Series:
         if not hasattr(self, "_common_fields"):
-            self._common_fields = self.config["long_tables"][self.name].get(
-                "common_fields", {}
-            )
+            self._common_fields = self.config.long_tables[self.name].common_fields
 
         return self._common_fields
 
     @cached_property
     def variable_col(self) -> str:
         """Returns the variable column for the long table"""
-        return self.config["long_tables"][self.name]["variable_col"]
+        return self.config.long_tables[self.name].variable_col
 
     @cached_property
     def value_cols(self) -> list[str]:
         """Returns the value columns for the long table"""
-        return self.config["long_tables"][self.name]["value_cols"]
+        return self.config.long_tables[self.name].value_cols
 
     @cached_property
     def other_fields(self) -> list[str]:

@@ -12,14 +12,13 @@ import numpy as np
 import pandas as pd
 from pandera.errors import SchemaError
 
+from .config.config import get_config, setup_config
 from .data_dict_schema import GeneratedDict, GeneratedDictDescribed
 from .util import (
     DEFAULT_CONFIG,
     check_matches,
     load_data_dict,
-    read_config_schema,
     read_data,
-    setup_llm,
 )
 
 
@@ -36,37 +35,13 @@ class DictWriter:
 
     Parameters
     ----------
-    config
-        The path to the configuration file to use if not using the default configuration
-    llm_provider
-        The LLM API to use (currently only OpenAI & Google Gemini are supported)
-    llm_model
-        The name of the LLM model to use (must support Structured Outputs for OpenAI, or
-        the equivalent responseSchema for Gemini)
     api_key
         API key corresponsing to the chosen LLM provider/model
     """
 
-    def __init__(
-        self,
-        config: Path | str | None = None,
-        llm_provider: str | None = None,
-        llm_model: str | None = None,
-        api_key: str | None = None,
-    ):
-        self.config = read_config_schema(
-            config or Path(Path(__file__).parent, DEFAULT_CONFIG)
-        )
-
-        try:
-            self.config["max_common_count"]
-        except KeyError:
-            raise ValueError("'max_common_count' not found in config file.")
-
-        if (llm_provider or llm_model) and api_key:
-            self.model = setup_llm(api_key, provider=llm_provider, model=llm_model)
-        else:
-            self.model = None
+    def __init__(self):
+        self.config = get_config()
+        self.model = self.config._llm
 
     def _reset_headers_and_validate(self, data_dict: pd.DataFrame) -> pd.DataFrame:
         """
@@ -80,7 +55,7 @@ class DictWriter:
             Data dictionary with the headers reset
         """
 
-        column_mappings = self.config["column_mappings"]
+        column_mappings = self.config.column_mappings.model_dump()
         data_dict.rename(columns=column_mappings, inplace=True)
 
         # Validate the new data dictionary
@@ -99,7 +74,9 @@ class DictWriter:
 
     def _load_dict(self, data_dict: pd.DataFrame) -> pd.DataFrame:
         dd = load_data_dict(data_dict, schema=GeneratedDict)
-        column_mappings = {v: k for k, v in self.config["column_mappings"].items()}
+        column_mappings = {
+            v: k for k, v in self.config.column_mappings.model_dump().items()
+        }
         dd.rename(columns=column_mappings, inplace=True)
 
         return dd
@@ -131,8 +108,8 @@ class DictWriter:
         value_opts = {}
 
         # Get common value thresholds
-        max_common_count = self.config["max_common_count"]
-        min_common_freq = self.config.get("min_common_freq")
+        max_common_count = self.config.max_common_count
+        min_common_freq = self.config.min_common_frequency
 
         # check the max count isn't > than 30% of the dataset
         calced_max_common_count = min(max_common_count, len(df) * 0.3)
@@ -176,7 +153,7 @@ class DictWriter:
                     index_values = list(values.index.values)
                     # Check: only allow if all values are str or bool
                     if all(isinstance(v, (str, bool)) for v in index_values):
-                        value_opts[i] = f"{self.config['choice_delimiter']} ".join(
+                        value_opts[i] = f"{self.config.choice_delimiter} ".join(
                             str(v) for v in index_values
                         )
 
@@ -208,12 +185,7 @@ class DictWriter:
         return dd
 
     def generate_descriptions(
-        self,
-        language: str,
-        data_dict: pd.DataFrame | str | None = None,
-        key: str | None = None,
-        llm_provider: str = "openai",
-        llm_model: str | None = None,
+        self, data_dict: pd.DataFrame | str | None = None
     ) -> pd.DataFrame:
         """
         Generate descriptions for the columns in the dataset.
@@ -223,20 +195,10 @@ class DictWriter:
 
         Parameters
         ----------
-        language
-            Language the column headers are in (e.g. french, spanish).
         data_dict
             Data dictionary containing the column headers, either as a dataframe or a
             path to the dictionary as a csv/xlsx file. Can be None if the data dict
             has already been created using `create_dict()`.
-        key
-            OpenAI API key.
-        llm_provider
-            LLM API to call (currently only OpenAI & Google Gemini is supported)
-        llm_model
-            Name of the LLM model to use (must support Structured Outputs for OpenAI, or
-            the equivalent responseSchema for Gemini). If not provided, the default for
-            each provider will be used.
 
         Returns
         -------
@@ -251,14 +213,14 @@ class DictWriter:
                     "No data dictionary found. Please create a data dictionary first."
                 )
 
-        df = self._load_dict(data_dict)
+        if self.model is None:
+            self.config.check_llm_setup()
 
-        if not self.model:
-            self.model = setup_llm(key, provider=llm_provider, model=llm_model)
+        df = self._load_dict(data_dict)
 
         headers = df.source_field
 
-        descriptions = self.model.get_definitions(list(headers), language)
+        descriptions = self.model.get_definitions(list(headers), self.config.language)
 
         descriptions = {d.field_name: d.translation for d in descriptions}
         df_descriptions = pd.DataFrame(
@@ -287,7 +249,7 @@ class DictWriter:
         return new_dd
 
 
-def create_dict(data: pd.DataFrame | str, config: Path | None = None) -> pd.DataFrame:
+def create_dict(data: pd.DataFrame | str) -> pd.DataFrame:
     """
     Create a basic data dictionary from a dataset.
 
@@ -300,8 +262,6 @@ def create_dict(data: pd.DataFrame | str, config: Path | None = None) -> pd.Data
     ----------
     data
         Path to a CSV or XLSX file, or a DataFrame, containing the raw data.
-    config
-        Path to the configuration file to use if not using the default configuration
 
     Returns
     -------
@@ -309,18 +269,11 @@ def create_dict(data: pd.DataFrame | str, config: Path | None = None) -> pd.Data
         Data dictionary containing field names, field types, and common values.
     """
 
-    dd = DictWriter(config).create_dict(data)
+    dd = DictWriter().create_dict(data)
     return dd
 
 
-def generate_descriptions(
-    data_dict: pd.DataFrame | str,
-    language: str,
-    key: str | None = None,
-    llm_provider: str | None = "openai",
-    llm_model: str | None = None,
-    config: Path | None = None,
-) -> pd.DataFrame:
+def generate_descriptions(data_dict: pd.DataFrame | str) -> pd.DataFrame:
     """
     Generate descriptions for the columns in the dataset.
 
@@ -332,18 +285,6 @@ def generate_descriptions(
     data_dict
         Data dictionary containing the column headers, either as a dataframe or a path
         to the dictionary as a csv/xlsx file.
-    language
-        Language the column headers are in (e.g. french, spanish).
-    key
-        OpenAI API key.
-    llm_provider
-        LLM API to call (currently OpenAI & Google Gemini are supported)
-    llm_model
-        Name of the LLM model to use (must support Structured Outputs for OpenAI, or the
-        equivalent responseSchema for Gemini). If not provided, the default for each
-        provider will be used.
-    config
-        Path to the configuration file to use if not using the default configuration
 
     Returns
     -------
@@ -351,9 +292,7 @@ def generate_descriptions(
         Data dictionary with descriptions added
     """
 
-    dd = DictWriter(config=config).generate_descriptions(
-        language, data_dict, key, llm_provider, llm_model
-    )
+    dd = DictWriter().generate_descriptions(data_dict)
 
     return dd
 
@@ -365,25 +304,10 @@ def main(argv=None):
     )
     parser.add_argument("data", help="Data to create dictionary from")
     parser.add_argument(
-        "language", help="Language of the raw data (e.g. 'fr', 'en', 'es')"
-    )
-    parser.add_argument(
         "-d",
         "--descriptions",
         help="Use an LLM to generate descriptions from file headers",
         action="store_true",
-    )
-    parser.add_argument("-k", "--api-key", help="LLM API key to generate descriptions")
-    parser.add_argument(
-        "-l",
-        "--llm-provider",
-        help="LLM API to use, either 'openai' or 'gemini'",
-        default="openai",
-    )
-    parser.add_argument(
-        "-m",
-        "--llm-model",
-        help="Select a specific model from the llm provider, e.g. 'gpt-4o-mini'",
     )
     parser.add_argument(
         "-c",
@@ -397,19 +321,15 @@ def main(argv=None):
 
     args = parser.parse_args(argv)
 
-    if args.descriptions and not args.api_key:
-        raise ValueError("API key required for generating descriptions")
+    setup_config(args.config or DEFAULT_CONFIG)
 
-    df = create_dict(args.data, args.config)
+    config = get_config()
+    if args.descriptions and not config._llm:
+        config.check_llm_setup()
+
+    df = create_dict(args.data)
     if args.descriptions:
-        df = generate_descriptions(
-            df,
-            args.language,
-            args.api_key,
-            args.llm_provider,
-            args.llm_model,
-            args.config,
-        )
+        df = generate_descriptions(df)
 
     df.to_csv(f"{args.output}.csv", index=False)
 

@@ -8,34 +8,13 @@ import difflib
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict, Literal
+from typing import Any, Dict
 
 import pandas as pd
-import tomli
 
 from adtl.autoparser.data_dict_schema import DataDictionaryProcessed
-from adtl.autoparser.language_models.gemini import GeminiLanguageModel
-from adtl.autoparser.language_models.openai import OpenAILanguageModel
 
 DEFAULT_CONFIG = "config/autoparser.toml"
-
-
-def read_config_schema(path: dict | str | Path) -> Dict:
-    if isinstance(path, dict):
-        return path
-
-    if isinstance(path, str):
-        path = Path(path)
-
-    if path.suffix == ".json":
-        return read_json(path)
-    elif path.suffix == ".toml":
-        with path.open("rb") as fp:
-            return tomli.load(fp)
-    else:
-        raise ValueError(
-            f"read_config_schema(): Unsupported file format: {path.suffix}"
-        )
 
 
 def read_json(file: str | Path) -> dict:
@@ -120,52 +99,6 @@ def load_data_dict(
     schema.validate(dd, lazy=True)
 
     return dd
-
-
-def setup_llm(
-    api_key: str,
-    provider: Literal["gemini", "openai"] | None = None,
-    model: str | None = None,
-):
-    """
-    Setup the LLM to use to generate descriptions.
-
-    Separate from the __init__ method to allow for extra barrier between raw data &
-    LLM.
-
-    Parameters
-    ----------
-    provider
-        Name of the LLM provider to use (openai or gemini)
-    api_key
-        API key
-    model
-        Name of the LLM model to use (must support Structured Outputs for OpenAI, or the
-        equivalent responseSchema for Gemini). If not provided, the default for each
-        provider will be used.
-    """
-    if api_key is None:
-        raise ValueError("API key required to set up an LLM")
-
-    if provider is None and model is None:
-        raise ValueError(
-            "Either a provider, a model or both must be provided to set up the LLM"
-        )
-    elif provider and provider not in ["openai", "gemini"]:
-        raise ValueError(f"Unsupported LLM provider: {provider}")
-
-    kwargs = {"api_key": api_key}
-    if model is not None:
-        kwargs["model"] = model
-
-    if provider == "openai" or model in OpenAILanguageModel.valid_models():
-        return OpenAILanguageModel(**kwargs)
-    elif provider == "gemini" or model in GeminiLanguageModel.valid_models():
-        return GeminiLanguageModel(**kwargs)
-    else:
-        raise ValueError(
-            f"Could not set up LLM with provider '{provider}' and model '{model}'."
-        )
 
 
 def check_matches(llm: str, source: list[str], cutoff=0.8) -> str | None:
