@@ -384,6 +384,7 @@ def create_parser(
     schema_path: Path,
     parser_name: str,
     description: Union[str, None] = None,
+    constant_fields: Union[dict[str, dict[str, bool]], None] = None,
 ):
     """
     Takes the csv mapping file created by `create_mapping` and writes out a TOML parser
@@ -402,6 +403,9 @@ def create_parser(
         Name of the parser to create
     description
         Description of the parser. Defaults to the parser name.
+    constant_fields
+        Constant fields are those which are single values, rather than taken from a
+        field in the source data.
 
     Returns
     -------
@@ -412,6 +416,7 @@ def create_parser(
         schema_path,
         parser_name,
         description,
+        constant_fields=constant_fields,
     ).create_parser(parser_name)
 
 

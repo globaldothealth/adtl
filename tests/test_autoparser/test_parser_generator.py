@@ -266,22 +266,68 @@ def test_single_field_mapping(row, expected, wide_parser):
     assert wide_parser.single_field_mapping(row) == expected
 
 
-def test_create_parser(tmp_path, snapshot):
+def test_create_parser(snapshot):
     parser = ParserGenerator(
         "tests/test_autoparser/sources/animals_mapping.csv",
         "",
         "animals",
     )
 
-    file = tmp_path / "test.toml"
-
-    parser.create_parser(file_name=file)
-
-    with file.open("rb") as fp:
-        parser_file = tomli.load(fp)
+    parser_file = parser.make_single_parser()
 
     # check body of parser file
     assert parser_file["animals"] == snapshot
+
+
+def test_create_parser_multitable(snapshot):
+    setup_config(
+        {
+            "name": "test_autoparser",
+            "language": "en",
+            "max_common_count": 8,
+            "schemas": {
+                "animals": "tests/test_autoparser/schemas/animals.schema.json",
+                "vet_observations": "tests/test_autoparser/schemas/vet-obs.schema.json",
+            },
+            "long_tables": {
+                "vet_observations": {
+                    "common_fields": {
+                        "animal_id": "subjid",
+                        "visit_date": "date",
+                        "clinic": "jericho",
+                    },
+                    "variable_col": "observation",
+                    "value_cols": ["string_value", "boolean_value", "numeric_value"],
+                }
+            },
+        }
+    )
+
+    with pytest.raises(
+        ValueError, match="Mapping for table 'animals' not found in provided mappings."
+    ):
+        ParserGenerator(
+            {
+                "vet_observations": "tests/test_autoparser/sources/long-animal-mapper.csv",
+            },
+            "",
+            "combined parser",
+            constant_fields={"vet_observations": {"clinic": True}},
+        )
+
+    parser = ParserGenerator(
+        {
+            "animals": "tests/test_autoparser/sources/animals_mapping.csv",
+            "vet_observations": "tests/test_autoparser/sources/long-animal-mapper.csv",
+        },
+        "",
+        "combined parser",
+        constant_fields={"vet_observations": {"clinic": True}},
+    )
+
+    parser_file = parser.make_single_parser()
+
+    assert parser_file == snapshot
 
 
 def test_create_parser_ap_access(tmp_path, snapshot):
