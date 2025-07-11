@@ -77,6 +77,21 @@ def test_dictionary_creation_no_descrip_dataframe(writer):
     writer.create_dict(df)
 
 
+def test_dictionary_creation_no_llm():
+    setup_config(
+        {
+            "language": "fr",
+            "llm_provider": "openai",
+            "max_common_count": 8,
+            "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
+        }
+    )
+
+    writer = DictWriter()
+    with pytest.raises(ValueError, match="Config: API key required to set up an LLM"):
+        writer.generate_descriptions(SOURCES + "animals_dd.csv")
+
+
 @pytest.mark.filterwarnings("ignore:Small Dataset")
 def test_dictionary_creation_with_list(writer):
     df = writer.create_dict(SOURCES + "IB_sample_data.csv")

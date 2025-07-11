@@ -54,6 +54,24 @@ def mapper(config):
     )
 
 
+def test_invalid_llm_setup():
+    setup_config(
+        {
+            "name": "test_autoparser",
+            "language": "fr",
+            "llm_provider": "openai",
+            "max_common_count": 8,
+            "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
+        }
+    )
+
+    with pytest.raises(ValueError, match="Config: API key required to set up an LLM"):
+        WideMapper(
+            "tests/test_autoparser/sources/animals_dd_described.parquet",
+            "animals",
+        )
+
+
 def test_target_fields(mapper):
     npt.assert_array_equal(
         mapper.target_fields,
