@@ -17,6 +17,11 @@ def test_get_config_not_set_up():
         get_config()
 
 
+def test_setup_config_incorrect_format():
+    with pytest.raises(ValueError, match="Unsupported config file format"):
+        setup_config("invalid_format.csv")
+
+
 @pytest.mark.parametrize(
     "input, error",
     [

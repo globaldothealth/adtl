@@ -11,27 +11,10 @@ from pathlib import Path
 from typing import Any, Dict
 
 import pandas as pd
-import tomli
 
 from adtl.autoparser.data_dict_schema import DataDictionaryProcessed
 
 DEFAULT_CONFIG = "config/autoparser.toml"
-
-
-def read_schema(path: dict | str | Path) -> Dict:
-    if isinstance(path, dict):
-        return path
-
-    if isinstance(path, str):
-        path = Path(path)
-
-    if path.suffix == ".json":
-        return read_json(path)
-    elif path.suffix == ".toml":
-        with path.open("rb") as fp:
-            return tomli.load(fp)
-    else:
-        raise ValueError(f"read_schema(): Unsupported file format: {path.suffix}")
 
 
 def read_json(file: str | Path) -> dict:

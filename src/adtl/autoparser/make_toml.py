@@ -17,7 +17,7 @@ import pandas as pd
 from .config.config import get_config, setup_config
 from .mixin import LongTableMixin
 from .toml_writer import dump
-from .util import DEFAULT_CONFIG, parse_llm_mapped_values, read_data, read_schema
+from .util import DEFAULT_CONFIG, parse_llm_mapped_values, read_data, read_json
 
 logger = logging.getLogger(__name__)
 INPUT_FORMAT = Union[pd.DataFrame, str, Path]
@@ -290,10 +290,7 @@ class ParserGenerator:
                 for table in self.tables
             }
 
-        self.schemas = {
-            t: read_schema(Path(schema_path, self.config.schemas[t]))
-            for t in self.tables
-        }
+        self.schemas = {t: read_json(self.config.schemas[t]) for t in self.tables}
 
         self.table_types = {
             t: "wide" if "target_field" in m.columns else "long"

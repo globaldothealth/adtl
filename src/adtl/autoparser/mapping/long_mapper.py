@@ -103,11 +103,6 @@ class LongMapper(BaseMapper, LongTableMixin):
             raise ValueError(
                 "No long tables defined in config file. Please set 'long_tables' in the config file."
             )
-        if self.name not in self.config.long_tables:
-            raise ValueError(
-                f"Long table {self.name} not defined in config file. "
-                "Please set 'long_tables' in the config file."
-            )
 
         if self.schema_fields[self.variable_col].get("enum") is None:
             raise ValueError(

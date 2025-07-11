@@ -67,7 +67,7 @@ def mock_data_dict():
     )
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def config():
     setup_config(
         {
@@ -91,7 +91,7 @@ def config():
 
 
 @pytest.fixture
-def mapper(mock_data_dict):
+def mapper(config, mock_data_dict):
     mapper = LongMapper(
         data_dictionary=mock_data_dict,
         table_name="vet_observations",
@@ -114,6 +114,36 @@ def common_fields_mapper(mapper):
 
 def test_check_config_valid(mapper):
     mapper._check_config()  # Should not raise
+
+
+def test_create_config_failure_no_long_tables(mock_data_dict):
+    setup_config(
+        {
+            "name": "Test Config",
+            "max_common_count": 8,
+            "language": "en",
+            "llm_provider": "openai",
+            "api_key": "1234",  # dummy API key
+            "schemas": {
+                "vet_observations": "tests/test_autoparser/schemas/vet-obs.schema.json"
+            },
+        }
+    )
+
+    with pytest.raises(ValueError, match="No long tables defined in config file"):
+        LongMapper(
+            data_dictionary=mock_data_dict,
+            table_name="vet_observations",
+        )._check_config()
+
+
+def test_create_config_failure_no_enum_fields(mapper):
+    del mapper.schema_fields[mapper.variable_col]["enum"]
+
+    with pytest.raises(
+        ValueError, match="'observation' in schema does not have an enum set"
+    ):
+        mapper._check_config()
 
 
 def test_set_common_fields_valid(common_fields_mapper):
@@ -221,12 +251,3 @@ def test_create_mapping_success(common_fields_mapper):
 def test_create_mapping_failure_fields_not_set(mapper):
     with pytest.raises(ValueError, match="Common fields must be set"):
         mapper.create_mapping(save=False)
-
-
-def test_create_mapping_failure_no_enum_fields(common_fields_mapper):
-    del common_fields_mapper.schema_fields[common_fields_mapper.variable_col]["enum"]
-
-    with pytest.raises(
-        ValueError, match="'observation' in schema does not have an enum set"
-    ):
-        common_fields_mapper.create_mapping(save=False)

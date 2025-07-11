@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy.testing as npt
 import pandas as pd
 import pandera.pandas as pa
@@ -11,20 +9,7 @@ from adtl.autoparser.util import (
     check_matches,
     load_data_dict,
     parse_llm_mapped_values,
-    read_schema,
 )
-
-
-def test_read_schema():
-    data = read_schema(Path("tests/test_autoparser/schemas/animals.schema.json"))
-    assert isinstance(data, dict)
-    npt.assert_array_equal(
-        ["$schema", "$id", "title", "description", "required", "properties"],
-        list(data.keys()),
-    )
-
-    with pytest.raises(ValueError, match="Unsupported file format: .csv"):
-        read_schema(Path("tests/test_autoparser/sources/animals_dd_described.csv"))
 
 
 @pytest.mark.parametrize(

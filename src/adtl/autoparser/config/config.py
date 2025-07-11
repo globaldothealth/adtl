@@ -118,12 +118,10 @@ class Config(BaseModel):
     @field_validator("api_key", mode="after")
     @classmethod
     def retrieve_api_key(cls, k) -> Optional[SecretStr]:
-        if k is not None:
-            try:
-                return SecretStr(os.environ[k.get_secret_value()])
-            except KeyError:
-                return k
-        return k
+        try:
+            return SecretStr(os.environ[k.get_secret_value()])
+        except KeyError:
+            return k
 
     @model_validator(mode="after")
     def check_common_cols_fields(self) -> Self:
@@ -158,19 +156,21 @@ def _config():
             raise RuntimeError("Config not initialized. Call setup_config() first.")
         return _config_instance
 
-    def setup_config(path: Path | dict) -> Config:
+    def setup_config(path: Path | str | dict) -> Config:
         """Initializes the config singleton from a file."""
 
         if isinstance(path, dict):
             data = path
-        elif path.suffix == ".json":
-            with path.open() as fp:
-                data = json.load(fp)
-        elif path.suffix == ".toml":
-            with path.open("rb") as fp:
-                data = tomli.load(fp)
         else:
-            raise ValueError(f"Unsupported config file format: {path.suffix}")
+            path = Path(path)
+            if path.suffix == ".json":
+                with path.open() as fp:
+                    data = json.load(fp)
+            elif path.suffix == ".toml":
+                with path.open("rb") as fp:
+                    data = tomli.load(fp)
+            else:
+                raise ValueError(f"Unsupported config file format: {path.suffix}")
 
         nonlocal _config_instance
         _config_instance = Config(**data)
