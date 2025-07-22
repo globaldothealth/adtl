@@ -19,22 +19,6 @@ SCHEMAS = "tests/test_autoparser/schemas/"
 
 
 @pytest.fixture
-def config():
-    """Fixture to load the configuration for the autoparser."""
-    setup_config(
-        {
-            "name": "test_autoparser",
-            "language": "fr",
-            "llm_provider": "openai",
-            "api_key": "1234",
-            "choice_delimiter": ",",
-            "max_common_count": 8,
-            "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
-        }
-    )
-
-
-@pytest.fixture
 def writer(config):
     return DictWriter()
 

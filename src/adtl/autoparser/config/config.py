@@ -60,12 +60,12 @@ class LongTableConfig(BaseModel):
 
     variable_col: str
     value_cols: list[str]
-    common_cols: Optional[list[str]] = None
-    common_fields: Optional[dict[str, str]] = None
+    common_cols: Optional[list[str]] = []
+    common_fields: Optional[dict[str, str]] = {}
 
     @model_validator(mode="after")
     def check_common_cols_fields(self) -> Self:
-        if self.common_cols is not None and self.common_fields is not None:
+        if self.common_cols and self.common_fields:
             raise ValueError(
                 "Only one from 'common_cols' and 'common_fields' can be set at once"
             )
@@ -81,7 +81,7 @@ class Config(BaseModel):
     llm_provider: Optional[Literal["openai", "gemini"]] = None
     llm_model: Optional[str] = None
     api_key: Optional[SecretStr] = None
-    choice_delimiter: str = ", "
+    choice_delimiter: str = ","
     choice_delimiter_map: str = "="
     num_refs: int = 3
     max_common_count: int = 25

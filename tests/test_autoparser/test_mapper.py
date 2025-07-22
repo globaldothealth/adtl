@@ -32,21 +32,6 @@ class MapperTest(WideMapper):
 
 
 @pytest.fixture
-def config():
-    """Fixture to load the configuration for the autoparser."""
-    setup_config(
-        {
-            "name": "test_autoparser",
-            "language": "fr",
-            "api_key": "1234",
-            "llm_provider": "openai",
-            "max_common_count": 8,
-            "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
-        }
-    )
-
-
-@pytest.fixture
 def mapper(config):
     return MapperTest(
         "tests/test_autoparser/sources/animals_dd_described.parquet",

@@ -11,8 +11,8 @@ from adtl.autoparser import setup_config
 from adtl.autoparser.make_toml import LongTableParser
 
 
-@pytest.fixture(autouse=True)
-def config():
+@pytest.fixture()
+def config_with_fields():
     """Fixture to load the configuration for the autoparser."""
     setup_config(
         {
@@ -38,7 +38,7 @@ def config():
 
 
 @pytest.fixture
-def long_parser():
+def long_parser(config_with_fields):
     return LongTableParser(
         mapping=pd.read_csv("tests/test_autoparser/sources/long-animal-mapper.csv"),
         schema=json.load(

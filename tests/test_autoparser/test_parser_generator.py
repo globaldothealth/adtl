@@ -13,8 +13,8 @@ from adtl.autoparser import make_toml_main as main
 from adtl.autoparser.make_toml import WideTableParser
 
 
-@pytest.fixture(autouse=True)
-def config():
+@pytest.fixture()
+def animal_only_config():
     """Fixture to load the configuration for the autoparser."""
     setup_config(
         {
@@ -27,7 +27,7 @@ def config():
 
 
 @pytest.fixture
-def wide_parser():
+def wide_parser(config):
     with open("tests/test_autoparser/schemas/animals.schema.json", "r") as f:
         schema = json.load(f)
 
@@ -266,7 +266,7 @@ def test_single_field_mapping(row, expected, wide_parser):
     assert wide_parser.single_field_mapping(row) == expected
 
 
-def test_create_parser(snapshot):
+def test_create_parser(snapshot, animal_only_config):
     parser = ParserGenerator(
         "tests/test_autoparser/sources/animals_mapping.csv",
         "",
@@ -330,7 +330,7 @@ def test_create_parser_multitable(snapshot):
     assert parser_file == snapshot
 
 
-def test_create_parser_ap_access(tmp_path, snapshot):
+def test_create_parser_ap_access(tmp_path, snapshot, animal_only_config):
     file = tmp_path / "test.toml"
 
     autoparser.create_parser(

@@ -67,29 +67,6 @@ def mock_data_dict():
     )
 
 
-@pytest.fixture()
-def config():
-    setup_config(
-        {
-            "name": "Test Config",
-            "max_common_count": 8,
-            "language": "en",
-            "llm_provider": "openai",
-            "api_key": "1234",  # dummy API key
-            "schemas": {
-                "vet_observations": "tests/test_autoparser/schemas/vet-obs.schema.json"
-            },
-            "long_tables": {
-                "vet_observations": {
-                    "common_cols": ["animal_id", "visit_date"],
-                    "variable_col": "observation",
-                    "value_cols": ["string_value", "boolean_value", "numeric_value"],
-                }
-            },
-        }
-    )
-
-
 @pytest.fixture
 def mapper(config, mock_data_dict):
     mapper = LongMapper(

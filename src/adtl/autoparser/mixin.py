@@ -30,7 +30,7 @@ class LongTableMixin(Protocol):
     def common_cols(self) -> list[str]:
         """Returns the common columns for the long table"""
         ccs = self.config.long_tables[self.name].common_cols
-        if ccs is None:
+        if not ccs:
             ccs = list(self.config.long_tables[self.name].common_fields.keys())
 
         return ccs
