@@ -27,11 +27,11 @@ class LongTableMixin(Protocol):
     schema_fields: list[dict]
 
     @cached_property
-    def common_cols(self) -> str:
+    def common_cols(self) -> list[str]:
         """Returns the common columns for the long table"""
         ccs = self.config.long_tables[self.name].common_cols
         if ccs is None:
-            ccs = self.config.long_tables[self.name].common_fields.keys()
+            ccs = list(self.config.long_tables[self.name].common_fields.keys())
 
         return ccs
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import warnings
 from functools import cached_property
+from typing import Generator
 
 import numpy as np
 import pandas as pd
@@ -51,7 +52,7 @@ class WideMapper(BaseMapper):
         target_vals.index.name = "target_field"
         return target_vals
 
-    def _iter_value_tuples(self):
+    def _iter_value_tuples(self) -> Generator[tuple[str, list[str], list[str]]]:
         for f in self.target_fields:
             s = self.common_values_mapped.get(f)
             t = self.target_values[f]
@@ -116,11 +117,11 @@ class WideMapper(BaseMapper):
         """
         Creates an intermediate mapping dataframe linking the data dictionary to schema
         fields. The index contains the target (schema) field names, and the columns are:
-        source_description
-        source_field
-        common_values OR choices (depending on the data dictionary)
-        target_values
-        value_mapping
+        * source_description
+        * source_field
+        * common_values OR choices (depending on the data dictionary)
+        * target_values
+        * value_mapping
 
         Raises a warning if any fields are present in the schema where a
         corresponding source field in the data dictionary has not been found.
@@ -130,7 +131,7 @@ class WideMapper(BaseMapper):
         save
             Whether to save the mapping to a CSV file. If True, lists and dicts are
             converted to strings before saving.
-        name
+        file_name
             The name to use for the CSV file
         """
 

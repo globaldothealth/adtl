@@ -180,7 +180,7 @@ def test_target_values(mapper):
     )
 
 
-def test_create_data_structure(common_fields_mapper):
+def test_create_data_model(common_fields_mapper):
     fields = {
         "source_description": (str, ...),
         "variable_name": (
@@ -213,11 +213,11 @@ def test_create_data_structure(common_fields_mapper):
         ),
     }
     SingleEntry = create_model("SingleEntry", **fields)
-    data_structure = common_fields_mapper._create_data_structure()
+    data_model = common_fields_mapper._create_data_model()
 
     assert (
         SingleEntry.model_json_schema()["properties"]
-        == data_structure.model_json_schema()["properties"]
+        == data_model.model_json_schema()["properties"]
     )
 
 

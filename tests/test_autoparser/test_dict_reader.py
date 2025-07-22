@@ -1,6 +1,8 @@
 # tests the `DictReader` class
 from __future__ import annotations
 
+import os
+
 import pandas as pd
 import pytest
 from pandera.errors import SchemaError
@@ -134,7 +136,7 @@ def test_main_cli(tmp_path, reader_dedupe):
     ARGV = [
         str(tmp_path / "sample_data_dict_dedupe.csv"),
         "-c",
-        SOURCES + "test_config_provided_dict.toml",
+        os.path.join(SOURCES, "test_config_provided_dict.toml"),
         "-o",
         str(tmp_path / "test_dd_validation"),
     ]

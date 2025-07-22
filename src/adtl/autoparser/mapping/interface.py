@@ -36,12 +36,14 @@ def create_mapping(
     ----------
     data_dictionary
         Path to a CSV or XLSX file, or a DataFrame, containing the data dictionary.
-    schema
-        Path to a JSON schema file.
+    table_name
+        Name of the table being mapped.
     save
         Whether to save the mapping to a CSV file.
     file_name
         Name of the file to save the mapping to.
+    table_format
+        Format of the table to create, either 'wide' or 'long'.
 
     Returns
     -------

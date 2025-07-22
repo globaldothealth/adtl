@@ -9,6 +9,7 @@ import tomli
 from pydantic import BaseModel, SecretStr, field_validator, model_validator
 from typing_extensions import Self
 
+from adtl.autoparser.language_models.base_llm import LLMBase
 from adtl.autoparser.language_models.gemini import GeminiLanguageModel
 from adtl.autoparser.language_models.openai import OpenAILanguageModel
 
@@ -87,7 +88,7 @@ class Config(BaseModel):
     min_common_frequency: Optional[float] = None
     long_tables: Optional[dict[str, LongTableConfig]] = None
 
-    _llm: Optional[OpenAILanguageModel | GeminiLanguageModel]
+    _llm: Optional[LLMBase]
 
     def model_post_init(self, context: Any) -> None:
         """

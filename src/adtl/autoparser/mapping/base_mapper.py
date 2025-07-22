@@ -94,7 +94,7 @@ class BaseMapper(abc.ABC):
         )
 
     @property
-    def mapped_fields(self):
+    def mapped_fields(self) -> pd.Series:
         try:
             return self._mapped_fields
         except AttributeError:
@@ -106,7 +106,7 @@ class BaseMapper(abc.ABC):
     def mapped_fields(self, value: pd.Series):
         self._mapped_fields = value
 
-    def _relabel_choices(self, map_df):
+    def _relabel_choices(self, map_df) -> pd.DataFrame:
         """
         If 'choices' are present in the data dictionary, relabel the choices
         in the mapping dataframe to match the source field names.

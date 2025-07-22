@@ -7,7 +7,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from pydantic import create_model
+from pydantic import BaseModel, create_model
 
 from ..mixin import LongTableMixin
 from .base_mapper import BaseMapper
@@ -38,11 +38,11 @@ class LongMapper(BaseMapper, LongTableMixin):
         """Returns the enum values or boolean options for the target schema"""
 
         def _value_options(f):
-            if "boolean" in self.schema_fields[f].get("type", ["str", "null"]):
+            if "boolean" in self.schema_fields[f].get("type", ["string", "null"]):
                 return ["True", "False", "None"]
-            elif "string" in self.schema_fields[f].get("type", ["str", "null"]):
+            elif "string" in self.schema_fields[f].get("type", ["string", "null"]):
                 return self.schema_fields[f].get("enum", np.nan)
-            elif "array" in self.schema_fields[f].get("type", ["str", "null"]):
+            elif "array" in self.schema_fields[f].get("type", ["string", "null"]):
                 return self.schema_fields[f].get("items", {}).get("enum", np.nan)
             else:
                 return np.nan
@@ -59,7 +59,7 @@ class LongMapper(BaseMapper, LongTableMixin):
             if s is not None and t is not None:
                 yield (f, s, t)
 
-    def _create_data_structure(self) -> pd.DataFrame:
+    def _create_data_model(self) -> BaseModel:
         def _enum_creator(name: str, enums: list[str]) -> dict:
             """
             Creates a dictionary for a single entry in the long table format.
@@ -131,7 +131,7 @@ class LongMapper(BaseMapper, LongTableMixin):
         source data fields from the data dictionary.
         """
 
-        data_format = self._create_data_structure()
+        data_format = self._create_data_model()
 
         if self.common_cols:
             self.uncommon_data_dict = self.data_dictionary[
@@ -145,7 +145,7 @@ class LongMapper(BaseMapper, LongTableMixin):
         mappings = self.model.map_long_table(
             data_format,
             source_descriptions.tolist(),
-            self.schema_fields[self.variable_col].get("enum", []),
+            self.schema_fields[self.variable_col]["enum"],
         )
 
         mapping_dict = pd.DataFrame(mappings.model_dump(mode="json")["long_table"])
@@ -185,10 +185,10 @@ class LongMapper(BaseMapper, LongTableMixin):
         """
         Creates an intermediate mapping dataframe linking the data dictionary to schema
         fields. The index contains the source field names, and the columns are:
-        source_description
-        common_values OR choices (depending on the data dictionary)
-        <variable_name> (the name of the column identified in the config file)
-        value_col
+        * source_description
+        * common_values OR choices (depending on the data dictionary)
+        * <variable_name> (the name of the column identified in the config file)
+        * value_col
         * any other fields in the long schema.
 
         Raises a warning if any fields are present in the schema where a
@@ -199,7 +199,7 @@ class LongMapper(BaseMapper, LongTableMixin):
         save
             Whether to save the mapping to a CSV file. If True, lists and dicts are
             converted to strings before saving.
-        name
+        file_name
             The name to use for the CSV file
         """
 

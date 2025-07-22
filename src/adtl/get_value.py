@@ -226,7 +226,7 @@ def parse_if(
     "Parse conditional statements and return a boolean"
 
     n_keys = len(rule.keys())
-    assert 1 <= n_keys <= 3
+    assert 1 <= n_keys < 3
     if n_keys > 1:
         if "can_skip" in rule:
             can_skip = True
