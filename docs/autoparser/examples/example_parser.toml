@@ -8,12 +8,11 @@ defs = { "Y/N/NK" = { caseInsensitive = true, values = { non = false, oui = true
 animals = { kind = "oneToOne", schema = "../../../tests/test_autoparser/schemas/animals.schema.json" }
 
 [animals]
-age_months = { field = "AgeMois         ", description = "Age Months" }
-age_years = { field = "AgeAns", description = "Age Years" }
+age_months = { field = "AgeMois         ", description = "Age (Months)" }
+age_years = { field = "AgeAns", description = "Age (Years)" }
 chipped = { field = "Micropucé", description = "Microchipped", ref = "Y/N/NK" }
 date_of_death = { field = "DateDec", description = "Date of Death" }
 identity = { field = "Identité", description = "Identity" }
-loc_admin_1 = { field = "Province", description = "Province" }
 name = { field = "Nom complet ", description = "Full Name" }
 notification_date = { field = "DateNotification", description = "Notification Date" }
 pet = { field = "AnimalDeCompagnie", description = "Pet", ref = "Y/N/NK" }
@@ -31,17 +30,23 @@ description = "Classification"
 caseInsensitive = true
 
 [animals.classification.values]
-poisson = "fish"
-oiseau = "bird"
-"mammifère" = "mammal"
 amphibie = "amphibian"
 fish = "fish"
+oiseau = "bird"
 rept = "reptile"
+poisson = "fish"
+"mammifère" = "mammal"
+
+[animals.loc_admin_1]
+field = "Province"
+description = "Province"
+values = { equateur = "", katanga = "", orientale = "" }
+caseInsensitive = true
 
 [animals.sex]
 field = "Sexe"
 description = "Sex"
-values = { m = "male", f = "female" }
+values = { f = "female", m = "male" }
 caseInsensitive = true
 
 [animals.underlying_conditions]
@@ -51,8 +56,8 @@ caseInsensitive = true
 type = "enum_list"
 
 [animals.underlying_conditions.values]
-"problèmes d'échelle" = "skin problems"
-"diabète" = "diabetes"
 convulsions = "seizures"
-arthrite = "arthritis"
+"problèmes d'échelle" = "skin problems"
 vomir = "vomiting"
+"diabète" = "diabetes"
+arthrite = "arthritis"

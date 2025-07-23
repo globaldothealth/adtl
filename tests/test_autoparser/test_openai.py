@@ -8,7 +8,13 @@ from openai.types.chat.parsed_chat_completion import (
     ParsedChatCompletionMessage,
     ParsedChoice,
 )
-from testing_data_animals import get_definitions, map_fields, map_values
+from testing_data_animals import (
+    SingleEntry,
+    get_definitions,
+    map_fields,
+    map_long_table,
+    map_values,
+)
 
 from adtl.autoparser.language_models.data_structures import ColumnDescriptionRequest
 from adtl.autoparser.language_models.openai import OpenAILanguageModel
@@ -152,3 +158,46 @@ def test_map_values(monkeypatch):
 
     # Assert the expected output
     assert result == map_values()
+
+
+def test_map_long_table(monkeypatch):
+    model = OpenAILanguageModel("1234")
+
+    # Define test inputs
+    descriptions = [
+        "Weight in kg",
+        "Vaccination Status",
+        "Reported issues",
+        "Temperature in Celsius",
+    ]
+    enums = ["weight", "vaccinated", "behavioural_issue", "temperature"]
+
+    # Define the mocked response
+    def mock_parse(*args, **kwargs):
+        return ParsedChatCompletion(
+            id="foo",
+            model="gpt-4o-mini",
+            object="chat.completion",
+            choices=[
+                ParsedChoice(
+                    message=ParsedChatCompletionMessage(
+                        content="",  # noqa
+                        role="assistant",
+                        parsed=map_long_table(),
+                    ),
+                    finish_reason="stop",
+                    index=0,
+                )
+            ],
+            created=int(datetime.datetime.now().timestamp()),
+        )
+
+    # Mock the parse method using monkeypatch
+    monkeypatch.setattr(model.client.beta.chat.completions, "parse", mock_parse)
+
+    # Call the function
+    result = model.map_long_table(SingleEntry, descriptions, enums)
+
+    # Assert the expected output
+    expected = map_long_table()
+    assert expected.model_dump(mode="json") == result.model_dump(mode="json")

@@ -11,12 +11,9 @@ import pandas as pd
 import pandera.pandas as pa
 from pandera.typing.pandas import DataFrame
 
+from .config.config import get_config
 from .data_dict_schema import DataDictionaryEntry, DataDictionaryProcessed
-from .util import (
-    DEFAULT_CONFIG,
-    read_config_schema,
-    read_data,
-)
+from .util import DEFAULT_CONFIG, read_data
 
 
 class DictReader:
@@ -40,21 +37,14 @@ class DictReader:
     def __init__(
         self,
         data_dict: pd.DataFrame | str,
-        config: Path | str | None = None,
     ):
-        if isinstance(config, dict):
-            # If config is a dictionary, use it directly
-            self.config = config
-        else:
-            self.config = read_config_schema(
-                config or Path(Path(__file__).parent, DEFAULT_CONFIG)
-            )
+        self.config = get_config()
 
         self.data_dict = read_data(data_dict, "Data Dictionary")
 
-    def _parse_choices(self, choice_col: pd.Series, config) -> pd.Series:
-        sep = config.get("choice_delimiter", "|")
-        link = config.get("choice_delimiter_map", ",")
+    def _parse_choices(self, choice_col: pd.Series) -> pd.Series:
+        sep = self.config.choice_delimiter
+        link = self.config.choice_delimiter_map
 
         def parse(x):
             if not isinstance(x, str):
@@ -80,14 +70,14 @@ class DictReader:
                     return list(
                         {
                             y.lower().strip()
-                            for y in x.split(self.config["choice_delimiter"])
+                            for y in x.split(self.config.choice_delimiter)
                         }
                     )
 
             dd["common_values"] = dd["common_values"].apply(_lower_string)
 
         elif "choices" in dd.columns:
-            dd.loc[:, "choices"] = self._parse_choices(dd["choices"], self.config)
+            dd.loc[:, "choices"] = self._parse_choices(dd["choices"])
 
         return dd
 
@@ -105,7 +95,9 @@ class DictReader:
         # Assumes an unformatted data dictionary, so processes it
         try:
             dd = self.data_dict
-            column_mappings = {v: k for k, v in self.config["column_mappings"].items()}
+            column_mappings = {
+                v: k for k, v in self.config.column_mappings.model_dump().items()
+            }
             dd.rename(columns=column_mappings, inplace=True)
 
             dd = dd.loc[
@@ -180,9 +172,7 @@ class DictReader:
         print(f"Formatted data dictionary saved to '{output_path}'")
 
 
-def format_dict(
-    data_dict: pd.DataFrame | str, config: Path | None = None, save=False
-) -> pd.DataFrame:
+def format_dict(data_dict: pd.DataFrame | str, save=False) -> pd.DataFrame:
     """
     Formats a pre-existing data dictionary to use with autoparser, or checks one
     that is already pre-formatted.
@@ -203,7 +193,7 @@ def format_dict(
         Data dictionary containing field names, field types, and common values.
     """
 
-    dr = DictReader(data_dict, config)
+    dr = DictReader(data_dict)
     dd = dr.validate_dictionary(save=save)
 
     return dd
@@ -227,10 +217,10 @@ def main(argv=None):
 
     args = parser.parse_args(argv)
 
-    dict_reader = DictReader(data_dict=args.data_dict, config=args.config)
+    dict_reader = DictReader(data_dict=args.data_dict)
 
     dict_reader.validate_dictionary(save=args.output if args.output else True)
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pragma: no cover

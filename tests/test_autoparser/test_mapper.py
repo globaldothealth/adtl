@@ -1,8 +1,6 @@
 # tests the `Mapper` class
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
@@ -10,36 +8,53 @@ import pytest
 from pandera.errors import SchemaError
 from testing_data_animals import TestLLM
 
-from adtl.autoparser import create_mapping
+from adtl.autoparser import create_mapping, setup_config
 from adtl.autoparser.language_models.openai import OpenAILanguageModel
-from adtl.autoparser.mapping import Mapper, main
+from adtl.autoparser.mapping.interface import WideMapper, main
+
+CONFIG_PATH = "tests/test_autoparser/test_config.toml"
 
 
-class MapperTest(Mapper):
+class MapperTest(WideMapper):
     # override the __init__ method to avoid calling any LLM API's, and fill with dummy
     # data from testing_data.py
     def __init__(
         self,
         data_dictionary,
-        schema,
-        language,
-        api_key=None,
-        llm_provider=None,
-        llm_model=None,
-        config=None,
+        name,
     ):
-        super().__init__(data_dictionary, schema, language, None, None, config=config)
+        super().__init__(
+            data_dictionary,
+            name,
+        )
 
         self.model = TestLLM()
 
 
 @pytest.fixture
-def mapper():
+def mapper(config):
     return MapperTest(
         "tests/test_autoparser/sources/animals_dd_described.parquet",
-        Path("tests/test_autoparser/schemas/animals.schema.json"),
-        "fr",
+        "animals",
     )
+
+
+def test_invalid_llm_setup():
+    setup_config(
+        {
+            "name": "test_autoparser",
+            "language": "fr",
+            "llm_provider": "openai",
+            "max_common_count": 8,
+            "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
+        }
+    )
+
+    with pytest.raises(ValueError, match="Config: API key required to set up an LLM"):
+        WideMapper(
+            "tests/test_autoparser/sources/animals_dd_described.parquet",
+            "animals",
+        )
 
 
 def test_target_fields(mapper):
@@ -121,7 +136,9 @@ def test_target_values(mapper):
             "owner",
             "underlying_conditions",
         ],
+        name="target_values",
     )
+    target_vals.index.name = "target_field"
 
     pd.testing.assert_series_equal(mapper.target_values, target_vals)
 
@@ -184,8 +201,7 @@ def test_missing_common_values():
     with pytest.raises(SchemaError, match="Data dictionary validation failed"):
         MapperTest(
             df,
-            Path("tests/test_autoparser/schemas/animals.schema.json"),
-            "fr",
+            "animals",
         )
 
 
@@ -199,11 +215,7 @@ def test_choices():
         }
     )
 
-    cv = MapperTest(
-        df,
-        Path("tests/test_autoparser/schemas/animals.schema.json"),
-        "fr",
-    ).common_values
+    cv = MapperTest(df, "animals").common_values
 
     npt.assert_array_equal(cv.iloc[0], ["test", "test2"])
 
@@ -218,42 +230,17 @@ def test_common_values_mapped_fields_error(mapper):
         mapper.common_values_mapped
 
 
-def test_mapper_class_init_raises():
-    with pytest.raises(ValueError, match="Unsupported LLM provider: fish"):
-        Mapper(
-            "tests/test_autoparser/sources/animals_dd_described.csv",
-            Path("tests/test_autoparser/schemas/animals.schema.json"),
-            "fr",
-            api_key="1234",
-            llm_provider="fish",
-        )
-
-
-def test_mapper_class_init():
-    mapper = Mapper(
-        "tests/test_autoparser/sources/animals_dd_described.parquet",
-        Path("tests/test_autoparser/schemas/animals.schema.json"),
-        "fr",
-        llm_provider=None,
+def test_mapper_class_init_with_llm(config):
+    mapper = WideMapper(
+        "tests/test_autoparser/sources/animals_dd_described.parquet", "animals"
     )
 
     assert mapper.language == "fr"
-    assert mapper.model is None
+    assert isinstance(mapper.model, OpenAILanguageModel)
     npt.assert_array_equal(
         mapper.data_dictionary.columns,
         ["source_field", "source_description", "source_type", "common_values"],
     )
-
-
-def test_mapper_class_init_with_llm():
-    mapper = Mapper(
-        "tests/test_autoparser/sources/animals_dd_described.parquet",
-        Path("tests/test_autoparser/schemas/animals.schema.json"),
-        "fr",
-        api_key="abcd",
-    )
-
-    assert isinstance(mapper.model, OpenAILanguageModel)
 
 
 def test_match_fields_to_schema_dummy_data(mapper):
@@ -327,11 +314,25 @@ def test_match_values_to_schema_dummy_data(mapper):
 
 
 def test_match_values_to_schema_choices():
+    setup_config(
+        {
+            "name": "test_autoparser",
+            "max_common_count": 8,
+            "language": "fr",
+            "llm_provider": "openai",
+            "api_key": "1234",
+            "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
+            "column_mappings": {
+                "source_field": "Field Name",
+                "source_description": "Description",
+                "source_type": "Field Type",
+                "choices": "Choices",
+            },
+        }
+    )
+
     mapper = MapperTest(
-        "tests/test_autoparser/sources/animals_dd_choices.csv",
-        Path("tests/test_autoparser/schemas/animals.schema.json"),
-        "fr",
-        config="tests/test_autoparser/test_config.toml",
+        "tests/test_autoparser/sources/animals_dd_choices.csv", "animals"
     )
 
     with pytest.warns(UserWarning, match="schema fields have not been mapped"):
@@ -339,7 +340,7 @@ def test_match_values_to_schema_choices():
 
     assert (
         df["value_mapping"]["classification"]
-        == "1=fish, 2=amphibian, 3=bird, 4=mammal, 5=fish, 6=reptile"
+        == "1=fish | 2=amphibian | 3=bird | 4=mammal | 5=fish | 6=reptile"
     )
 
 
@@ -364,9 +365,9 @@ def test_class_create_mapping_no_save(mapper):
         {
             "source_description": "Pet Animal",
             "source_field": "AnimalDeCompagnie",
-            "common_values": "oui, non",
-            "target_values": "True, False, None",
-            "value_mapping": "oui=True, non=False",
+            "common_values": "oui | non",
+            "target_values": "True | False | None",
+            "value_mapping": "oui=True | non=False",
         },
         name="pet",
     )
@@ -383,9 +384,9 @@ def test_class_create_mapping_save(tmp_path, mapper):
         {
             "source_description": "Pet Animal",
             "source_field": "AnimalDeCompagnie",
-            "common_values": "oui, non",
-            "target_values": "True, False, None",
-            "value_mapping": "oui=True, non=False",
+            "common_values": "oui | non",
+            "target_values": "True | False | None",
+            "value_mapping": "oui=True | non=False",
         },
         name="pet",
     )
@@ -396,14 +397,12 @@ def test_class_create_mapping_save(tmp_path, mapper):
 
 
 @pytest.mark.filterwarnings("ignore:The following schema fields have not been mapped")
-def test_create_mapping(monkeypatch, tmp_path):
-    monkeypatch.setattr("adtl.autoparser.mapping.Mapper", MapperTest)
+def test_create_mapping(monkeypatch, tmp_path, config):
+    monkeypatch.setattr("adtl.autoparser.mapping.interface.WideMapper", MapperTest)
 
     create_mapping(
         "tests/test_autoparser/sources/animals_dd_described.parquet",
-        "tests/test_autoparser/schemas/animals.schema.json",
-        "fr",
-        "1a2b3c4d",
+        "animals",
         save=True,
         file_name=str(tmp_path / "test_animals_mapping.csv"),
     )
@@ -411,18 +410,29 @@ def test_create_mapping(monkeypatch, tmp_path):
     assert (tmp_path / "test_animals_mapping.csv").exists()
 
 
+def test_create_mapping_wrong_table_format():
+    with pytest.raises(ValueError, match="Invalid table format"):
+        create_mapping(
+            "",
+            "",
+            save=True,
+            file_name="",
+            table_format="fish",  # invalid format
+        )
+
+
 @pytest.mark.filterwarnings("ignore:The following schema fields have not been mapped")
 def test_main_cli(monkeypatch, tmp_path):
     ARGV = [
         "tests/test_autoparser/sources/animals_dd_described.parquet",
-        "tests/test_autoparser/schemas/animals.schema.json",
-        "fr",
-        "1a2b3c4d",
+        "animals",
         "-o",
         str(tmp_path / "test_animals_mapping.csv"),
+        "-c",
+        CONFIG_PATH,
     ]
 
-    monkeypatch.setattr("adtl.autoparser.mapping.Mapper", MapperTest)
+    monkeypatch.setattr("adtl.autoparser.mapping.interface.WideMapper", MapperTest)
 
     main(ARGV)
 

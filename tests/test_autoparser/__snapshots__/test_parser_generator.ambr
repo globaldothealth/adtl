@@ -167,6 +167,179 @@
     }),
   })
 # ---
+# name: test_create_parser_multitable
+  dict({
+    'adtl': dict({
+      'defs': dict({
+        'Y/N/NK': dict({
+          'caseInsensitive': True,
+          'values': dict({
+            'non': False,
+            'oui': True,
+          }),
+        }),
+      }),
+      'description': 'combined parser',
+      'name': 'combined parser',
+      'returnUnmatched': True,
+      'tables': dict({
+        'animals': dict({
+          'kind': 'oneToOne',
+          'schema': 'tests/test_autoparser/schemas/animals.schema.json',
+        }),
+        'vet_observations': dict({
+          'kind': 'oneToMany',
+          'schema': 'tests/test_autoparser/schemas/vet-obs.schema.json',
+        }),
+      }),
+    }),
+    'animals': dict({
+      'age_months': dict({
+        'description': 'Age in Months',
+        'field': 'AgeMois         ',
+      }),
+      'age_years': dict({
+        'description': 'Age in Years',
+        'field': 'AgeAns',
+      }),
+      'case_status': dict({
+        'caseInsensitive': True,
+        'description': 'Case Status',
+        'field': 'StatusCas',
+        'values': dict({
+          'décédé': 'dead',
+          'vivant': 'alive',
+        }),
+      }),
+      'chipped': dict({
+        'description': 'Microchipped',
+        'field': 'Micropucé',
+        'ref': 'Y/N/NK',
+      }),
+      'classification': dict({
+        'caseInsensitive': True,
+        'description': 'Classification',
+        'field': 'Classicfication ',
+        'values': dict({
+          'amphibie': 'amphibian',
+          'autre': '',
+          'fish': 'fish',
+          'mammifère': 'mammal',
+          'oiseau': 'bird',
+          'poisson': 'fish',
+          'rept': 'reptile',
+        }),
+      }),
+      'country_iso3': '',
+      'identity': dict({
+        'description': 'Identity',
+        'field': 'Identité',
+      }),
+      'loc_admin_1': dict({
+        'description': 'Province',
+        'field': 'Province',
+      }),
+      'name': dict({
+        'description': 'Full Name',
+        'field': 'Nom complet ',
+      }),
+      'notification_date': dict({
+        'description': 'Notification Date',
+        'field': 'DateNotification',
+      }),
+      'pet': dict({
+        'description': 'Pet Animal',
+        'field': 'AnimalDeCompagnie',
+        'ref': 'Y/N/NK',
+      }),
+      'sex': dict({
+        'caseInsensitive': True,
+        'description': 'Gender',
+        'field': 'Sexe',
+        'values': dict({
+          'f': 'female',
+          'm': 'male',
+        }),
+      }),
+      'underlying_conditions': dict({
+        'caseInsensitive': True,
+        'description': 'Preexisting Conditions',
+        'field': 'ConditionsPreexistantes',
+        'type': 'enum_list',
+        'values': dict({
+          'arthrite': 'arthritis',
+          'convulsions': 'seizures',
+          'diabète': 'diabetes',
+          "problèmes d'échelle": 'skin problems',
+          'vomir': 'vomiting',
+        }),
+      }),
+    }),
+    'vet_observations': list([
+      dict({
+        'animal_id': dict({
+          'field': 'subjid',
+        }),
+        'clinic': 'jericho',
+        'numeric_value': dict({
+          'field': 'weight_kg',
+        }),
+        'observation': 'weight',
+        'vet_name': 'Dr. Lopez',
+        'visit_date': dict({
+          'field': 'date',
+        }),
+      }),
+      dict({
+        'animal_id': dict({
+          'field': 'subjid',
+        }),
+        'clinic': 'jericho',
+        'numeric_value': dict({
+          'field': 'temperature_C',
+        }),
+        'observation': 'temperature',
+        'vet_name': 'Dr. Kamau',
+        'visit_date': dict({
+          'field': 'date',
+        }),
+      }),
+      dict({
+        'animal_id': dict({
+          'field': 'subjid',
+        }),
+        'boolean_value': dict({
+          'caseInsensitive': True,
+          'field': 'vacc_status',
+          'values': dict({
+            'false': False,
+            'true': True,
+          }),
+        }),
+        'clinic': 'jericho',
+        'observation': 'vaccinated',
+        'vet_name': 'Dr. Lopez',
+        'visit_date': dict({
+          'field': 'date',
+        }),
+      }),
+      dict({
+        'animal_id': dict({
+          'field': 'subjid',
+        }),
+        'clinic': 'jericho',
+        'observation': 'behavioural_issue',
+        'string_value': dict({
+          'field': 'reported_issues',
+        }),
+        'vet_name': 'Dr. Lopez',
+        'visit_date': dict({
+          'field': 'date',
+        }),
+      }),
+    ]),
+  })
+# ---
 # name: test_schema_fields
   dict({
     'age_months': dict({

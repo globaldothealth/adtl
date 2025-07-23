@@ -371,16 +371,18 @@ class Parser:
 
         if "combinedType" not in rule[option]:
             field = rule[option]["field"]
+
+            flags = {
+                flag: True
+                for flag in ("can_skip", "caseInsensitive")
+                if flag in rule[option]
+            }
+
             if "values" in rule[option]:
                 values = rule[option]["values"]
-                if "can_skip" in rule[option]:
-                    if_rule = {"any": [{field: v, "can_skip": True} for v in values]}
-                else:
-                    if_rule = {"any": [{field: v} for v in values]}
-            elif "can_skip" in rule[option]:
-                if_rule = {field: {"!=": ""}, "can_skip": True}
+                if_rule = {"any": [{field: v, **flags} for v in values]}
             else:
-                if_rule = {field: {"!=": ""}}
+                if_rule = {field: {"!=": ""}, **flags}
         else:
             assert rule[option]["combinedType"] in [
                 "any",
@@ -396,21 +398,16 @@ class Parser:
             def create_if_rule(rule):
                 field = rule["field"]
                 values = rule.get("values", [])
-                can_skip = rule.get("can_skip", False)
+                flags = {
+                    flag: True
+                    for flag in ("can_skip", "caseInsensitive")
+                    if flag in rule
+                }
 
-                if_condition = {}
-
-                if values and can_skip:
-                    if_condition = [{field: v, "can_skip": True} for v in values]
-                elif values:
-                    if_condition = [{field: v} for v in values]
-                elif can_skip:
-                    if_condition[field] = {"!=": ""}
-                    if_condition["can_skip"] = True
-                    if_condition = [if_condition]
+                if values:
+                    if_condition = [{field: v, **flags} for v in values]
                 else:
-                    if_condition[field] = {"!=": ""}
-                    if_condition = [if_condition]
+                    if_condition = [{field: {"!=": ""}, **flags}]
 
                 return if_condition
 

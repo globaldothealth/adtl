@@ -28,6 +28,8 @@ You can select which model to use, or keep to the defaults which are OpenAI's `g
 or Google's `gemini-1.5-flash`. Your model choice should support Structured Outputs (for [OpenAI](https://platform.openai.com/docs/guides/structured-outputs#supported-models)) or Controlled Generation (for [Gemini](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output)). Please be aware that more high-powered models like OpenAI's
 'O' series and Gemini 2.0 will cost more per API call.
 
+These choices can be specified using the [config class](../../api/autoparser/config.md).
+
 The LLM should *never* see your raw data; only the data dictionary which contains
 column headers, text descriptions of what each field contains, and a list of frequently
 occuring values if present.

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pathlib import Path
+import json
 
 import numpy as np
 import pandas as pd
@@ -8,37 +8,71 @@ import pytest
 import tomli
 
 import adtl.autoparser as autoparser
-from adtl.autoparser import ParserGenerator
+from adtl.autoparser import ParserGenerator, setup_config
 from adtl.autoparser import make_toml_main as main
-from adtl.autoparser.make_toml import refs_defs
-
-CONFIG_PATH = "tests/test_autoparser/test_config.toml"
-ANIMAL_PARSER = ParserGenerator(
-    "tests/test_autoparser/sources/animals_mapping.csv",
-    Path("tests/test_autoparser/schemas"),
-    "animals",
-    config=Path(CONFIG_PATH),
-)
-
-# TODO: sort out how lists and dicts are written out in the csv file to enable stuff to
-# actually be read in properly. Maybe try and utilise some kind of schema for the
-# dataframe?
+from adtl.autoparser.make_toml import WideTableParser
 
 
-def test_invalid_converter():
-    with pytest.raises(NotImplementedError, match="Only ADTL is supported"):
-        ParserGenerator(
-            "tests/test_autoparser/sources/animals_mapping.csv",
-            Path("tests/test_autoparser/schemas"),
-            "animals",
-            config=Path(CONFIG_PATH),
-            transformation_tool="invalid",
-        )
+@pytest.fixture()
+def animal_only_config():
+    """Fixture to load the configuration for the autoparser."""
+    setup_config(
+        {
+            "name": "test_autoparser",
+            "language": "en",
+            "max_common_count": 8,
+            "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
+        }
+    )
 
 
-def test_parsed_choices():
-    parser = ANIMAL_PARSER
+@pytest.fixture
+def wide_parser(config):
+    with open("tests/test_autoparser/schemas/animals.schema.json", "r") as f:
+        schema = json.load(f)
 
+    return WideTableParser(
+        mapping=pd.read_csv("tests/test_autoparser/sources/animals_mapping.csv"),
+        schema=schema,
+        table_name="animals",
+    )
+
+
+def test_constant_fields(wide_parser):
+    expected = {
+        "identity": False,
+        "name": False,
+        "loc_admin_1": False,
+        "country_iso3": False,
+        "notification_date": False,
+        "classification": False,
+        "case_status": False,
+        "date_of_death": False,
+        "age_years": False,
+        "age_months": False,
+        "sex": False,
+        "pet": False,
+        "chipped": False,
+        "owner": False,
+        "underlying_conditions": False,
+    }
+
+    assert wide_parser.constant_field == expected
+
+
+def test_update_constant_fields(wide_parser):
+    with pytest.raises(ValueError, match="is not a valid schema field"):
+        wide_parser.update_constant_fields({"unknown_field": True})
+
+    with pytest.raises(ValueError, match="must be True or False"):
+        wide_parser.update_constant_fields({"name": "Betty"})
+
+    wide_parser.update_constant_fields({"country_iso3": True})
+
+    assert wide_parser.constant_field["country_iso3"] is True
+
+
+def test_parsed_choices(wide_parser):
     choices = pd.Series(
         data=[
             None,
@@ -90,18 +124,18 @@ def test_parsed_choices():
         ],
     )
 
-    pd.testing.assert_series_equal(choices, parser.parsed_choices, check_names=False)
+    pd.testing.assert_series_equal(
+        choices, wide_parser.parsed_choices, check_names=False
+    )
 
 
-def test_references_definitions():
-    parser = ANIMAL_PARSER
-
+def test_references_definitions(wide_parser):
     ref_def = (
         {'{"non": false, "oui": true}': "Y/N/NK"},
         {"Y/N/NK": {"caseInsensitive": True, "values": {"oui": True, "non": False}}},
     )
 
-    assert parser.references_definitions == ref_def
+    assert wide_parser.references_definitions == ref_def
 
 
 s1 = pd.Series(
@@ -145,18 +179,17 @@ s1 = pd.Series(
         )
     ],
 )
-def test_ref_def(source, expected):
+def test_ref_def(source, expected, wide_parser):
     choices = source.value_counts()
 
-    answer = refs_defs(choices, 3)
+    # provide a different dataset than the one in the class
+    answer = wide_parser.refs_defs(choices, 3)
 
     assert answer == expected
 
 
-def test_schema_fields(snapshot):
-    parser = ANIMAL_PARSER
-
-    assert parser.schema_fields("animals") == snapshot
+def test_schema_fields(wide_parser, snapshot):
+    assert wide_parser.schema_fields == snapshot
 
 
 @pytest.mark.parametrize(
@@ -229,34 +262,81 @@ def test_schema_fields(snapshot):
         ),
     ],
 )
-def test_single_field_mapping(row, expected):
-    parser = ANIMAL_PARSER
-
-    assert parser.single_field_mapping("animals", row) == expected
+def test_single_field_mapping(row, expected, wide_parser):
+    assert wide_parser.single_field_mapping(row) == expected
 
 
-def test_create_parser(tmp_path, snapshot):
-    parser = ANIMAL_PARSER
+def test_create_parser(snapshot, animal_only_config):
+    parser = ParserGenerator(
+        "tests/test_autoparser/sources/animals_mapping.csv",
+        "",
+        "animals",
+    )
 
-    file = tmp_path / "test.toml"
-
-    parser.create_parser(file_name=file)
-
-    with file.open("rb") as fp:
-        parser_file = tomli.load(fp)
+    parser_file = parser.make_single_parser()
 
     # check body of parser file
     assert parser_file["animals"] == snapshot
 
 
-def test_create_parser_ap_access(tmp_path, snapshot):
+def test_create_parser_multitable(snapshot):
+    setup_config(
+        {
+            "name": "test_autoparser",
+            "language": "en",
+            "max_common_count": 8,
+            "schemas": {
+                "animals": "tests/test_autoparser/schemas/animals.schema.json",
+                "vet_observations": "tests/test_autoparser/schemas/vet-obs.schema.json",
+            },
+            "long_tables": {
+                "vet_observations": {
+                    "common_fields": {
+                        "animal_id": "subjid",
+                        "visit_date": "date",
+                        "clinic": "jericho",
+                    },
+                    "variable_col": "observation",
+                    "value_cols": ["string_value", "boolean_value", "numeric_value"],
+                }
+            },
+        }
+    )
+
+    with pytest.raises(
+        ValueError, match="Mapping for table 'animals' not found in provided mappings."
+    ):
+        ParserGenerator(
+            {
+                "vet_observations": "tests/test_autoparser/sources/long-animal-mapper.csv",
+            },
+            "",
+            "combined parser",
+            constant_fields={"vet_observations": {"clinic": True}},
+        )
+
+    parser = ParserGenerator(
+        {
+            "animals": "tests/test_autoparser/sources/animals_mapping.csv",
+            "vet_observations": "tests/test_autoparser/sources/long-animal-mapper.csv",
+        },
+        "",
+        "combined parser",
+        constant_fields={"vet_observations": {"clinic": True}},
+    )
+
+    parser_file = parser.make_single_parser()
+
+    assert parser_file == snapshot
+
+
+def test_create_parser_ap_access(tmp_path, snapshot, animal_only_config):
     file = tmp_path / "test.toml"
 
     autoparser.create_parser(
         "tests/test_autoparser/sources/animals_mapping.csv",
-        "tests/test_autoparser/schemas",
+        "",
         str(file),
-        config=CONFIG_PATH,
     )
 
     with file.open("rb") as fp:
@@ -269,11 +349,11 @@ def test_create_parser_ap_access(tmp_path, snapshot):
 def test_main_cli(tmp_path):
     ARGV = [
         "tests/test_autoparser/sources/animals_mapping.csv",
-        "tests/test_autoparser/schemas",
+        "",
         "-o",
         str(tmp_path / "animals"),
         "-c",
-        CONFIG_PATH,
+        "tests/test_autoparser/test_config.toml",
     ]
 
     main(ARGV)

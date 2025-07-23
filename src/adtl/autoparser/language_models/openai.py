@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from openai import OpenAI
+from pydantic import create_model
 
 from .base_llm import LLMBase
 from .data_structures import ColumnDescriptionRequest, MappingRequest, ValuesRequest
@@ -123,5 +124,60 @@ class OpenAILanguageModel(LLMBase):
             response_format=ValuesRequest,
         )
         mappings = value_mapping.choices[0].message.parsed
+
+        return mappings
+
+    def map_long_table(self, single_field_format, descriptions, enums):
+        """
+        Calls the OpenAI API to generate a mapping for a long table.
+        """
+
+        LongTableRequest = create_model(
+            "LongTableRequest", long_table=(list[single_field_format], ...)
+        )
+
+        system_msg_descriptive = """
+            You are an expert at structured data extraction.
+            For each source column description provided, match it to the best variable name
+            from the given list of enums. If no good match exists, use null.
+
+            Return output as a JSON array of objects, each with fields:
+            - source_description (string)
+            - variable_name (string or null)
+            - value_col (one of "value_bool", "value_num", "value" or null)
+            - phase (one of "presentation", "outcome", or null)
+            - attribute_unit (string or null)
+
+            Example input:
+
+            Columns descriptions: ["Age", "Symptoms: Cough", "Admission Date"]
+            Variable names: ["age", "cough", "aids_hiv"]
+
+            Example output:
+            [
+            {"source_description": "Age", "variable_name": "age", "value_col": "value_num", "phase": "presentation", "attribute_unit": "years"},
+            {"source_description": "Symptoms: Cough", "variable_name": "cough", "value_col": "value_bool", "phase": "presentation", "attribute_unit": ""},
+            {"source_description": "Admission Date", "variable_name": null, "value_col": "", "phase": "", "attribute_unit": ""}
+            ]
+            """
+
+        long_table_mapping = self.client.beta.chat.completions.parse(
+            model=self.model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_msg_descriptive,
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f"Columns descriptions: {', '.join(descriptions)}"
+                        f"Variable names: {', '.join(enums)}"
+                    ),
+                },
+            ],
+            response_format=LongTableRequest,
+        )
+        mappings = long_table_mapping.choices[0].message.parsed
 
         return mappings

@@ -1,21 +1,44 @@
 # tests the `DictReader` class
 from __future__ import annotations
 
+import os
+
 import pandas as pd
 import pytest
 from pandera.errors import SchemaError
 from pytest_unordered import unordered
 
+from adtl.autoparser import setup_config
 from adtl.autoparser.dict_reader import DictReader, main
 
 SOURCES = "tests/test_autoparser/sources/"
 SCHEMAS = "tests/test_autoparser/schemas/"
-CONFIG_PATH = SOURCES + "test_config_provided_dict.toml"
 
 
 @pytest.fixture
-def reader():
-    return DictReader(data_dict=SOURCES + "sample_data_dict.csv", config=CONFIG_PATH)
+def config():
+    setup_config(
+        {
+            "name": "Test Config",
+            "language": "en",
+            "choice_delimiter": "|",
+            "choice_delimiter_map": ",",
+            "max_common_count": 8,
+            "column_mappings": {
+                "source_field": "Variable / Field Name",
+                "source_description": "Field Label",
+                "source_type": "Field Type",
+                "common_values": None,
+                "choices": "Choices, Calculations, OR Slider Labels",
+            },
+            "schemas": {"animals": "animals.schema.json"},
+        }
+    )
+
+
+@pytest.fixture
+def reader(config):
+    return DictReader(data_dict=SOURCES + "sample_data_dict.csv")
 
 
 @pytest.fixture
@@ -67,10 +90,15 @@ def test_invalid_data_dict_duplicates(reader):
 
 
 def test_process_dict():
-    reader = DictReader(
-        data_dict=SOURCES + "animals_dd_described.csv",
-        config="tests/test_autoparser/test_config.toml",
+    setup_config(
+        {
+            "name": "test_autoparser",
+            "language": "en",
+            "max_common_count": 8,
+            "schemas": {"animals": "tests/test_autoparser/schemas/animals.schema.json"},
+        }
     )
+    reader = DictReader(data_dict=SOURCES + "animals_dd_described.csv")
 
     dd = pd.DataFrame(
         {
@@ -95,18 +123,6 @@ def test_save_formatted_dict(tmp_path, reader_dedupe):
     df = reader_dedupe.validate_dictionary(save=False)
     reader_dedupe.save_formatted_dictionary(name=file_name)
 
-    # pet_test = pd.Series(
-    #     {
-    #         "source_description": "Pet Animal",
-    #         "source_field": "AnimalDeCompagnie",
-    #         "common_values": "oui, non",
-    #         "target_values": "True, False, None",
-    #         "value_mapping": "oui=True, non=False",
-    #     },
-    #     name="pet",
-    # )
-    # pd.testing.assert_series_equal(df.loc["pet"], pet_test)
-
     loaded_file = pd.read_parquet(file_name, engine="fastparquet")
     assert loaded_file.equals(df)
 
@@ -120,7 +136,7 @@ def test_main_cli(tmp_path, reader_dedupe):
     ARGV = [
         str(tmp_path / "sample_data_dict_dedupe.csv"),
         "-c",
-        CONFIG_PATH,
+        os.path.join(SOURCES, "test_config_provided_dict.toml"),
         "-o",
         str(tmp_path / "test_dd_validation"),
     ]
