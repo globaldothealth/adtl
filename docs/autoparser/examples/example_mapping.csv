@@ -1,16 +1,16 @@
 target_field,source_description,source_field,common_values,target_values,value_mapping
 identity,Identity,Identité,,,
 name,Full Name,Nom complet ,,,
-loc_admin_1,Province,Province,"equateur, katanga, orientale",,"equateur=None, katanga=None, orientale=None"
+loc_admin_1,Province,Province,equateur | katanga | orientale,,equateur=None | katanga=None | orientale=None
 country_iso3,,,,,
 notification_date,Notification Date,DateNotification,,,
-classification,Classification,Classicfication ,"rept, fish, amphibie, mammifère, poisson, oiseau","mammal, bird, reptile, amphibian, fish, invertebrate, None","rept=reptile, fish=fish, amphibie=amphibian, mammifère=mammal, poisson=fish, oiseau=bird"
-case_status,Case Status,StatusCas,"décédé, vivant","alive, dead, unknown, None","décédé=dead, vivant=alive"
+classification,Classification,Classicfication ,amphibie | fish | oiseau | rept | poisson | mammifère,mammal | bird | reptile | amphibian | fish | invertebrate | None,amphibie=amphibian | fish=fish | oiseau=bird | rept=reptile | poisson=fish | mammifère=mammal
+case_status,Case Status,StatusCas,vivant | décédé,alive | dead | unknown | None,vivant=alive | décédé=dead
 date_of_death,Date of Death,DateDec,,,
-age_years,Age in Years,AgeAns,,,
-age_months,Age in Months,AgeMois         ,,,
-sex,Gender,Sexe,"f, m","male, female, other, unknown, None","f=female, m=male"
-pet,Pet Animal,AnimalDeCompagnie,"non, oui","True, False, None","non=False, oui=True"
-chipped,Microchipped,Micropucé,"non, oui","True, False, None","non=False, oui=True"
+age_years,Age (Years),AgeAns,,,
+age_months,Age (Months),AgeMois         ,,,
+sex,Sex,Sexe,f | m,male | female | other | unknown | None,f=female | m=male
+pet,Pet,AnimalDeCompagnie,non | oui,True | False | None,non=False | oui=True
+chipped,Microchipped,Micropucé,non | oui,True | False | None,non=False | oui=True
 owner,,,,,
-underlying_conditions,Preexisting Conditions,ConditionsPreexistantes,"diabète, convulsions, problèmes d'échelle, vomir, arthrite","diabetes, arthritis, seizures, vomiting, skin problems","diabète=diabetes, convulsions=seizures, problèmes d'échelle=skin problems, vomir=vomiting, arthrite=arthritis"
+underlying_conditions,Pre-existing Conditions,ConditionsPreexistantes,convulsions | problèmes d'échelle | vomir | diabète | arthrite,diabetes | arthritis | seizures | vomiting | skin problems,convulsions=seizures | problèmes d'échelle=skin problems | vomir=vomiting | diabète=diabetes | arthrite=arthritis

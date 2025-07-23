@@ -160,7 +160,7 @@ class BaseMapper(abc.ABC):
             if col in mapping_dict.columns:
                 mapping_dict[col] = mapping_dict[col].apply(
                     lambda x: (
-                        ", ".join(str(item) for item in x)
+                        " | ".join(str(item) for item in x)
                         if isinstance(x, (list, np.ndarray))
                         else x
                     )
@@ -169,7 +169,7 @@ class BaseMapper(abc.ABC):
             if col in mapping_dict.columns:
                 mapping_dict[col] = mapping_dict[col].apply(
                     lambda x: (
-                        ", ".join(f"{k}={v}" for k, v in x.items())
+                        " | ".join(f"{k}={v}" for k, v in x.items())
                         if isinstance(x, dict)
                         else x
                     )

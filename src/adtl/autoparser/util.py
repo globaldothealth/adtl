@@ -50,11 +50,11 @@ def parse_llm_mapped_values(s: str) -> Dict[str, Any] | None:
     """
     Takes the values mapped by the llm as a string and turns into pairs.
 
-    "oui=True, non=False, blah=None" -> {"oui": True, "non": False, "blah": ""}
-    "vivant=alive, décédé=dead, " "=None" -> {"vivant": "alive", "décédé": "dead"}
+    "oui=True | non=False | blah=None" -> {"oui": True, "non": False, "blah": ""}
+    "vivant=alive | décédé=dead | " "=None" -> {"vivant": "alive", "décédé": "dead"}
     {2: True} -> None
-    "" " = " ", poisson=fish" -> {"poisson": "fish"}
-    ecouvillon+croûte=[swab, crust], ecouvillon=[swab]" ->
+    "" " = " "| poisson=fish" -> {"poisson": "fish"}
+    ecouvillon+croûte=[swab, crust] | ecouvillon=[swab]" ->
             {"ecouvillon+croûte": ["swab", "crust"], "ecouvillon": ["swab"]}
 
     """
@@ -62,7 +62,7 @@ def parse_llm_mapped_values(s: str) -> Dict[str, Any] | None:
     if not isinstance(s, str):
         return None
 
-    split_str = re.split(r",(?!(?:[^\[]*\])|(?:[^\[]*\[[^\]]*$))", s)
+    split_str = re.split(r"\|(?!(?:[^\[]*\])|(?:[^\[]*\[[^\]]*$))", s)
     choices_list = [tuple(x.strip().split("=")) for x in split_str]
     if any(len(c) != 2 for c in choices_list):
         raise ValueError(

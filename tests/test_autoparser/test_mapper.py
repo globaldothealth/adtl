@@ -340,7 +340,7 @@ def test_match_values_to_schema_choices():
 
     assert (
         df["value_mapping"]["classification"]
-        == "1=fish, 2=amphibian, 3=bird, 4=mammal, 5=fish, 6=reptile"
+        == "1=fish | 2=amphibian | 3=bird | 4=mammal | 5=fish | 6=reptile"
     )
 
 
@@ -365,9 +365,9 @@ def test_class_create_mapping_no_save(mapper):
         {
             "source_description": "Pet Animal",
             "source_field": "AnimalDeCompagnie",
-            "common_values": "oui, non",
-            "target_values": "True, False, None",
-            "value_mapping": "oui=True, non=False",
+            "common_values": "oui | non",
+            "target_values": "True | False | None",
+            "value_mapping": "oui=True | non=False",
         },
         name="pet",
     )
@@ -384,9 +384,9 @@ def test_class_create_mapping_save(tmp_path, mapper):
         {
             "source_description": "Pet Animal",
             "source_field": "AnimalDeCompagnie",
-            "common_values": "oui, non",
-            "target_values": "True, False, None",
-            "value_mapping": "oui=True, non=False",
+            "common_values": "oui | non",
+            "target_values": "True | False | None",
+            "value_mapping": "oui=True | non=False",
         },
         name="pet",
     )

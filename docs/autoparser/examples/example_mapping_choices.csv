@@ -4,13 +4,13 @@ name,Full Name,Nom complet ,,,
 loc_admin_1,Province,Province,,,
 country_iso3,,,,,
 notification_date,Notification Date,DateNotification,,,
-classification,Classification,Classicfication ,"1=fish, 2=amphibie, 3=oiseau, 4=mammifère, 5=poisson, 6=rept","mammal, bird, reptile, amphibian, fish, invertebrate, None","1=fish, 2=amphibian, 3=bird, 4=mammal, 5=fish, 6=reptile"
-case_status,Case Status,StatusCas,"1=Vivant, 2=Décédé","alive, dead, unknown, None","1=alive, 2=dead"
+classification,Classification,Classicfication ,1=fish | 2=amphibie | 3=oiseau | 4=mammifère | 5=poisson | 6=rept,mammal | bird | reptile | amphibian | fish | invertebrate | None,1=fish | 2=amphibian | 3=bird | 4=mammal | 5=fish | 6=reptile
+case_status,Case Status,StatusCas,1=Vivant | 2=Décédé,alive | dead | unknown | None,1=alive | 2=dead
 date_of_death,Date of Death,DateDec,,,
 age_years,Age in Years,AgeAns,,,
 age_months,Age in Months,AgeMois         ,,,
-sex,Gender,Sexe,"1=mâle, 2=femelle, 3=inconnu","male, female, other, unknown, None","1=male, 2=female, 3=unknown"
-pet,Pet Animal,AnimalDeCompagnie,"1=oui, 2=non","True, False, None","1=True, 2=False"
-chipped,Microchipped,Micropucé,"1=oui, 2=non","True, False, None","1=True, 2=False"
-owner,Care Contact,ContSoins ,"1=oui, 2=non",,"1=None, 2=None"
-underlying_conditions,Preexisting Conditions,ConditionsPreexistantes,,"diabetes, arthritis, seizures, vomiting, skin problems",
+sex,Gender,Sexe,1=mâle | 2=femelle | 3=inconnu,male | female | other | unknown | None,1=male | 2=female | 3=other
+pet,Pet Animal,AnimalDeCompagnie,1=oui | 2=non,True | False | None,1=True | 2=False
+chipped,Microchipped,Micropucé,1=oui | 2=non,True | False | None,1=True | 2=False
+owner,Care Contact,ContSoins ,1=oui | 2=non,,1=None | 2=None
+underlying_conditions,Preexisting Conditions,ConditionsPreexistantes,,diabetes | arthritis | seizures | vomiting | skin problems,

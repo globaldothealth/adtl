@@ -41,5 +41,5 @@ caseInsensitive = true
 [animals.sex]
 field = "Sexe"
 description = "Gender"
-values = { 1 = "male", 2 = "female", 3 = "unknown" }
+values = { 1 = "male", 2 = "female", 3 = "other" }
 caseInsensitive = true

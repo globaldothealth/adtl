@@ -28,4 +28,4 @@ True,,11,1,alive,True,bird,,,C503,Equateur,Kate,2024-12-10,,False,female,
 True,,5,4,alive,False,amphibian,,,D504,,Bobby,2024-04-29,,False,male,
 True,,3,5,dead,True,fish,,2024-04-30,E505,,Toothless,2024-09-30,,True,female,
 True,,10,2,alive,True,reptile,,,A601,Equateur,,2024-02-01,,True,female,
-False,data.underlying_conditions must be array or null,4,3,dead,False,fish,,2024-02-25,B602,Equateur,Millie,2024-02-12,,True,unknown,problèmes d'échelle
+False,data.underlying_conditions must be array or null,4,3,dead,False,fish,,2024-02-25,B602,Equateur,Millie,2024-02-12,,True,other,problèmes d'échelle
