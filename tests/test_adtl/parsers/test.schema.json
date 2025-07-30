@@ -45,6 +45,15 @@
       ],
       "description": "Sex at birth",
       "category": "demographics"
+    },
+    "ethnicity": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true,
+      "description": "Ethnicity",
+      "category": "demographics"
     }
   }
 }

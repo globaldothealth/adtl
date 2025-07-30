@@ -10,6 +10,7 @@ from typing import Any, Callable, Iterable, Union
 import pint
 
 import adtl.transformations as tf
+import adtl.util as util
 from adtl.transformations import AdtlTransformationWarning
 
 StrDict = dict[str, Any]
@@ -132,16 +133,31 @@ def convert_values(value, rule: StrDict, ctx: Context) -> str | list[str | None]
 # main functions
 
 
-def get_value(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
+def get_value(
+    row: StrDict,
+    rule: Rule,
+    ctx: Context = None,
+    coerce_type: str | list[str] | None = None,
+) -> Any:
     """Gets value from row using rule
 
     Same as get_value_unhashed(), except it hashes if sensitive = True in rule.
     This function should be used instead of get_value_unhashed() for
     application code.
+
+    row: dict with row data
+    rule: rule to apply to row taken from parser file, can be a string or a dict
+    ctx: top level rules from parser file
+    coerce_type: field type taken from schema to coerce the value to
+        If no type given, or no schema provided, no specific coercion is applied.
     """
     value = get_value_unhashed(row, rule, ctx)
     if isinstance(rule, dict) and rule.get("sensitive") and value is not None:
         return hash_sensitive(value)
+
+    if coerce_type is not None and value is not None:
+        return util.convert_to_schema_type(value, coerce_type)
+
     if not isinstance(value, str):
         return value
     try:
