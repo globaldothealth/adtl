@@ -11,7 +11,6 @@ def convert_to_schema_type(value, target_type: str | list[str]):
         "string": str,
         "integer": int,
         "number": float,
-        "boolean": bool,
     }
 
     if isinstance(target_type, str):
@@ -28,7 +27,8 @@ def convert_to_schema_type(value, target_type: str | list[str]):
                         return int(round(float(value)))
                     except (ValueError, TypeError):
                         logger.debug(f"Could not convert value {value} to integer")
+                        return value
 
-                logger.debug(f"Could not coerce value {value} to type {tt}")
+                logger.debug(f"Could not convert value {value} to type {tt}")
 
     return value
