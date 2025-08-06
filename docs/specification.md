@@ -14,6 +14,17 @@ created in parallel from one source file.
 [JSON schema](../schemas/dev.schema.json): This is a partial JSON schema to validate
 adtl parser files.
 
+## Type conversion
+
+If field data types are specified in the target schema, ADTL will attempt to
+coerce the parsed source data into that format. In the case of numeric data -> integer types,
+the value will be rounded to the nearest whole number to conform to the schema. If the
+value can't be converted, the original data type will be returned.
+
+Where data types aren't provided, ADTL will return numeric data as-is, and attempt to cast
+string values first as integers (no rounding applied), then floats, returning the original format
+if these both fail.
+
 ## Metadata
 
 These metadata fields are defined under a header key `adtl`.

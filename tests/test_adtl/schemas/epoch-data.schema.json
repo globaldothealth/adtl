@@ -27,6 +27,9 @@
     },
     "followup_cough": {
       "description": "Follow-up cough field"
+    },
+    "headache": {
+      "description": "Standard headache field"
     }
   }
 }

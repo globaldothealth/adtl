@@ -426,6 +426,10 @@ class Parser:
         """
 
         kind = self.tables[table].get("kind")
+        if self.schemas.get(table):
+            schema_p = self.schemas[table]["properties"]
+        else:
+            schema_p = None
 
         if kind == "oneToMany":
             data = []
@@ -436,7 +440,12 @@ class Parser:
                     data.append(
                         remove_null_keys(
                             {
-                                attr: get_value(row, match[attr], self.ctx(attr))
+                                attr: get_value(
+                                    row,
+                                    match[attr],
+                                    self.ctx(attr),
+                                    schema_p[attr].get("type") if schema_p else None,
+                                )
                                 for attr in set(match.keys()) - {"if"}
                             }
                         )
@@ -447,7 +456,12 @@ class Parser:
         else:  # groupBy
             parsed_row = {}
             for attr in self.spec[table]:
-                value = get_value(row, self.spec[table][attr], self.ctx(attr))
+                value = get_value(
+                    row,
+                    self.spec[table][attr],
+                    self.ctx(attr),
+                    schema_p[attr].get("type") if schema_p else None,
+                )
                 if value is not None and value != []:
                     parsed_row[attr] = value
             return remove_null_keys(parsed_row)
