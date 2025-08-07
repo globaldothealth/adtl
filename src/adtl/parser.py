@@ -22,6 +22,7 @@ from joblib import Parallel, delayed
 from more_itertools import unique_everseen
 from tqdm.auto import tqdm
 
+import adtl.util as util
 from adtl.get_value import get_value, parse_if
 
 SUPPORTED_FORMATS = {"json": json.load, "toml": tomli.load}
@@ -288,7 +289,12 @@ class Parser:
                             json.load(fp), optional_fields
                         )
                 self.date_fields.extend(get_date_fields(self.schemas[table]))
-                self.validators[table] = fastjsonschema.compile(self.schemas[table])
+                if self.tables[table]["kind"] == "oneToMany":
+                    self.validators[table] = util.expand_schema(
+                        self.schemas[table], self.tables[table].get("discriminator")
+                    )
+                else:
+                    self.validators[table] = fastjsonschema.compile(self.schemas[table])
 
         self._set_field_names()
 
@@ -320,6 +326,7 @@ class Parser:
             aggregation = self.tables[table].get("aggregation")
             group_field = self.tables[table].get("groupBy")
             kind = self.tables[table].get("kind")
+            discriminator = self.tables[table].get("discriminator")
             if kind is None:
                 raise ValueError(
                     f"Required 'kind' attribute within 'tables' not present for {table}"
@@ -331,6 +338,21 @@ class Parser:
                 raise ValueError(
                     f"groupBy needs 'aggregation' to be set for table: {table}"
                 )
+            if discriminator is None and kind == "oneToMany":
+                raise ValueError("discriminator is required for 'oneToMany' tables")
+
+    def validate_row(self, table, row):
+        if self.tables[table]["kind"] == "oneToMany":
+            # For oneToMany, we need to validate each row individually
+            attr = row.get(self.tables[table]["discriminator"])
+            validator = self.validators[table].get(attr)
+            if not validator:
+                raise fastjsonschema.JsonSchemaException(
+                    f"No validator found for attribute '{attr}' in table '{table}'"
+                )
+            validator(row)
+        else:
+            self.validators[table](row)
 
     def _set_field_names(self):
         for table in self.tables:
@@ -652,7 +674,7 @@ class Parser:
                 ):
                     self.report["total"][table] += 1
                     try:
-                        self.validators[table](row)
+                        self.validate_row(table, row)
                         row["adtl_valid"] = True
                         self.report["total_valid"][table] += 1
                     except fastjsonschema.exceptions.JsonSchemaValueException as e:
