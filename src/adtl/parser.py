@@ -289,12 +289,6 @@ class Parser:
                             json.load(fp), optional_fields
                         )
                 self.date_fields.extend(get_date_fields(self.schemas[table]))
-                if self.tables[table]["kind"] == "oneToMany":
-                    self.validators[table] = util.expand_schema(
-                        self.schemas[table], self.tables[table].get("discriminator")
-                    )
-                else:
-                    self.validators[table] = fastjsonschema.compile(self.schemas[table])
 
         self._set_field_names()
 
@@ -666,7 +660,13 @@ class Parser:
 
         self.report_available = not skip_validation
         if not skip_validation:
-            for table in self.validators:
+            for table in self.tables:
+                if self.tables[table]["kind"] == "oneToMany":
+                    self.validators[table] = util.expand_schema(
+                        self.schemas[table], self.tables[table].get("discriminator")
+                    )
+                else:
+                    self.validators[table] = fastjsonschema.compile(self.schemas[table])
                 for row in tqdm(
                     self.read_table(table),
                     desc=f"[{self.name}] validating {table} table",
