@@ -5,10 +5,11 @@
 
   [adtl.tables.observation]
     kind = "oneToMany"
+    discriminator = "name"
     schema = "../schemas/observation_defaultif.schema.json"
 
-[adtl.defs]
-  "Y/N/NK" = { values = { 1 = true, 2 = false } }
+  [adtl.defs]
+    "Y/N/NK" = { values = { 1 = true, 2 = false } }
 
 [[observation]]
   name = "headache"
@@ -29,11 +30,7 @@
 
   [observation.is_present]
     combinedType = "any"
-    fields = [
-      { field = "cough_ceoccur_v2", ref = "Y/N/NK" },
-      { field = "dry_cough_ceoccur_v2", ref = "Y/N/NK" },
-      { field = "wet_cough_ceoccur_v2", ref = "Y/N/NK" },
-    ]
+    fields = [{ field = "cough_ceoccur_v2", ref = "Y/N/NK" }, { field = "dry_cough_ceoccur_v2", ref = "Y/N/NK" }, { field = "wet_cough_ceoccur_v2", ref = "Y/N/NK" }]
 
 [[observation]]
   name = "pao2_sample_type"

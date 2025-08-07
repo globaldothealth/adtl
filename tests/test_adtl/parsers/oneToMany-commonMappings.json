@@ -5,6 +5,7 @@
         "tables": {
             "observation": {
                 "kind": "oneToMany",
+                "discriminator": "name",
                 "common": {
                     "dataset_id": "ONE_TO_MANY"
                 }

@@ -4,7 +4,8 @@
         "description": "One to Many example",
         "tables": {
             "observation": {
-                "kind": "oneToMany"
+                "kind": "oneToMany",
+                "discriminator": "name"
             }
         }
     },

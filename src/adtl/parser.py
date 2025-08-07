@@ -335,13 +335,13 @@ class Parser:
             if discriminator is None and kind == "oneToMany":
                 raise ValueError("discriminator is required for 'oneToMany' tables")
 
-    def validate_row(self, table, row):
-        if self.tables[table]["kind"] == "oneToMany":
+    def validate_row(self, table, row, expanded):
+        if (self.tables[table]["kind"] == "oneToMany") and expanded:
             # For oneToMany, we need to validate each row individually
             attr = row.get(self.tables[table]["discriminator"])
             validator = self.validators[table].get(attr)
             if not validator:
-                raise fastjsonschema.JsonSchemaException(
+                raise fastjsonschema.JsonSchemaValueException(
                     f"No validator found for attribute '{attr}' in table '{table}'"
                 )
             validator(row)
@@ -660,13 +660,14 @@ class Parser:
 
         self.report_available = not skip_validation
         if not skip_validation:
-            for table in self.tables:
+            for table in self.schemas:
                 if self.tables[table]["kind"] == "oneToMany":
-                    self.validators[table] = util.expand_schema(
+                    self.validators[table], attr_schemas = util.expand_schema(
                         self.schemas[table], self.tables[table].get("discriminator")
                     )
                 else:
                     self.validators[table] = fastjsonschema.compile(self.schemas[table])
+                    attr_schemas = False
                 for row in tqdm(
                     self.read_table(table),
                     desc=f"[{self.name}] validating {table} table",
@@ -674,7 +675,7 @@ class Parser:
                 ):
                     self.report["total"][table] += 1
                     try:
-                        self.validate_row(table, row)
+                        self.validate_row(table, row, attr_schemas)
                         row["adtl_valid"] = True
                         self.report["total_valid"][table] += 1
                     except fastjsonschema.exceptions.JsonSchemaValueException as e:
