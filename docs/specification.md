@@ -68,7 +68,7 @@ if not present in a datafile, following the same syntax as `fieldPattern` key.
   with either "date_" / "_date" in the field name or that have format date
   set in the JSON schema
 * **returnUnmatched**: Returns all values that are not able to be converted
-  according to the provided rules and formats. For fields with [value mappings](#field-with-value-mapping), it is equivalent to using `ignoreMissingKeys`. Fields using [data transformation functions](#data-transformations-apply) will issue a warning to the
+  according to the provided rules and formats. For fields with [value mappings](#field-with-value-mapping), it is equivalent to using `ignoreMissingKey`. Fields using [data transformation functions](#data-transformations-apply) will issue a warning to the
   terminal describing the error in the transformation. Transformations requiring multiple
   parameters will only return the current field value that was not transformed.
   > :warning: This is likely to return columns with non-matching datatypes. External json

@@ -291,6 +291,7 @@ class Parser:
                 self.date_fields.extend(get_date_fields(self.schemas[table]))
 
         self._set_field_names()
+        self.empty_fields = self.header.get("emptyFields", "")
 
     @lru_cache
     def ctx(self, attribute: str):
@@ -394,11 +395,13 @@ class Parser:
                 if flag in rule[option]
             }
 
-            if "values" in rule[option]:
+            if "values" in rule[option] and not rule[option].get(
+                "ignoreMissingKey", False
+            ):
                 values = rule[option]["values"]
                 if_rule = {"any": [{field: v, **flags} for v in values]}
             else:
-                if_rule = {field: {"!=": ""}, **flags}
+                if_rule = {field: {"!=": self.empty_fields}, **flags}
         else:
             assert rule[option]["combinedType"] in [
                 "any",
@@ -420,10 +423,10 @@ class Parser:
                     if flag in rule
                 }
 
-                if values:
+                if values and not rule.get("ignoreMissingKey", False):
                     if_condition = [{field: v, **flags} for v in values]
                 else:
-                    if_condition = [{field: {"!=": ""}, **flags}]
+                    if_condition = [{field: {"!=": self.empty_fields}, **flags}]
 
                 return if_condition
 
