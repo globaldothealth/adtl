@@ -489,6 +489,16 @@ def test_multi_id_groupby(snapshot):
             TEST_PARSERS_PATH / "groupBy-incorrect-aggregation.json",
             "groupBy needs 'aggregation' to be set for table:",
         ),
+        (
+            TEST_PARSERS_PATH / "oneToMany-missing-discriminator.json",
+            "discriminator is required for 'oneToMany' tables",
+        ),
+    ],
+    ids=[
+        "missing-kind",
+        "missing-table",
+        "incorrect-aggregation",
+        "missing-discriminator",
     ],
 )
 def test_invalid_spec_raises_error(source, error):
