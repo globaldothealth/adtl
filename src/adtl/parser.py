@@ -338,7 +338,7 @@ class Parser:
 
     def validate_row(self, table, row, expanded):
         if (self.tables[table]["kind"] == "oneToMany") and expanded:
-            # For oneToMany, we need to validate each row individually
+            # Need to validate each row against an individual subschema
             attr = row.get(self.tables[table]["discriminator"])
             validator = self.validators[table].get(attr)
             if not validator:

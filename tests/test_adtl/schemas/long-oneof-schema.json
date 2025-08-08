@@ -1,0 +1,107 @@
+{
+    "type": "object",
+    "properties": {
+        "subjid": {
+            "type": "string"
+        },
+        "phase": {
+            "type": "string",
+            "enum": [
+                "presentation",
+                "outcome"
+            ]
+        },
+        "attribute": {
+            "type": "string"
+        },
+        "value": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "value_bool": {
+            "type": [
+                "boolean",
+                "null"
+            ]
+        },
+        "value_num": {
+            "type": [
+                "number",
+                "null"
+            ]
+        }
+    },
+    "oneOf": [
+        {
+            "properties": {
+                "attribute": {
+                    "enum": [
+                        "lesion_sl",
+                        "lesion_ml"
+                    ]
+                },
+                "value": {
+                    "type": "string",
+                    "enum": [
+                        "None",
+                        "1",
+                        "2-5",
+                        "6-9",
+                        "10-24",
+                        "25-49",
+                        "50-99",
+                        "100-250",
+                        "251-1000",
+                        ">1000"
+                    ]
+                }
+            },
+            "required": [
+                "value"
+            ]
+        },
+        {
+            "properties": {
+                "attribute": {
+                    "enum": [
+                        "comor_dementia",
+                        "comor_asthma"
+                    ]
+                },
+                "value": {
+                    "type": "string",
+                    "enum": [
+                        "Yes",
+                        "No",
+                        "Unknown"
+                    ]
+                }
+            },
+            "required": [
+                "value"
+            ]
+        },
+        {
+            "properties": {
+                "attribute": {
+                    "const": "vital_rass"
+                },
+                "value_num": {
+                    "type": "number",
+                    "minimum": -5.0,
+                    "maximum": 4.0
+                }
+            },
+            "required": [
+                "value_num"
+            ]
+        }
+    ],
+    "required": [
+        "subjid",
+        "phase",
+        "attribute"
+    ]
+}

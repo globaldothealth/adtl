@@ -389,6 +389,29 @@ def test_one_to_many_with_common_mappings():
                 ]
             },
         ),
+        (
+            {
+                "name": "demog_country",
+                "phase": "presentation",
+                "value": {
+                    "field": "slider_country",
+                    "ignoreMissingKey": True,
+                    "values": {
+                        "Russian Federation": "Russia",
+                        "Gambia": "Gambia The",
+                    },
+                },
+            },
+            {"slider_country": {"!=": ""}},
+        ),
+    ],
+    ids=[
+        "observation_rule_field_option_skip",
+        "observation_rule_text_skip",
+        "observation_rule_field_option_value",
+        "observation_rule_field_option_comb",
+        "observation_rule_field_option_value_comb",
+        "long_rule_ignore_missing_key",
     ],
 )
 def test_default_if_rule_is_correct(rule, expected):
@@ -1109,5 +1132,14 @@ def test_return_unmapped(snapshot):
         parser.Parser(TEST_PARSERS_PATH / "return-unmapped.toml")
         .parse(TEST_SOURCES_PATH / "return-unmapped.csv")
         .write_csv("subject")
+    )
+    assert transformed_csv_data == snapshot
+
+
+def test_subschema_validation(snapshot):
+    transformed_csv_data = (
+        parser.Parser(TEST_PARSERS_PATH / "long-oneof-parser.toml")
+        .parse(TEST_SOURCES_PATH / "long-oneof.csv")
+        .data["long"]
     )
     assert transformed_csv_data == snapshot
