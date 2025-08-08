@@ -85,8 +85,8 @@ def expand_schema(
             for key in attr_keys:
                 per_attribute_schemas[key] = per_attr_schema
 
-        return {
-            k: fastjsonschema.compile(v) for k, v in per_attribute_schemas.items()
-        }, True
-    else:
-        return fastjsonschema.compile(schema), False
+        if len(per_attribute_schemas) != 0:
+            return {
+                k: fastjsonschema.compile(v) for k, v in per_attribute_schemas.items()
+            }, True
+    return fastjsonschema.compile(schema), False
