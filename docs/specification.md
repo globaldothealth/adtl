@@ -44,7 +44,7 @@ These metadata fields are defined under a header key `adtl`.
     allowed value is *oneToMany* when multiple rows are
     generated from the same row.
   * *groupBy*: Attribute(s) to group by
-  * *discrimiator*: Column name used to choose between subschemas with kind *oneToMany*
+  * *discriminator*: Column name used to choose between subschemas with kind *oneToMany*
   * *aggregation*: Aggregation type. Currently either
     type *lastNotNull* or *applyCombinedType* is supported which sets a particular
     attribute to the last non-null value in the grouped dataset. *applyCombinedType* applies
