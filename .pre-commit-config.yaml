@@ -1,14 +1,14 @@
 exclude: 'tests/test_adtl/__snapshots__/.*ambr|tests/test_autoparser/__snapshots__/.*ambr|src/adtl/autoparser/toml_writer.py'  # syrupy snapshots
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.7
+    rev: v0.12.10
     hooks:
       - id: ruff-check
         args: [ "--select", "I", "--fix" ]
