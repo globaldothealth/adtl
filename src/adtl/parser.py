@@ -291,7 +291,7 @@ class Parser:
                 self.date_fields.extend(get_date_fields(self.schemas[table]))
 
         self._set_field_names()
-        self.empty_fields = self.header.get("emptyFields", "")
+        self.empty_fields = self.header.get("emptyFields", None)
 
     @lru_cache
     def ctx(self, attribute: str):
@@ -401,7 +401,7 @@ class Parser:
                 values = rule[option]["values"]
                 if_rule = {"any": [{field: v, **flags} for v in values]}
             else:
-                if_rule = {field: {"!=": self.empty_fields}, **flags}
+                if_rule = {field: {"!=": ""}, **flags}
         else:
             assert rule[option]["combinedType"] in [
                 "any",
@@ -426,7 +426,7 @@ class Parser:
                 if values and not rule.get("ignoreMissingKey", False):
                     if_condition = [{field: v, **flags} for v in values]
                 else:
-                    if_condition = [{field: {"!=": self.empty_fields}, **flags}]
+                    if_condition = [{field: {"!=": ""}, **flags}]
 
                 return if_condition
 
@@ -589,8 +589,13 @@ class Parser:
 
         with open(file, encoding=encoding) as fp:
             reader = csv.DictReader(fp)
+
+            def clean_empty_vals(reader, na_values=self.empty_fields):
+                for row in reader:
+                    yield {k: ("" if v == na_values else v) for k, v in row.items()}
+
             return self.parse_rows(
-                reader,
+                clean_empty_vals(reader) if self.empty_fields else reader,
                 Path(file).name,
                 row_count,
                 skip_validation=skip_validation,
