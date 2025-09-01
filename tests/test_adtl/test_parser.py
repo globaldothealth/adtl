@@ -1143,3 +1143,13 @@ def test_subschema_validation(snapshot):
         .data["long"]
     )
     assert transformed_csv_data == snapshot
+
+
+def test_different_empty_values(snapshot):
+    ps = parser.Parser(TEST_PARSERS_PATH / "oneToMany-emptyFields.json")
+
+    transformed_csv_data = ps.parse(
+        TEST_SOURCES_PATH / "oneToMany-emptyFields.csv"
+    ).data["observation"]
+
+    assert transformed_csv_data == snapshot

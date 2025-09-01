@@ -7,6 +7,15 @@
   
   '''
 # ---
+# name: test_different_empty_values
+  list([
+    dict({
+      'date': '2022-02-05',
+      'is_present': True,
+      'name': 'headache',
+    }),
+  ])
+# ---
 # name: test_main
   '''
   adtl_valid,adtl_error,epoch,id,some_date,text

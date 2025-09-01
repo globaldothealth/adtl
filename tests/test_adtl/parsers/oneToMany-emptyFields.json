@@ -1,0 +1,45 @@
+{
+    "adtl": {
+        "name": "sampleOneToMany",
+        "description": "One to Many example",
+        "emptyFields": "NA",
+        "tables": {
+            "observation": {
+                "kind": "oneToMany",
+                "discriminator": "name"
+            }
+        }
+    },
+    "observation": [
+        {
+            "date": {
+                "field": "dt"
+            },
+            "name": "headache",
+            "is_present": true,
+            "if": {
+                "headache_cmyn": 1
+            }
+        },
+        {
+            "date": {
+                "field": "dt"
+            },
+            "name": "cough",
+            "is_present": true,
+            "if": {
+                "cough_cmyn": 1
+            }
+        },
+        {
+            "date": {
+                "field": "dt"
+            },
+            "name": "dyspnea",
+            "is_present": true,
+            "if": {
+                "dyspnea_cmyn": 1
+            }
+        }
+    ]
+}
