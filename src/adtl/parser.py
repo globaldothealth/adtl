@@ -22,6 +22,7 @@ from joblib import Parallel, delayed
 from more_itertools import unique_everseen
 from tqdm.auto import tqdm
 
+import adtl.util as util
 from adtl.get_value import get_value, parse_if
 
 SUPPORTED_FORMATS = {"json": json.load, "toml": tomli.load}
@@ -288,9 +289,9 @@ class Parser:
                             json.load(fp), optional_fields
                         )
                 self.date_fields.extend(get_date_fields(self.schemas[table]))
-                self.validators[table] = fastjsonschema.compile(self.schemas[table])
 
         self._set_field_names()
+        self.empty_fields = self.header.get("emptyFields", None)
 
     @lru_cache
     def ctx(self, attribute: str):
@@ -320,6 +321,7 @@ class Parser:
             aggregation = self.tables[table].get("aggregation")
             group_field = self.tables[table].get("groupBy")
             kind = self.tables[table].get("kind")
+            discriminator = self.tables[table].get("discriminator")
             if kind is None:
                 raise ValueError(
                     f"Required 'kind' attribute within 'tables' not present for {table}"
@@ -331,6 +333,21 @@ class Parser:
                 raise ValueError(
                     f"groupBy needs 'aggregation' to be set for table: {table}"
                 )
+            if discriminator is None and kind == "oneToMany":
+                raise ValueError("discriminator is required for 'oneToMany' tables")
+
+    def validate_row(self, table, row, expanded):
+        if (self.tables[table]["kind"] == "oneToMany") and expanded:
+            # Need to validate each row against an individual subschema
+            attr = row.get(self.tables[table]["discriminator"])
+            validator = self.validators[table].get(attr)
+            if not validator:
+                raise fastjsonschema.JsonSchemaValueException(
+                    f"No validator found for attribute '{attr}' in table '{table}'"
+                )
+            validator(row)
+        else:
+            self.validators[table](row)
 
     def _set_field_names(self):
         for table in self.tables:
@@ -378,7 +395,9 @@ class Parser:
                 if flag in rule[option]
             }
 
-            if "values" in rule[option]:
+            if "values" in rule[option] and not rule[option].get(
+                "ignoreMissingKey", False
+            ):
                 values = rule[option]["values"]
                 if_rule = {"any": [{field: v, **flags} for v in values]}
             else:
@@ -404,7 +423,7 @@ class Parser:
                     if flag in rule
                 }
 
-                if values:
+                if values and not rule.get("ignoreMissingKey", False):
                     if_condition = [{field: v, **flags} for v in values]
                 else:
                     if_condition = [{field: {"!=": ""}, **flags}]
@@ -570,8 +589,13 @@ class Parser:
 
         with open(file, encoding=encoding) as fp:
             reader = csv.DictReader(fp)
+
+            def clean_empty_vals(reader, na_values=self.empty_fields):
+                for row in reader:
+                    yield {k: ("" if v == na_values else v) for k, v in row.items()}
+
             return self.parse_rows(
-                reader,
+                clean_empty_vals(reader) if self.empty_fields else reader,
                 Path(file).name,
                 row_count,
                 skip_validation=skip_validation,
@@ -644,7 +668,14 @@ class Parser:
 
         self.report_available = not skip_validation
         if not skip_validation:
-            for table in self.validators:
+            for table in self.schemas:
+                if self.tables[table]["kind"] == "oneToMany":
+                    self.validators[table], attr_schemas = util.expand_schema(
+                        self.schemas[table], self.tables[table].get("discriminator")
+                    )
+                else:
+                    self.validators[table] = fastjsonschema.compile(self.schemas[table])
+                    attr_schemas = False
                 for row in tqdm(
                     self.read_table(table),
                     desc=f"[{self.name}] validating {table} table",
@@ -652,7 +683,7 @@ class Parser:
                 ):
                     self.report["total"][table] += 1
                     try:
-                        self.validators[table](row)
+                        self.validate_row(table, row, attr_schemas)
                         row["adtl_valid"] = True
                         self.report["total_valid"][table] += 1
                     except fastjsonschema.exceptions.JsonSchemaValueException as e:

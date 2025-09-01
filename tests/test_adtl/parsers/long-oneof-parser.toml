@@ -1,0 +1,30 @@
+#:schema schemas/parser.schema.json
+
+[adtl]
+  name = "isaric"
+  description = "isaric"
+
+  [adtl.tables]
+
+    [adtl.tables.long]
+      kind = "oneToMany"
+      schema = "../schemas/long-oneof-schema.json"
+      discriminator = "attribute"
+      common = {subjid = {field = "subject_id"}, phase = "presentation"}
+
+
+[[long]]
+  attribute = "lesion_ml"
+  value = { field = "lesions" }
+
+[[long]]
+  attribute = "comor_dementia"
+  value = { field = "comorbid_dementia", values = { 1 = "Yes", 0="No"} }
+
+[[long]]
+  attribute = "comor_asthma"
+  value_num = { field = "comorbid_asthma", values = { 1 = "True", 0="False"} }
+
+[[long]]
+  attribute = "vital_rass"
+  value_num = { field = "rass" }

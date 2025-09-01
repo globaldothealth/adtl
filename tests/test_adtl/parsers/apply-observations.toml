@@ -4,14 +4,13 @@
 
   [adtl.tables.observation]
     kind = "oneToMany"
+    discriminator = "name"
 
 [[observation]]
   name = "headache"
   phase = "followup"
   date = { field = "dsstdat" }
-  start_date = { field = "dsstdat", apply = { function = "startDate", params = [
-    10,
-  ] } }
+  start_date = { field = "dsstdat", apply = { function = "startDate", params = [10] } }
   duration_type = "event"
   is_present = { field = "flw_headache", values = { 1 = true, 0 = false } }
   if = { flw_headache = { "!=" = 99 } }
@@ -20,9 +19,7 @@
   name = "cough"
   date = { field = "dsstdat" }
   phase = "followup"
-  start_date = { field = "dsstdat", apply = { function = "startDate", params = [
-    7,
-  ] } }
+  start_date = { field = "dsstdat", apply = { function = "startDate", params = [7] } }
   duration_type = "event"
   is_present = { field = "flw_cough", values = { 1 = true, 0 = false } }
   if = { flw_cough = { "!=" = 99 } }

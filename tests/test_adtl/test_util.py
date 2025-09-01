@@ -1,3 +1,4 @@
+import fastjsonschema
 import pytest
 
 import adtl.util as util
@@ -48,3 +49,105 @@ def test_convert_type_to_schema_failure(value, target, expected_log, caplog):
     assert new_value == value
     # Check if expected log message is in caplog
     assert any(expected_log in msg for msg in caplog.text.splitlines())
+
+
+def test_expand_schema_no_oneof():
+    schema = {
+        "type": "object",
+        "properties": {"type": {"type": "string"}, "value": {"type": "number"}},
+        "required": ["type", "value"],
+    }
+    validator, expanded = util.expand_schema(schema, "type")
+    assert callable(validator)
+    assert expanded is False
+    # Validator should accept valid dict
+    validator({"type": "foo", "value": 1.23})
+    # Validator should raise on missing property
+    with pytest.raises(fastjsonschema.JsonSchemaException):
+        validator({"type": "foo"})
+
+
+def test_expand_schema_oneof_const():
+    schema = {
+        "oneOf": [
+            {
+                "properties": {"kind": {"const": "A"}, "value": {"type": "number"}},
+                "required": ["kind", "value"],
+            },
+            {
+                "properties": {"kind": {"const": "B"}, "amount": {"type": "integer"}},
+                "required": ["kind", "amount"],
+            },
+        ],
+        "properties": {"id": {"type": "string"}},
+        "required": ["id"],
+    }
+    validators, expanded = util.expand_schema(schema, "kind")
+    assert isinstance(validators, dict)
+    assert expanded is True
+    assert set(validators.keys()) == {"A", "B"}
+    # Each validator should require id + discriminator fields
+    validators["A"]({"id": "x", "kind": "A", "value": 2.2})
+    with pytest.raises(fastjsonschema.JsonSchemaException):
+        validators["A"]({"id": "x", "kind": "A"})  # missing value
+
+
+def test_expand_schema_oneof_enum():
+    schema = {
+        "oneOf": [
+            {
+                "properties": {
+                    "mode": {"enum": ["foo", "bar"]},
+                    "val": {"type": "string"},
+                },
+                "required": ["mode", "val"],
+            }
+        ],
+        "properties": {"base": {"type": "boolean"}},
+    }
+    validators, expanded = util.expand_schema(schema, "mode")
+    assert expanded is True
+    assert set(validators.keys()) == {"foo", "bar"}
+    for key in ["foo", "bar"]:
+        validators[key]({"base": True, "mode": key, "val": "abc"})
+    with pytest.raises(fastjsonschema.JsonSchemaException):
+        validators["foo"]({"base": True, "mode": "foo"})  # missing val
+
+
+def test_expand_schema_unhandled_discriminator():
+    schema = {
+        "oneOf": [
+            {
+                "properties": {"type": {"const": "A"}, "value": {"type": "number"}},
+                "required": ["type", "value"],
+            },
+            {
+                "properties": {
+                    "type": {"type": "string"},  # This one is neither const nor enum
+                },
+                "required": ["type"],
+            },
+        ]
+    }
+    # Should fallback to not expanding since discriminator is not const/enum
+    with pytest.warns(UserWarning, match="Falling back to unexpanded schema mode"):
+        validator, expanded = util.expand_schema(schema, "type")
+    assert callable(validator)
+    assert expanded is False
+
+
+def test_expand_schema_additional_properties():
+    schema = {
+        "oneOf": [
+            {
+                "properties": {
+                    "k": {"const": "x"},
+                },
+                "required": ["k"],
+            }
+        ],
+        "additionalProperties": True,
+    }
+    validators, expanded = util.expand_schema(schema, "k")
+    assert expanded is True
+    validators["x"]({"k": "x", "foo": "bar"})  # should not raise

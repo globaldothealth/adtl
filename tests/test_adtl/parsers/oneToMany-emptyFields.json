@@ -2,6 +2,7 @@
     "adtl": {
         "name": "sampleOneToMany",
         "description": "One to Many example",
+        "emptyFields": "NA",
         "tables": {
             "observation": {
                 "kind": "oneToMany",

@@ -44,6 +44,7 @@ These metadata fields are defined under a header key `adtl`.
     allowed value is *oneToMany* when multiple rows are
     generated from the same row.
   * *groupBy*: Attribute(s) to group by
+  * *discriminator*: Column name used to choose between subschemas with kind *oneToMany*
   * *aggregation*: Aggregation type. Currently either
     type *lastNotNull* or *applyCombinedType* is supported which sets a particular
     attribute to the last non-null value in the grouped dataset. *applyCombinedType* applies
@@ -67,12 +68,15 @@ if not present in a datafile, following the same syntax as `fieldPattern` key.
   with either "date_" / "_date" in the field name or that have format date
   set in the JSON schema
 * **returnUnmatched**: Returns all values that are not able to be converted
-  according to the provided rules and formats. For fields with [value mappings](#field-with-value-mapping), it is equivalent to using `ignoreMissingKeys`. Fields using [data transformation functions](#data-transformations-apply) will issue a warning to the
+  according to the provided rules and formats. For fields with [value mappings](#field-with-value-mapping), it is equivalent to using `ignoreMissingKey`. Fields using [data transformation functions](#data-transformations-apply) will issue a warning to the
   terminal describing the error in the transformation. Transformations requiring multiple
   parameters will only return the current field value that was not transformed.
   > :warning: This is likely to return columns with non-matching datatypes. External json
   validation may fail. This option is incompatible with the `--parquet` option to save
   outputs as parquet files (which required a consistent type down each column).
+* **emptyFields**: If the source data has something padding the empty fields (e.g. an
+Excel file with 'NA' in all the unfilled cells), use this field to specify what that
+code is so it can be stripped out.
 
 ## Validation
 

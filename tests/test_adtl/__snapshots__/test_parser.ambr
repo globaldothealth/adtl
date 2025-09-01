@@ -7,6 +7,14 @@
   
   '''
 # ---
+# name: test_different_empty_values
+  list([
+    dict({
+      'is_present': True,
+      'name': 'headache',
+    }),
+  ])
+# ---
 # name: test_main
   '''
   adtl_valid,adtl_error,epoch,id,some_date,text
@@ -84,6 +92,82 @@
   False,data.epoch must be date,0,19/12/2022,1,0,2,example
   
   '''
+# ---
+# name: test_subschema_validation
+  list([
+    dict({
+      'adtl_valid': True,
+      'attribute': 'lesion_ml',
+      'phase': 'presentation',
+      'subjid': '1',
+      'value': '2-5',
+    }),
+    dict({
+      'adtl_valid': True,
+      'attribute': 'comor_dementia',
+      'phase': 'presentation',
+      'subjid': '1',
+      'value': 'Yes',
+    }),
+    dict({
+      'adtl_valid': True,
+      'attribute': 'vital_rass',
+      'phase': 'presentation',
+      'subjid': '1',
+      'value_num': 1.0,
+    }),
+    dict({
+      'adtl_error': "data.value must be one of ['None', '1', '2-5', '6-9', '10-24', '25-49', '50-99', '100-250', '251-1000', '>1000']",
+      'adtl_valid': False,
+      'attribute': 'lesion_ml',
+      'phase': 'presentation',
+      'subjid': '2',
+      'value': 'five',
+    }),
+    dict({
+      'adtl_valid': True,
+      'attribute': 'comor_dementia',
+      'phase': 'presentation',
+      'subjid': '2',
+      'value': 'Yes',
+    }),
+    dict({
+      'adtl_valid': True,
+      'attribute': 'vital_rass',
+      'phase': 'presentation',
+      'subjid': '2',
+      'value_num': 2.0,
+    }),
+    dict({
+      'adtl_valid': True,
+      'attribute': 'lesion_ml',
+      'phase': 'presentation',
+      'subjid': '3',
+      'value': '2-5',
+    }),
+    dict({
+      'adtl_valid': True,
+      'attribute': 'comor_dementia',
+      'phase': 'presentation',
+      'subjid': '3',
+      'value': 'Yes',
+    }),
+    dict({
+      'adtl_error': "data must contain ['subjid', 'phase', 'attribute', 'value'] properties",
+      'adtl_valid': False,
+      'attribute': 'comor_asthma',
+      'phase': 'presentation',
+      'subjid': '3',
+      'value_num': 'False',
+    }),
+    dict({
+      'adtl_valid': True,
+      'attribute': 'vital_rass',
+      'phase': 'presentation',
+      'subjid': '3',
+      'value_num': 3.0,
+    }),
+  ])
 # ---
 # name: test_validation
   '''

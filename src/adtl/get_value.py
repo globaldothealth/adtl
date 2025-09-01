@@ -254,7 +254,7 @@ def parse_if(
     elif key == "all" and isinstance(rule[key], list):
         return all(parse_if(row, r, ctx, can_skip) for r in rule[key])
     try:
-        attr_value = row[key].lower() if "case_insensitive" in rule else row[key]
+        attr_value = row[key].lower() if "caseInsensitive" in rule else row[key]
     except KeyError:
         if can_skip is True:
             return False

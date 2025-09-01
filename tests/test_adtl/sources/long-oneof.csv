@@ -1,0 +1,4 @@
+subject_id,lesions,comorbid_dementia,comorbid_asthma,rass
+1,"2-5",1,,1
+2,"five",1,,2
+3,"2-5",1,0,3
