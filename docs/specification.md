@@ -74,6 +74,9 @@ if not present in a datafile, following the same syntax as `fieldPattern` key.
   > :warning: This is likely to return columns with non-matching datatypes. External json
   validation may fail. This option is incompatible with the `--parquet` option to save
   outputs as parquet files (which required a consistent type down each column).
+* **emptyFields**: If the source data has something padding the empty fields (e.g. an
+Excel file with 'NA' in all the unfilled cells), use this field to specify what that
+code is so it can be stripped out.
 
 ## Validation
 
