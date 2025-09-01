@@ -118,15 +118,20 @@ def test_expand_schema_unhandled_discriminator():
     schema = {
         "oneOf": [
             {
+                "properties": {"type": {"const": "A"}, "value": {"type": "number"}},
+                "required": ["type", "value"],
+            },
+            {
                 "properties": {
-                    "type": {"type": "string"},
+                    "type": {"type": "string"},  # This one is neither const nor enum
                 },
                 "required": ["type"],
-            }
+            },
         ]
     }
     # Should fallback to not expanding since discriminator is not const/enum
-    validator, expanded = util.expand_schema(schema, "type")
+    with pytest.warns(UserWarning, match="Falling back to unexpanded schema mode"):
+        validator, expanded = util.expand_schema(schema, "type")
     assert callable(validator)
     assert expanded is False
 

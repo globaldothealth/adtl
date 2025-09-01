@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import warnings
 from typing import Callable
 
 import fastjsonschema
@@ -74,7 +75,12 @@ def expand_schema(
             elif "enum" in attr:
                 attr_keys = attr["enum"]
             else:
-                continue  # Unhandled case
+                warnings.warn(
+                    f"Found long schema item '{attr}' with neither 'const' nor 'enum'.\n"
+                    "Falling back to unexpanded schema mode"
+                )
+                per_attribute_schemas = []
+                break
             # Build the minimal schema for this attribute
             per_attr_schema = {
                 "type": "object",
