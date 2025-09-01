@@ -10,7 +10,6 @@
 # name: test_different_empty_values
   list([
     dict({
-      'date': '2022-02-05',
       'is_present': True,
       'name': 'headache',
     }),
