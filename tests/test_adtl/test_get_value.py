@@ -1,12 +1,7 @@
-from pathlib import Path
-
 import pytest
 from pytest_unordered import unordered
 
 import adtl.get_value as parser
-
-TEST_PARSERS_PATH = Path(__file__).parent / "parsers"
-TEST_SOURCES_PATH = Path(__file__).parent / "sources"
 
 RULE_SINGLE_FIELD = {"field": "diabetes_mhyn"}
 RULE_SINGLE_FIELD_WITH_MAPPING = {
