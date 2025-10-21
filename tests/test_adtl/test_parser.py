@@ -16,19 +16,6 @@ TEST_PARSERS_PATH = Path(__file__).parent / "parsers"
 TEST_SOURCES_PATH = Path(__file__).parent / "sources"
 TEST_SCHEMAS_PATH = Path(__file__).parent / "schemas"
 
-LIVER_DISEASE = [
-    {
-        "field": "modliv",
-        "values": {"1": True, "0": False, "2": None},
-        "description": "Moderate liver disease",
-    },
-    {
-        "field": "mildliver",
-        "values": {"1": True, "0": False, "2": None},
-        "description": "Mild liver disease",
-    },
-]
-
 ONE_MANY_SOURCE = [
     {"dt": "2022-02-05", "headache_cmyn": 1, "cough_cmyn": 1, "dyspnea_cmyn": 0}
 ]
@@ -171,12 +158,6 @@ SOURCE_GROUPBY_INVALID = [
     },
 ]
 
-BUFFER_GROUPBY = """
-sex_at_birth,subject_id,dataset_id,country_iso3,enrolment_date,admission_date
-male,S007,dataset-2020-03-23,GBR,2020-05-06,2020-06-08
-female,S001,dataset-2020-03-23,GBR,2022-01-11,2020-06-08
-"""
-
 SOURCE_APPLY_PRESENT = [
     {
         "subjid": "S007",
@@ -236,12 +217,6 @@ APPLY_OBSERVATIONS_OUTPUT = [
         "is_present": True,
     },
 ]
-
-RULE_FIELD_OPTION_SKIP = {
-    "field": "aidshiv_mhyn",
-    "values": {"1": True, "0": False},
-    "can_skip": True,
-}
 
 OBSERVATION_RULE_FIELD_OPTION_SKIP = {
     "name": "bleeding",
@@ -813,7 +788,7 @@ def test_apply_when_values_not_present():
     assert apply_values_absent_output == APPLY_ABSENT_OUTPUT
 
 
-def test_apply_in_observations_table():
+def test_apply_in_one_to_many():
     apply_observations_output = list(
         parser.Parser(TEST_PARSERS_PATH / "apply-observations.toml")
         .parse_rows(APPLY_OBSERVATIONS_SOURCE, "apply_obs")
