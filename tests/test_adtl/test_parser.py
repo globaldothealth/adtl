@@ -16,95 +16,6 @@ TEST_PARSERS_PATH = Path(__file__).parent / "parsers"
 TEST_SOURCES_PATH = Path(__file__).parent / "sources"
 TEST_SCHEMAS_PATH = Path(__file__).parent / "schemas"
 
-ONE_MANY_SOURCE = [
-    {"dt": "2022-02-05", "headache_cmyn": 1, "cough_cmyn": 1, "dyspnea_cmyn": 0}
-]
-
-SOURCE_GROUPBY = [
-    {"sex": "1", "subjid": "S007", "dsstdat": "2020-05-06", "hostdat": "2020-06-08"},
-    {"sex": "2", "subjid": "S001", "dsstdat": "2022-01-11", "hostdat": "2020-06-08"},
-]
-# Checks ID mapping from multiple fields
-SOURCE_GROUPBY_MULTI_ID = [
-    {
-        "sex": "1",
-        "subjid": "",
-        "othid": "P007",
-        "dsstdat": "2020-05-06",
-        "hostdat": "2020-06-08",
-    },
-    {
-        "sex": "2",
-        "subjid": "S001",
-        "othid": "P008",
-        "dsstdat": "2022-01-11",
-        "hostdat": "2020-06-08",
-    },
-]
-
-SOURCE_GROUPBY_INVALID = [
-    {
-        "sex": "1",
-        "subjid": "S007",
-        "dsstdat": "2020-05-06",
-        "hostdat": "2020-06-08",
-        "ethnic": "1",
-    },
-    {
-        "sex": "",
-        "subjid": "S007",
-        "dsstdat": "",
-        "hostdat": "",
-        "ethnic": "",
-    },
-    {
-        "sex": "5",
-        "subjid": "S001",
-        "dsstdat": "2022-01-11",
-        "hostdat": "8/6/2022",
-        "ethnic": "2",
-    },
-    {
-        "sex": "1",
-        "subjid": "S009",
-        "dsstdat": "2020-05-06",
-        "hostdat": "8/6/2020",
-        "ethnic": "3",
-    },
-]
-
-SOURCE_APPLY_PRESENT = [
-    {
-        "subjid": "S007",
-        "brthdtc": "1996-02-24",
-        "dsstdat": "2023-02-24",
-        "age": "22",
-        "ageu": 1,
-        "icu_hostdat": 1,
-    }
-]
-APPLY_PRESENT_OUTPUT = [
-    {
-        "subject_id": "S007",
-        "age": pytest.approx(27.0, 0.001),
-        "icu_admitted": True,
-        "dob_year": 1974,
-    }
-]
-SOURCE_APPLY_ABSENT = [
-    {
-        "subjid": "S007",
-        "brthdtc": "",
-        "dsstdat": "2023-02-24",
-        "age": "22",
-        "ageu": 1,
-        "icu_hostdat": "",
-    }
-]
-APPLY_ABSENT_OUTPUT = [
-    {"subject_id": "S007", "age": 22.0, "icu_admitted": False, "dob_year": 2001}
-]
-
 
 def test_missing_key_parse_if():
     with pytest.raises(KeyError, match="headache_v2"):
@@ -114,24 +25,84 @@ def test_missing_key_parse_if():
 
 
 def test_parse_write_buffer(snapshot):
+    groupby_source = [
+        {
+            "sex": "1",
+            "subjid": "S007",
+            "dsstdat": "2020-05-06",
+            "hostdat": "2020-06-08",
+        },
+        {
+            "sex": "2",
+            "subjid": "S001",
+            "dsstdat": "2022-01-11",
+            "hostdat": "2020-06-08",
+        },
+    ]
     ps = parser.Parser(TEST_PARSERS_PATH / "groupBy.json")
-    buf = ps.parse_rows(SOURCE_GROUPBY, "test_groupby").write_csv("subject")
+    buf = ps.parse_rows(groupby_source, "test_groupby").write_csv("subject")
     assert buf == snapshot
 
 
 def test_validation(snapshot):
+    invalid_groupby_source = [
+        {
+            "sex": "1",
+            "subjid": "S007",
+            "dsstdat": "2020-05-06",
+            "hostdat": "2020-06-08",
+            "ethnic": "1",
+        },
+        {
+            "sex": "",
+            "subjid": "S007",
+            "dsstdat": "",
+            "hostdat": "",
+            "ethnic": "",
+        },
+        {
+            "sex": "5",
+            "subjid": "S001",
+            "dsstdat": "2022-01-11",
+            "hostdat": "8/6/2022",
+            "ethnic": "2",
+        },
+        {
+            "sex": "1",
+            "subjid": "S009",
+            "dsstdat": "2020-05-06",
+            "hostdat": "8/6/2020",
+            "ethnic": "3",
+        },
+    ]
+
     ps = parser.Parser(TEST_PARSERS_PATH / "groupBy-with-schema.json")
-    buf = ps.parse_rows(SOURCE_GROUPBY_INVALID, "test_groupby_invalid").write_csv(
+    buf = ps.parse_rows(invalid_groupby_source, "test_groupby_invalid").write_csv(
         "subject"
     )
     assert buf == snapshot
 
 
 def test_multi_id_groupby(snapshot):
+    multi_id_groupby = [
+        {
+            "sex": "1",
+            "subjid": "",
+            "othid": "P007",
+            "dsstdat": "2020-05-06",
+            "hostdat": "2020-06-08",
+        },
+        {
+            "sex": "2",
+            "subjid": "S001",
+            "othid": "P008",
+            "dsstdat": "2022-01-11",
+            "hostdat": "2020-06-08",
+        },
+    ]
+
     ps = parser.Parser(TEST_PARSERS_PATH / "groupBy-multi-id.json")
-    buf = ps.parse_rows(SOURCE_GROUPBY_MULTI_ID, "groupby_multi_id").write_csv(
-        "subject"
-    )
+    buf = ps.parse_rows(multi_id_groupby, "groupby_multi_id").write_csv("subject")
     assert buf == snapshot
 
 
@@ -143,10 +114,13 @@ def test_parser_clear():
 
 
 def test_read_table_raises_error():
+    source = [
+        {"dt": "2022-02-05", "headache_cmyn": 1, "cough_cmyn": 1, "dyspnea_cmyn": 0}
+    ]
     with pytest.raises(ValueError, match="Invalid table"):
         list(
             parser.Parser(TEST_PARSERS_PATH / "oneToMany.json")
-            .parse_rows(ONE_MANY_SOURCE, "one_to_many")
+            .parse_rows(source, "one_to_many")
             .read_table("obs")
         )
 
@@ -207,13 +181,53 @@ def test_make_fields_optional():
 
 # write functions to check that apply is working properly
 def test_apply_when_values_are_present():
+    data = [
+        {
+            "subjid": "S007",
+            "brthdtc": "1996-02-24",
+            "dsstdat": "2023-02-24",
+            "age": "22",
+            "ageu": 1,
+            "icu_hostdat": 1,
+        }
+    ]
+
     apply_values_present_output = list(
         parser.Parser(TEST_PARSERS_PATH / "apply.toml")
-        .parse_rows(SOURCE_APPLY_PRESENT, "apply")
+        .parse_rows(data, "apply")
         .read_table("subject")
     )
 
-    assert apply_values_present_output == APPLY_PRESENT_OUTPUT
+    assert apply_values_present_output == [
+        {
+            "subject_id": "S007",
+            "age": pytest.approx(27.0, 0.001),
+            "icu_admitted": True,
+            "dob_year": 1974,
+        }
+    ]
+
+
+def test_apply_when_values_not_present():
+    data = [
+        {
+            "subjid": "S007",
+            "brthdtc": "",
+            "dsstdat": "2023-02-24",
+            "age": "22",
+            "ageu": 1,
+            "icu_hostdat": "",
+        }
+    ]
+    apply_values_absent_output = list(
+        parser.Parser(TEST_PARSERS_PATH / "apply.toml")
+        .parse_rows(data, "apply_absent")
+        .read_table("subject")
+    )
+
+    assert apply_values_absent_output == [
+        {"subject_id": "S007", "age": 22.0, "icu_admitted": False, "dob_year": 2001}
+    ]
 
 
 def test_show_report(snapshot):
@@ -236,16 +250,6 @@ def test_show_report(snapshot):
     assert f.getvalue() == snapshot
 
 
-def test_apply_when_values_not_present():
-    apply_values_absent_output = list(
-        parser.Parser(TEST_PARSERS_PATH / "apply.toml")
-        .parse_rows(SOURCE_APPLY_ABSENT, "apply_absent")
-        .read_table("subject")
-    )
-
-    assert apply_values_absent_output == APPLY_ABSENT_OUTPUT
-
-
 def test_skip_field_pattern_present(snapshot):
     transformed_csv_data = (
         parser.Parser(TEST_PARSERS_PATH / "skip_field.json")
@@ -264,54 +268,34 @@ def test_skip_field_pattern_absent(snapshot):
     assert transformed_csv_data == snapshot
 
 
-OVERWRITE_OUTPUT = [
-    {
-        "subject_id": 1,
-        "earliest_admission": "2023-11-19",
-        "start_date": "2023-11-20",
-        "treatment_antiviral_type": unordered(["Ribavirin", "Interferon"]),
-    },
-    {
-        "subject_id": 2,
-        "start_date": "2022-11-23",
-        "icu_admission_date": unordered(["2020-11-25", "2020-11-30"]),
-        "treatment_antiviral_type": ["Lopinavir"],
-    },
-    {
-        "subject_id": 3,
-        "start_date": "2020-02-20",
-        "treatment_antiviral_type": unordered(["Ribavirin", "Lopinavir", "Interferon"]),
-    },
-]
-
-OVERWRITTEN_OUTPUT = [
-    {
-        "subject_id": 1,
-        "earliest_admission": "2023-11-19",
-        "start_date": "2023-11-19",
-        "treatment_antiviral_type": unordered(["Ribavirin"]),
-    },
-    {
-        "subject_id": 2,
-        "start_date": "2020-11-23",
-        "icu_admission_date": unordered(["2020-11-30"]),
-        "treatment_antiviral_type": ["Lopinavir"],
-    },
-    {
-        "subject_id": 3,
-        "start_date": "2020-02-20",
-        "treatment_antiviral_type": unordered(["Ribavirin"]),
-    },
-]
-
-
 def test_no_overwriting():
     prsr = parser.Parser(TEST_PARSERS_PATH / "stop-overwriting.toml")
 
     overwriting_output = list(
         prsr.parse(TEST_SOURCES_PATH / "stop-overwriting.csv").read_table("visit")
     )
-    assert overwriting_output == OVERWRITE_OUTPUT
+    # Can't use snapshot as the antiviral order changes between runs
+    assert overwriting_output == [
+        {
+            "subject_id": 1,
+            "earliest_admission": "2023-11-19",
+            "start_date": "2023-11-20",
+            "treatment_antiviral_type": unordered(["Ribavirin", "Interferon"]),
+        },
+        {
+            "subject_id": 2,
+            "start_date": "2022-11-23",
+            "icu_admission_date": unordered(["2020-11-25", "2020-11-30"]),
+            "treatment_antiviral_type": ["Lopinavir"],
+        },
+        {
+            "subject_id": 3,
+            "start_date": "2020-02-20",
+            "treatment_antiviral_type": unordered(
+                ["Ribavirin", "Lopinavir", "Interferon"]
+            ),
+        },
+    ]
 
 
 @pytest.mark.parametrize(
@@ -337,7 +321,26 @@ def test_overwriting_with_strict(verbosity, expected_warnings):
         overwritten_output = list(
             prsr.parse(TEST_SOURCES_PATH / "stop-overwriting.csv").read_table("visit")
         )
-    assert overwritten_output == OVERWRITTEN_OUTPUT
+
+    assert overwritten_output == [
+        {
+            "subject_id": 1,
+            "earliest_admission": "2023-11-19",
+            "start_date": "2023-11-19",
+            "treatment_antiviral_type": unordered(["Ribavirin"]),
+        },
+        {
+            "subject_id": 2,
+            "start_date": "2020-11-23",
+            "icu_admission_date": unordered(["2020-11-30"]),
+            "treatment_antiviral_type": ["Lopinavir"],
+        },
+        {
+            "subject_id": 3,
+            "start_date": "2020-02-20",
+            "treatment_antiviral_type": unordered(["Ribavirin"]),
+        },
+    ]
 
 
 @pytest.mark.filterwarnings("ignore:No matches found")
