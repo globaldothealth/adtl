@@ -313,6 +313,18 @@ def test_invalid_operand_parse_if():
         )
 
 
+def test_missing_key_parse_if():
+    with pytest.raises(ValueError, match="Column 'headache_v2' not found."):
+        parser.parse_if(
+            {
+                "dt": "2022-02-05",
+                "dt_1": "2022-02-06",
+                "dt_2": "2022-02-07",
+            },
+            {"headache_v2": "1"},
+        )
+
+
 @pytest.mark.parametrize(
     "rowrule,expected",
     [

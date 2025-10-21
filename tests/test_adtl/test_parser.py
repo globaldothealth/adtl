@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import collections
-import contextlib
-import io
 import json
 import warnings
 from pathlib import Path
@@ -16,12 +13,85 @@ TEST_PARSERS_PATH = Path(__file__).parent / "parsers"
 TEST_SOURCES_PATH = Path(__file__).parent / "sources"
 TEST_SCHEMAS_PATH = Path(__file__).parent / "schemas"
 
+# test the header info is being picked up
 
-def test_missing_key_parse_if():
-    with pytest.raises(KeyError, match="headache_v2"):
-        parser.Parser(TEST_PARSERS_PATH / "oneToMany-missingIf.toml").parse(
-            TEST_SOURCES_PATH / "oneToManyIf-missingError.csv"
+
+def test_get_date_fields():
+    with (Path(__file__).parent / "parsers" / "test.schema.json").open() as fp:
+        schema = json.load(fp)
+        assert parser.get_date_fields(schema) == unordered(
+            ["enrolment_date", "admission_date"]
         )
+
+
+def test_default_date_format(snapshot):
+    transformed_csv_data = (
+        parser.Parser(TEST_PARSERS_PATH / "epoch.json")
+        .parse(TEST_SOURCES_PATH / "epoch.csv")
+        .write_csv("table")
+    )
+    assert transformed_csv_data == snapshot
+
+
+def test_provide_empty_values_definition(snapshot):
+    ps = parser.Parser(TEST_PARSERS_PATH / "emptyFields.json")
+
+    transformed_csv_data = ps.parse(TEST_SOURCES_PATH / "emptyFields.csv").data[
+        "observation"
+    ]
+
+    assert transformed_csv_data == snapshot
+
+
+def test_skip_field_pattern_present(snapshot):
+    transformed_csv_data = (
+        parser.Parser(TEST_PARSERS_PATH / "skip_field.json")
+        .parse(TEST_SOURCES_PATH / "skip_field_present.csv")
+        .write_csv("table")
+    )
+    assert transformed_csv_data == snapshot
+
+
+def test_skip_field_pattern_absent(snapshot):
+    transformed_csv_data = (
+        parser.Parser(TEST_PARSERS_PATH / "skip_field.json")
+        .parse(TEST_SOURCES_PATH / "skip_field_absent.csv")
+        .write_csv("table")
+    )
+    assert transformed_csv_data == snapshot
+
+
+def test_make_fields_optional():
+    with (TEST_SCHEMAS_PATH / "epoch-oneOf.schema.json").open() as fp:
+        schema = json.load(fp)
+    assert schema["required"] == ["epoch", "id", "text"]
+    assert parser.make_fields_optional(schema, ["text"])["required"] == ["epoch", "id"]
+    assert parser.make_fields_optional(schema, ["field_not_present"])["required"] == [
+        "epoch",
+        "id",
+        "text",
+    ]
+    assert parser.make_fields_optional(schema, ["sex"])["oneOf"] == [
+        {"required": []},
+        {"required": ["sex_at_birth"]},
+    ]
+    assert "oneOf" not in parser.make_fields_optional(schema, ["sex", "sex_at_birth"])
+
+    assert schema["anyOf"] == [
+        {"required": ["sex", "epoch"]},
+        {"required": ["sex_at_birth", "epoch"]},
+    ]
+
+    assert parser.make_fields_optional(schema, ["epoch"])["anyOf"] == [
+        {"required": ["sex"]},
+        {"required": ["sex_at_birth"]},
+    ]
+    assert parser.make_fields_optional(schema, ["sex", "sex_at_birth"])["anyOf"] == [
+        {"required": ["epoch"]}
+    ]
+
+
+# Check writing out and validation works as expected
 
 
 def test_parse_write_buffer(snapshot):
@@ -83,6 +153,19 @@ def test_validation(snapshot):
     assert buf == snapshot
 
 
+# check static tables
+
+
+def test_constant_table():
+    ps = parser.Parser(TEST_PARSERS_PATH / "constant.json").parse_rows([{"x": 1}], "x")
+    assert list(ps.read_table("metadata")) == [
+        {"dataset": "constant", "version": "20220505.1", "format": "csv"}
+    ]
+
+
+# kind=groupby behaviour
+
+
 def test_multi_id_groupby(snapshot):
     multi_id_groupby = [
         {
@@ -106,81 +189,7 @@ def test_multi_id_groupby(snapshot):
     assert buf == snapshot
 
 
-def test_parser_clear():
-    ps = parser.Parser(TEST_PARSERS_PATH / "oneToMany.json")
-    ps.data = {"observation": []}
-    ps.clear()
-    assert ps.data == {}
-
-
-def test_read_table_raises_error():
-    source = [
-        {"dt": "2022-02-05", "headache_cmyn": 1, "cough_cmyn": 1, "dyspnea_cmyn": 0}
-    ]
-    with pytest.raises(ValueError, match="Invalid table"):
-        list(
-            parser.Parser(TEST_PARSERS_PATH / "oneToMany.json")
-            .parse_rows(source, "one_to_many")
-            .read_table("obs")
-        )
-
-
-def test_constant_table():
-    ps = parser.Parser(TEST_PARSERS_PATH / "constant.json").parse_rows([{"x": 1}], "x")
-    assert list(ps.read_table("metadata")) == [
-        {"dataset": "constant", "version": "20220505.1", "format": "csv"}
-    ]
-
-
-def test_get_date_fields():
-    with (Path(__file__).parent / "parsers" / "test.schema.json").open() as fp:
-        schema = json.load(fp)
-        assert parser.get_date_fields(schema) == unordered(
-            ["enrolment_date", "admission_date"]
-        )
-
-
-def test_default_date_format(snapshot):
-    transformed_csv_data = (
-        parser.Parser(TEST_PARSERS_PATH / "epoch.json")
-        .parse(TEST_SOURCES_PATH / "epoch.csv")
-        .write_csv("table")
-    )
-    assert transformed_csv_data == snapshot
-
-
-def test_make_fields_optional():
-    with (TEST_SCHEMAS_PATH / "epoch-oneOf.schema.json").open() as fp:
-        schema = json.load(fp)
-    assert schema["required"] == ["epoch", "id", "text"]
-    assert parser.make_fields_optional(schema, ["text"])["required"] == ["epoch", "id"]
-    assert parser.make_fields_optional(schema, ["field_not_present"])["required"] == [
-        "epoch",
-        "id",
-        "text",
-    ]
-    assert parser.make_fields_optional(schema, ["sex"])["oneOf"] == [
-        {"required": []},
-        {"required": ["sex_at_birth"]},
-    ]
-    assert "oneOf" not in parser.make_fields_optional(schema, ["sex", "sex_at_birth"])
-
-    assert schema["anyOf"] == [
-        {"required": ["sex", "epoch"]},
-        {"required": ["sex_at_birth", "epoch"]},
-    ]
-
-    assert parser.make_fields_optional(schema, ["epoch"])["anyOf"] == [
-        {"required": ["sex"]},
-        {"required": ["sex_at_birth"]},
-    ]
-    assert parser.make_fields_optional(schema, ["sex", "sex_at_birth"])["anyOf"] == [
-        {"required": ["epoch"]}
-    ]
-
-
-# write functions to check that apply is working properly
-def test_apply_when_values_are_present():
+def test_apply_when_values_are_present_groupby():
     data = [
         {
             "subjid": "S007",
@@ -208,7 +217,7 @@ def test_apply_when_values_are_present():
     ]
 
 
-def test_apply_when_values_not_present():
+def test_apply_when_values_not_present_groupby():
     data = [
         {
             "subjid": "S007",
@@ -230,45 +239,7 @@ def test_apply_when_values_not_present():
     ]
 
 
-def test_show_report(snapshot):
-    ps = parser.Parser(TEST_PARSERS_PATH / "epoch.json")
-    ps.report = {
-        "total": {"table": 10},
-        "total_valid": {"table": 8},
-        "validation_errors": {
-            "table": collections.Counter(
-                [
-                    "data must be valid exactly by one definition (0 matches found)",
-                    "data must contain ['epoch'] properties",
-                ]
-            )
-        },
-    }
-    ps.report_available = True
-    with contextlib.redirect_stdout(io.StringIO()) as f:
-        ps.show_report()
-    assert f.getvalue() == snapshot
-
-
-def test_skip_field_pattern_present(snapshot):
-    transformed_csv_data = (
-        parser.Parser(TEST_PARSERS_PATH / "skip_field.json")
-        .parse(TEST_SOURCES_PATH / "skip_field_present.csv")
-        .write_csv("table")
-    )
-    assert transformed_csv_data == snapshot
-
-
-def test_skip_field_pattern_absent(snapshot):
-    transformed_csv_data = (
-        parser.Parser(TEST_PARSERS_PATH / "skip_field.json")
-        .parse(TEST_SOURCES_PATH / "skip_field_absent.csv")
-        .write_csv("table")
-    )
-    assert transformed_csv_data == snapshot
-
-
-def test_no_overwriting():
+def test_no_overwriting_groupby():
     prsr = parser.Parser(TEST_PARSERS_PATH / "stop-overwriting.toml")
 
     overwriting_output = list(
@@ -305,7 +276,7 @@ def test_no_overwriting():
         (True, "Multiple rows of data found for"),
     ],
 )
-def test_overwriting_with_strict(verbosity, expected_warnings):
+def test_overwriting_with_strict_groupby(verbosity, expected_warnings):
     prsr = parser.Parser(TEST_PARSERS_PATH / "stop-overwriting.toml", verbose=verbosity)
     prsr.tables["visit"]["aggregation"] = "lastNotNullStrict"
 
@@ -343,6 +314,33 @@ def test_overwriting_with_strict(verbosity, expected_warnings):
     ]
 
 
+# General tests
+
+
+def test_parser_clear_removes_all_data():
+    ps = parser.Parser(TEST_PARSERS_PATH / "oneToMany.json")
+    ps.data = {"observation": []}
+    ps.clear()
+    assert ps.data == {}
+
+
+def test_read_table_raises_error_if_wrong_table_name():
+    source = [
+        {
+            "Entry_ID": 1,
+            "Epoch": "11/01/1999",
+            "SomeDate": "24/01/1999",
+            "Text": "Lorem Ipsum",
+        }
+    ]
+    with pytest.raises(ValueError, match="Invalid table name"):
+        list(
+            parser.Parser(TEST_PARSERS_PATH / "epoch.json")
+            .parse_rows(source, "one_to_many")
+            .read_table("wrong-name")
+        )
+
+
 @pytest.mark.filterwarnings("ignore:No matches found")
 @pytest.mark.filterwarnings("ignore:Could not construct date")
 def test_return_unmapped(snapshot):
@@ -354,20 +352,10 @@ def test_return_unmapped(snapshot):
     assert transformed_csv_data == snapshot
 
 
-def test_subschema_validation(snapshot):
+def test_subschema_validation_for_large_schemas(snapshot):
     transformed_csv_data = (
         parser.Parser(TEST_PARSERS_PATH / "long-oneof-parser.toml")
         .parse(TEST_SOURCES_PATH / "long-oneof.csv")
         .data["long"]
     )
-    assert transformed_csv_data == snapshot
-
-
-def test_different_empty_values(snapshot):
-    ps = parser.Parser(TEST_PARSERS_PATH / "oneToMany-emptyFields.json")
-
-    transformed_csv_data = ps.parse(
-        TEST_SOURCES_PATH / "oneToMany-emptyFields.csv"
-    ).data["observation"]
-
     assert transformed_csv_data == snapshot

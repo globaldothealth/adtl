@@ -7,14 +7,6 @@
   
   '''
 # ---
-# name: test_different_empty_values
-  list([
-    dict({
-      'is_present': True,
-      'name': 'headache',
-    }),
-  ])
-# ---
 # name: test_multi_id_groupby
   '''
   admission_date,country_iso3,dataset_id,enrolment_date,sex_at_birth,subject_id
@@ -31,25 +23,18 @@
   
   '''
 # ---
+# name: test_provide_empty_values_definition
+  list([
+    dict({
+      'is_present': True,
+      'name': 'headache',
+    }),
+  ])
+# ---
 # name: test_return_unmapped
   '''
   age,date_death,date_of_birth,diabetes_type,has_smoking,pregnancy_birth_weight_kg,subject_id
   fifteen,2023,2023-11-20,no diabetes,today,eight,1
-  
-  '''
-# ---
-# name: test_show_report
-  '''
-  
-  |table       	|valid	|total	|percentage_valid|
-  |---------------|-------|-------|----------------|
-  |table         	|8	|10	|80.000000% |
-  
-  ## table
-  
-  * 1: data must be valid exactly by one definition (0 matches found)
-  * 1: data must contain ['epoch'] properties
-  
   
   '''
 # ---
@@ -69,7 +54,7 @@
   
   '''
 # ---
-# name: test_subschema_validation
+# name: test_subschema_validation_for_large_schemas
   list([
     dict({
       'adtl_valid': True,

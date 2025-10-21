@@ -314,10 +314,3 @@ OBSERVATION_RULE_FIELD_OPTION_VALUE_COMB = {
 def test_default_if_rule_is_correct(rule, expected):
     psr = parser.Parser(TEST_PARSERS_PATH / "oneToMany-missingIf.toml")
     assert psr._default_if("observation", rule)["if"] == expected
-
-
-def test_missing_key_parse_if():
-    with pytest.raises(KeyError, match="headache_v2"):
-        parser.Parser(TEST_PARSERS_PATH / "oneToMany-missingIf.toml").parse(
-            TEST_SOURCES_PATH / "oneToManyIf-missingError.csv"
-        )

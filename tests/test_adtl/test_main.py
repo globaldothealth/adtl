@@ -1,3 +1,6 @@
+import collections
+import contextlib
+import io
 import json
 from pathlib import Path
 from typing import Any, Dict, Iterable
@@ -99,3 +102,23 @@ def test_main_save_report():
         "validation_errors": {},
     }
     Path("epoch-report.json").unlink()
+
+
+def test_show_report(snapshot):
+    ps = adtl.parser.Parser(TEST_PARSERS_PATH / "epoch.json")
+    ps.report = {
+        "total": {"table": 10},
+        "total_valid": {"table": 8},
+        "validation_errors": {
+            "table": collections.Counter(
+                [
+                    "data must be valid exactly by one definition (0 matches found)",
+                    "data must contain ['epoch'] properties",
+                ]
+            )
+        },
+    }
+    ps.report_available = True
+    with contextlib.redirect_stdout(io.StringIO()) as f:
+        ps.show_report()
+    assert f.getvalue() == snapshot
