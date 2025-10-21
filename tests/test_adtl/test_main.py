@@ -7,16 +7,13 @@ from typing import Any, Dict, Iterable
 
 import pytest
 import responses
+from shared import parser_path, schemas_path, sources_path
 
 import adtl
 
-TEST_PARSERS_PATH = Path(__file__).parent / "parsers"
-TEST_SOURCES_PATH = Path(__file__).parent / "sources"
-TEST_SCHEMAS_PATH = Path(__file__).parent / "schemas"
-
 ARGV = [
-    str(TEST_PARSERS_PATH / "epoch.json"),
-    str(TEST_SOURCES_PATH / "epoch.csv"),
+    str(parser_path / "epoch.json"),
+    str(sources_path / "epoch.csv"),
     "-o",
     "output",
     "--encoding",
@@ -38,8 +35,8 @@ def test_main_parquet():
 
 def test_main_parquet_error():
     ARG = [
-        str(TEST_PARSERS_PATH / "return-unmapped.toml"),
-        str(TEST_SOURCES_PATH / "return-unmapped.csv"),
+        str(parser_path / "return-unmapped.toml"),
+        str(sources_path / "return-unmapped.csv"),
         "-o",
         "output",
         "--encoding",
@@ -55,16 +52,14 @@ def test_main_parquet_error():
 @responses.activate
 def test_main_web_schema(snapshot):
     # test with schema on the web
-    epoch_schema = json.loads(
-        Path(TEST_SCHEMAS_PATH / "epoch-data.schema.json").read_text()
-    )
+    epoch_schema = json.loads(Path(schemas_path / "epoch-data.schema.json").read_text())
     responses.add(
         responses.GET,
         "http://example.com/schemas/epoch-data.schema.json",
         json=epoch_schema,
         status=200,
     )
-    adtl.main([str(TEST_PARSERS_PATH / "epoch-web-schema.json")] + ARGV[1:])
+    adtl.main([str(parser_path / "epoch-web-schema.json")] + ARGV[1:])
     assert Path("output-table.csv").read_text() == snapshot
     Path("output-table.csv").unlink()
 
@@ -77,7 +72,7 @@ def test_main_web_schema_missing(snapshot):
         json={"error": "not found"},
         status=404,
     )
-    adtl.main([str(TEST_PARSERS_PATH / "epoch-web-schema.json")] + ARGV[1:])
+    adtl.main([str(parser_path / "epoch-web-schema.json")] + ARGV[1:])
     assert Path("output-table.csv").read_text() == snapshot
     Path("output-table.csv").unlink()
 
@@ -105,7 +100,7 @@ def test_main_save_report():
 
 
 def test_show_report(snapshot):
-    ps = adtl.parser.Parser(TEST_PARSERS_PATH / "epoch.json")
+    ps = adtl.parser.Parser(parser_path / "epoch.json")
     ps.report = {
         "total": {"table": 10},
         "total_valid": {"table": 8},

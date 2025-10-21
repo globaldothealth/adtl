@@ -1,11 +1,7 @@
-from pathlib import Path
-
 import pytest
+from shared import parser_path, sources_path
 
 import adtl.parser as parser
-
-TEST_PARSERS_PATH = Path(__file__).parent / "parsers"
-TEST_SOURCES_PATH = Path(__file__).parent / "sources"
 
 ONE_MANY_SOURCE = [
     {"dt": "2022-02-05", "headache_cmyn": 1, "cough_cmyn": 1, "dyspnea_cmyn": 0}
@@ -19,13 +15,13 @@ ONE_MANY_OUTPUT = [
 
 def test_one_to_many():
     actual_one_many_output_rows = list(
-        parser.Parser(TEST_PARSERS_PATH / "oneToMany.json")
+        parser.Parser(parser_path / "oneToMany.json")
         .parse_rows(ONE_MANY_SOURCE, "test_one_to_many")
         .read_table("observation")
     )
     actual_one_many_output_csv = list(
-        parser.Parser(TEST_PARSERS_PATH / "oneToMany.json")
-        .parse(TEST_SOURCES_PATH / "oneToMany.csv")
+        parser.Parser(parser_path / "oneToMany.json")
+        .parse(sources_path / "oneToMany.csv")
         .read_table("observation")
     )
     assert actual_one_many_output_rows == ONE_MANY_OUTPUT
@@ -39,7 +35,7 @@ ONE_MANY_OUTPUT_COMMON = [
 
 def test_one_to_many_with_common_mappings():
     one_many_output_rows = list(
-        parser.Parser(TEST_PARSERS_PATH / "oneToMany-commonMappings.json")
+        parser.Parser(parser_path / "oneToMany-commonMappings.json")
         .parse_rows(ONE_MANY_SOURCE, "test_one_to_many_common_mappings")
         .read_table("observation")
     )
@@ -125,13 +121,13 @@ ONE_MANY_IF_MISSINGDATA_OUTPUT = [
 
 def test_one_to_many_correct_if_behaviour():
     actual_row = list(
-        parser.Parser(TEST_PARSERS_PATH / "oneToMany-missingIf.toml")
-        .parse(TEST_SOURCES_PATH / "oneToManyIf.csv")
+        parser.Parser(parser_path / "oneToMany-missingIf.toml")
+        .parse(sources_path / "oneToManyIf.csv")
         .read_table("observation")
     )
     actual_row_missing = list(
-        parser.Parser(TEST_PARSERS_PATH / "oneToMany-missingIf.toml")
-        .parse(TEST_SOURCES_PATH / "oneToManyIf-missing.csv")
+        parser.Parser(parser_path / "oneToMany-missingIf.toml")
+        .parse(sources_path / "oneToManyIf-missing.csv")
         .read_table("observation")
     )
 
@@ -170,7 +166,7 @@ APPLY_OBSERVATIONS_OUTPUT = [
 
 def test_apply_in_one_to_many():
     apply_observations_output = list(
-        parser.Parser(TEST_PARSERS_PATH / "apply-observations.toml")
+        parser.Parser(parser_path / "apply-observations.toml")
         .parse_rows(APPLY_OBSERVATIONS_SOURCE, "apply_obs")
         .read_table("observation")
     )
@@ -312,5 +308,5 @@ OBSERVATION_RULE_FIELD_OPTION_VALUE_COMB = {
     ],
 )
 def test_default_if_rule_is_correct(rule, expected):
-    psr = parser.Parser(TEST_PARSERS_PATH / "oneToMany-missingIf.toml")
+    psr = parser.Parser(parser_path / "oneToMany-missingIf.toml")
     assert psr._default_if("observation", rule)["if"] == expected

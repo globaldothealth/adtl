@@ -2,22 +2,18 @@ from __future__ import annotations
 
 import json
 import warnings
-from pathlib import Path
 
 import pytest
 from pytest_unordered import unordered
+from shared import parser_path, schemas_path, sources_path
 
 import adtl.parser as parser
-
-TEST_PARSERS_PATH = Path(__file__).parent / "parsers"
-TEST_SOURCES_PATH = Path(__file__).parent / "sources"
-TEST_SCHEMAS_PATH = Path(__file__).parent / "schemas"
 
 # test the header info is being picked up
 
 
 def test_get_date_fields():
-    with (Path(__file__).parent / "parsers" / "test.schema.json").open() as fp:
+    with (parser_path / "test.schema.json").open() as fp:
         schema = json.load(fp)
         assert parser.get_date_fields(schema) == unordered(
             ["enrolment_date", "admission_date"]
@@ -26,17 +22,17 @@ def test_get_date_fields():
 
 def test_default_date_format(snapshot):
     transformed_csv_data = (
-        parser.Parser(TEST_PARSERS_PATH / "epoch.json")
-        .parse(TEST_SOURCES_PATH / "epoch.csv")
+        parser.Parser(parser_path / "epoch.json")
+        .parse(sources_path / "epoch.csv")
         .write_csv("table")
     )
     assert transformed_csv_data == snapshot
 
 
 def test_provide_empty_values_definition(snapshot):
-    ps = parser.Parser(TEST_PARSERS_PATH / "emptyFields.json")
+    ps = parser.Parser(parser_path / "emptyFields.json")
 
-    transformed_csv_data = ps.parse(TEST_SOURCES_PATH / "emptyFields.csv").data[
+    transformed_csv_data = ps.parse(sources_path / "emptyFields.csv").data[
         "observation"
     ]
 
@@ -45,8 +41,8 @@ def test_provide_empty_values_definition(snapshot):
 
 def test_skip_field_pattern_present(snapshot):
     transformed_csv_data = (
-        parser.Parser(TEST_PARSERS_PATH / "skip_field.json")
-        .parse(TEST_SOURCES_PATH / "skip_field_present.csv")
+        parser.Parser(parser_path / "skip_field.json")
+        .parse(sources_path / "skip_field_present.csv")
         .write_csv("table")
     )
     assert transformed_csv_data == snapshot
@@ -54,15 +50,15 @@ def test_skip_field_pattern_present(snapshot):
 
 def test_skip_field_pattern_absent(snapshot):
     transformed_csv_data = (
-        parser.Parser(TEST_PARSERS_PATH / "skip_field.json")
-        .parse(TEST_SOURCES_PATH / "skip_field_absent.csv")
+        parser.Parser(parser_path / "skip_field.json")
+        .parse(sources_path / "skip_field_absent.csv")
         .write_csv("table")
     )
     assert transformed_csv_data == snapshot
 
 
 def test_make_fields_optional():
-    with (TEST_SCHEMAS_PATH / "epoch-oneOf.schema.json").open() as fp:
+    with (schemas_path / "epoch-oneOf.schema.json").open() as fp:
         schema = json.load(fp)
     assert schema["required"] == ["epoch", "id", "text"]
     assert parser.make_fields_optional(schema, ["text"])["required"] == ["epoch", "id"]
@@ -109,7 +105,7 @@ def test_parse_write_buffer(snapshot):
             "hostdat": "2020-06-08",
         },
     ]
-    ps = parser.Parser(TEST_PARSERS_PATH / "groupBy.json")
+    ps = parser.Parser(parser_path / "groupBy.json")
     buf = ps.parse_rows(groupby_source, "test_groupby").write_csv("subject")
     assert buf == snapshot
 
@@ -146,7 +142,7 @@ def test_validation(snapshot):
         },
     ]
 
-    ps = parser.Parser(TEST_PARSERS_PATH / "groupBy-with-schema.json")
+    ps = parser.Parser(parser_path / "groupBy-with-schema.json")
     buf = ps.parse_rows(invalid_groupby_source, "test_groupby_invalid").write_csv(
         "subject"
     )
@@ -157,7 +153,7 @@ def test_validation(snapshot):
 
 
 def test_constant_table():
-    ps = parser.Parser(TEST_PARSERS_PATH / "constant.json").parse_rows([{"x": 1}], "x")
+    ps = parser.Parser(parser_path / "constant.json").parse_rows([{"x": 1}], "x")
     assert list(ps.read_table("metadata")) == [
         {"dataset": "constant", "version": "20220505.1", "format": "csv"}
     ]
@@ -184,7 +180,7 @@ def test_multi_id_groupby(snapshot):
         },
     ]
 
-    ps = parser.Parser(TEST_PARSERS_PATH / "groupBy-multi-id.json")
+    ps = parser.Parser(parser_path / "groupBy-multi-id.json")
     buf = ps.parse_rows(multi_id_groupby, "groupby_multi_id").write_csv("subject")
     assert buf == snapshot
 
@@ -202,7 +198,7 @@ def test_apply_when_values_are_present_groupby():
     ]
 
     apply_values_present_output = list(
-        parser.Parser(TEST_PARSERS_PATH / "apply.toml")
+        parser.Parser(parser_path / "apply.toml")
         .parse_rows(data, "apply")
         .read_table("subject")
     )
@@ -229,7 +225,7 @@ def test_apply_when_values_not_present_groupby():
         }
     ]
     apply_values_absent_output = list(
-        parser.Parser(TEST_PARSERS_PATH / "apply.toml")
+        parser.Parser(parser_path / "apply.toml")
         .parse_rows(data, "apply_absent")
         .read_table("subject")
     )
@@ -240,10 +236,10 @@ def test_apply_when_values_not_present_groupby():
 
 
 def test_no_overwriting_groupby():
-    prsr = parser.Parser(TEST_PARSERS_PATH / "stop-overwriting.toml")
+    prsr = parser.Parser(parser_path / "stop-overwriting.toml")
 
     overwriting_output = list(
-        prsr.parse(TEST_SOURCES_PATH / "stop-overwriting.csv").read_table("visit")
+        prsr.parse(sources_path / "stop-overwriting.csv").read_table("visit")
     )
     # Can't use snapshot as the antiviral order changes between runs
     assert overwriting_output == [
@@ -278,20 +274,18 @@ def test_no_overwriting_groupby():
     ids=["no_warnings", "with_warnings"],
 )
 def test_overwriting_with_strict_groupby(verbosity, expected_warnings):
-    prsr = parser.Parser(TEST_PARSERS_PATH / "stop-overwriting.toml", verbose=verbosity)
+    prsr = parser.Parser(parser_path / "stop-overwriting.toml", verbose=verbosity)
     prsr.tables["visit"]["aggregation"] = "lastNotNullStrict"
 
     if verbosity:
         with pytest.warns(UserWarning, match=expected_warnings):
             overwritten_output = list(
-                prsr.parse(TEST_SOURCES_PATH / "stop-overwriting.csv").read_table(
-                    "visit"
-                )
+                prsr.parse(sources_path / "stop-overwriting.csv").read_table("visit")
             )
     else:
         warnings.filterwarnings("error")  # Treat warnings as errors
         overwritten_output = list(
-            prsr.parse(TEST_SOURCES_PATH / "stop-overwriting.csv").read_table("visit")
+            prsr.parse(sources_path / "stop-overwriting.csv").read_table("visit")
         )
 
     assert overwritten_output == [
@@ -319,7 +313,7 @@ def test_overwriting_with_strict_groupby(verbosity, expected_warnings):
 
 
 def test_parser_clear_removes_all_data():
-    ps = parser.Parser(TEST_PARSERS_PATH / "oneToMany.json")
+    ps = parser.Parser(parser_path / "oneToMany.json")
     ps.data = {"observation": []}
     ps.clear()
     assert ps.data == {}
@@ -336,7 +330,7 @@ def test_read_table_raises_error_if_wrong_table_name():
     ]
     with pytest.raises(ValueError, match="Invalid table name"):
         list(
-            parser.Parser(TEST_PARSERS_PATH / "epoch.json")
+            parser.Parser(parser_path / "epoch.json")
             .parse_rows(source, "one_to_many")
             .read_table("wrong-name")
         )
@@ -346,8 +340,8 @@ def test_read_table_raises_error_if_wrong_table_name():
 @pytest.mark.filterwarnings("ignore:Could not construct date")
 def test_return_unmapped(snapshot):
     transformed_csv_data = (
-        parser.Parser(TEST_PARSERS_PATH / "return-unmapped.toml")
-        .parse(TEST_SOURCES_PATH / "return-unmapped.csv")
+        parser.Parser(parser_path / "return-unmapped.toml")
+        .parse(sources_path / "return-unmapped.csv")
         .write_csv("subject")
     )
     assert transformed_csv_data == snapshot
@@ -355,8 +349,8 @@ def test_return_unmapped(snapshot):
 
 def test_subschema_validation_for_large_schemas(snapshot):
     transformed_csv_data = (
-        parser.Parser(TEST_PARSERS_PATH / "long-oneof-parser.toml")
-        .parse(TEST_SOURCES_PATH / "long-oneof.csv")
+        parser.Parser(parser_path / "long-oneof-parser.toml")
+        .parse(sources_path / "long-oneof.csv")
         .data["long"]
     )
     assert transformed_csv_data == snapshot

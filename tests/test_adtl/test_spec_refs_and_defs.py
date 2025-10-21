@@ -1,10 +1,7 @@
-from pathlib import Path
-
 import pytest
+from shared import parser_path
 
 import adtl.parser as parser
-
-TEST_PARSERS_PATH = Path(__file__).parent / "parsers"
 
 
 @pytest.mark.parametrize(
@@ -33,15 +30,15 @@ def test_expand_refs(source, expected):
 
 
 def test_reference_expansion():
-    ps_noref = parser.Parser(TEST_PARSERS_PATH / "groupBy.json")
-    ps_ref = parser.Parser(TEST_PARSERS_PATH / "groupBy-defs.json")
+    ps_noref = parser.Parser(parser_path / "groupBy.json")
+    ps_ref = parser.Parser(parser_path / "groupBy-defs.json")
     del ps_ref.spec["adtl"]["defs"]
     assert ps_ref.spec == ps_noref.spec
 
 
 def test_reference_expansion_with_include():
-    ps_noinclude = parser.Parser(TEST_PARSERS_PATH / "groupBy-defs.toml")
-    ps_include = parser.Parser(TEST_PARSERS_PATH / "groupBy-defs-include.toml")
+    ps_noinclude = parser.Parser(parser_path / "groupBy-defs.toml")
+    ps_include = parser.Parser(parser_path / "groupBy-defs-include.toml")
     del ps_noinclude.spec["adtl"]["defs"]
     del ps_include.spec["adtl"]["include-def"]
     assert ps_noinclude.spec == ps_include.spec
@@ -49,10 +46,10 @@ def test_reference_expansion_with_include():
 
 def test_external_definitions():
     with pytest.raises(KeyError):
-        parser.Parser(TEST_PARSERS_PATH / "groupBy-external-defs.toml")
+        parser.Parser(parser_path / "groupBy-external-defs.toml")
     ps = parser.Parser(
-        TEST_PARSERS_PATH / "groupBy-external-defs.toml",
-        include_defs=[TEST_PARSERS_PATH / "include-def.toml"],
+        parser_path / "groupBy-external-defs.toml",
+        include_defs=[parser_path / "include-def.toml"],
     )
     assert ps.defs["sexMapping"]["values"] == {
         "1": "male",
@@ -63,7 +60,7 @@ def test_external_definitions():
 
 @pytest.mark.parametrize(
     "source",
-    [str(TEST_PARSERS_PATH / "apply.toml"), TEST_PARSERS_PATH / "epoch.json"],
+    [str(parser_path / "apply.toml"), parser_path / "epoch.json"],
     ids=["toml", "json"],
 )
 def test_read_definition(source):
@@ -78,8 +75,8 @@ def test_validate_spec():
 @pytest.mark.parametrize(
     "source,expected",
     [
-        (TEST_PARSERS_PATH / "oneToMany.json", ["observation"]),
-        (TEST_PARSERS_PATH / "groupBy.json", ["subject"]),
+        (parser_path / "oneToMany.json", ["observation"]),
+        (parser_path / "groupBy.json", ["subject"]),
     ],
     ids=["oneToMany", "groupBy"],
 )
@@ -90,28 +87,28 @@ def test_load_spec(source, expected):
 
 def test_unsupported_spec_format_raises_exception():
     with pytest.raises(ValueError, match="Unsupported file format"):
-        parser.read_definition(TEST_PARSERS_PATH / "epoch.yml")
+        parser.read_definition(parser_path / "epoch.yml")
     with pytest.raises(ValueError, match="adtl specification format not supported"):
-        parser.Parser(str(TEST_PARSERS_PATH / "epoch.yml"))
+        parser.Parser(str(parser_path / "epoch.yml"))
 
 
 @pytest.mark.parametrize(
     "source,error",
     [
         (
-            TEST_PARSERS_PATH / "groupBy-missing-kind.json",
+            parser_path / "groupBy-missing-kind.json",
             "Required 'kind' attribute within 'tables' not present for",
         ),
         (
-            TEST_PARSERS_PATH / "groupBy-missing-table.json",
+            parser_path / "groupBy-missing-table.json",
             "Parser specification missing required",
         ),
         (
-            TEST_PARSERS_PATH / "groupBy-incorrect-aggregation.json",
+            parser_path / "groupBy-incorrect-aggregation.json",
             "groupBy needs 'aggregation' to be set for table:",
         ),
         (
-            TEST_PARSERS_PATH / "oneToMany-missing-discriminator.json",
+            parser_path / "oneToMany-missing-discriminator.json",
             "discriminator is required for 'oneToMany' tables",
         ),
     ],
