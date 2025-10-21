@@ -26,6 +26,7 @@ TEST_PARSERS_PATH = Path(__file__).parent / "parsers"
             {"a": [{"values": {"1": True, "2": False}}, {"x": 4}]},
         ),
     ],
+    ids=["empty", "simple_ref", "list_ref"],
 )
 def test_expand_refs(source, expected):
     assert parser.expand_refs(*source) == expected
@@ -61,7 +62,9 @@ def test_external_definitions():
 
 
 @pytest.mark.parametrize(
-    "source", [str(TEST_PARSERS_PATH / "apply.toml"), TEST_PARSERS_PATH / "epoch.json"]
+    "source",
+    [str(TEST_PARSERS_PATH / "apply.toml"), TEST_PARSERS_PATH / "epoch.json"],
+    ids=["toml", "json"],
 )
 def test_read_definition(source):
     assert parser.read_definition(source)
@@ -78,6 +81,7 @@ def test_validate_spec():
         (TEST_PARSERS_PATH / "oneToMany.json", ["observation"]),
         (TEST_PARSERS_PATH / "groupBy.json", ["subject"]),
     ],
+    ids=["oneToMany", "groupBy"],
 )
 def test_load_spec(source, expected):
     ps = parser.Parser(source)
@@ -349,6 +353,13 @@ EXPANDED_FOR_PATTERN_APPLY = [
         (FOR_PATTERN_MULTI_VAR, EXPANDED_FOR_PATTERN_MULTI_VAR),
         (FOR_PATTERN_APPLY, EXPANDED_FOR_PATTERN_APPLY),
         (FOR_PATTERN_LIST, EXPANDED_FOR_PATTERN_LIST),
+    ],
+    ids=[
+        "simple_for",
+        "for_with_any",
+        "for_multi_var",
+        "for_with_apply",
+        "for_with_list",
     ],
 )
 def test_expand_for(source, expected):

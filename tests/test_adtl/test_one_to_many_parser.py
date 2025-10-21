@@ -303,11 +303,11 @@ OBSERVATION_RULE_FIELD_OPTION_VALUE_COMB = {
         ),
     ],
     ids=[
-        "observation_rule_field_option_skip",
-        "observation_rule_text_skip",
-        "observation_rule_field_option_value",
-        "observation_rule_field_option_comb",
-        "observation_rule_field_option_value_comb",
+        "long_rule_field_option_skip",
+        "long_rule_text_skip",
+        "long_rule_field_option_value",
+        "long_rule_field_option_comb",
+        "long_rule_field_option_value_comb",
         "long_rule_ignore_missing_key",
     ],
 )

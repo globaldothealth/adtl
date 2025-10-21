@@ -275,6 +275,7 @@ def test_no_overwriting_groupby():
         (False, None),
         (True, "Multiple rows of data found for"),
     ],
+    ids=["no_warnings", "with_warnings"],
 )
 def test_overwriting_with_strict_groupby(verbosity, expected_warnings):
     prsr = parser.Parser(TEST_PARSERS_PATH / "stop-overwriting.toml", verbose=verbosity)
