@@ -121,3 +121,243 @@ def test_unsupported_spec_format_raises_exception():
 def test_invalid_spec_raises_error(source, error):
     with pytest.raises(ValueError, match=error):
         _ = parser.Parser(source)
+
+
+# Test expand_for
+
+FOR_PATTERN = [
+    {
+        "name": "history_of_fever",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_{n}"},
+        "is_present": {"field": "flw2_fever_{n}", "values": {"0": False, "1": True}},
+        "if": {"not": {"flw2_fever_{n}": 2}},
+        "for": {"n": {"range": [1, 3]}},
+    }
+]
+
+FOR_PATTERN_LIST = [
+    {
+        "name": "headache",
+        "phase": "admission",
+        "date": {"field": "flw2_survey_date_{n}"},
+        "is_present": {
+            "combinedType": "any",
+            "fields": ["flw2_headache_{n}", "headache"],
+            "values": {"0": False, "1": True},
+            5: "non-string-key",
+        },
+        "if": {"not": {"flw2_headache_{n}": 2}},
+        "for": {"n": {"range": [1, 2]}},
+    }
+]
+
+EXPANDED_FOR_PATTERN_LIST = [
+    {
+        "name": "headache",
+        "phase": "admission",
+        "date": {"field": "flw2_survey_date_1"},
+        "is_present": {
+            "combinedType": "any",
+            "fields": ["flw2_headache_1", "headache"],
+            "values": {"0": False, "1": True},
+            5: "non-string-key",
+        },
+        "if": {"not": {"flw2_headache_1": 2}},
+    },
+    {
+        "name": "headache",
+        "phase": "admission",
+        "date": {"field": "flw2_survey_date_2"},
+        "is_present": {
+            "combinedType": "any",
+            "fields": ["flw2_headache_2", "headache"],
+            "values": {"0": False, "1": True},
+            5: "non-string-key",
+        },
+        "if": {"not": {"flw2_headache_2": 2}},
+    },
+]
+
+FOR_PATTERN_NOT_DICT = [
+    {
+        "name": "history_of_fever",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_{n}"},
+        "is_present": {"field": "flw2_fever_{n}", "values": {"0": False, "1": True}},
+        "for": [1, 3],
+    }
+]
+
+FOR_PATTERN_BAD_RULE = [
+    {
+        "name": "history_of_fever",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_{n}"},
+        "is_present": {"field": "flw2_fever_{n}", "values": {"0": False, "1": True}},
+        "for": {"n": {"includes": [1, 3]}},
+    }
+]
+
+
+EXPANDED_FOR_PATTERN = [
+    {
+        "name": "history_of_fever",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_1"},
+        "is_present": {"field": "flw2_fever_1", "values": {"0": False, "1": True}},
+        "if": {"not": {"flw2_fever_1": 2}},
+    },
+    {
+        "name": "history_of_fever",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_2"},
+        "is_present": {"field": "flw2_fever_2", "values": {"0": False, "1": True}},
+        "if": {"not": {"flw2_fever_2": 2}},
+    },
+    {
+        "name": "history_of_fever",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_3"},
+        "is_present": {"field": "flw2_fever_3", "values": {"0": False, "1": True}},
+        "if": {"not": {"flw2_fever_3": 2}},
+    },
+]
+
+FOR_PATTERN_ANY = [
+    {
+        "name": "history_of_fever",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_{n}"},
+        "is_present": {"field": "flw2_fever_{n}", "values": {"0": False, "1": True}},
+        "if": {"any": [{"flw2_fever_{n}": 0}, {"flw2_fever_{n}": 1}]},
+        "for": {"n": {"range": [1, 2]}},
+    }
+]
+
+EXPANDED_FOR_PATTERN_ANY = [
+    {
+        "name": "history_of_fever",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_1"},
+        "is_present": {"field": "flw2_fever_1", "values": {"0": False, "1": True}},
+        "if": {"any": [{"flw2_fever_1": 0}, {"flw2_fever_1": 1}]},
+    },
+    {
+        "name": "history_of_fever",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_2"},
+        "is_present": {"field": "flw2_fever_2", "values": {"0": False, "1": True}},
+        "if": {"any": [{"flw2_fever_2": 0}, {"flw2_fever_2": 1}]},
+    },
+]
+
+FOR_PATTERN_MULTI_VAR = [
+    {
+        "field": "field_{x}_{y}",
+        "if": {"field_{x}_{y}": 1},
+        "for": {"x": [1, 2], "y": [3, 4]},
+    }
+]
+
+EXPANDED_FOR_PATTERN_MULTI_VAR = [
+    {
+        "field": "field_1_3",
+        "if": {"field_1_3": 1},
+    },
+    {
+        "field": "field_1_4",
+        "if": {"field_1_4": 1},
+    },
+    {
+        "field": "field_2_3",
+        "if": {"field_2_3": 1},
+    },
+    {
+        "field": "field_2_4",
+        "if": {"field_2_4": 1},
+    },
+]
+
+FOR_PATTERN_APPLY = [
+    {
+        "name": "cough",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_{n}"},
+        "start_date": {
+            "field": "flw2_survey_date_{n}",
+            "apply": {
+                "function": "startDate",
+                "params": [
+                    7,
+                ],
+            },
+        },
+        "for": {"n": {"range": [1, 2]}},
+        "is_present": {
+            "field": "flw2_pers_cough_dry_{n}",
+            "values": {"0": False, "1": True},
+        },
+    }
+]
+
+EXPANDED_FOR_PATTERN_APPLY = [
+    {
+        "name": "cough",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_1"},
+        "start_date": {
+            "field": "flw2_survey_date_1",
+            "apply": {
+                "function": "startDate",
+                "params": [
+                    7,
+                ],
+            },
+        },
+        "is_present": {
+            "field": "flw2_pers_cough_dry_1",
+            "values": {"0": False, "1": True},
+        },
+    },
+    {
+        "name": "cough",
+        "phase": "followup",
+        "date": {"field": "flw2_survey_date_2"},
+        "start_date": {
+            "field": "flw2_survey_date_2",
+            "apply": {
+                "function": "startDate",
+                "params": [
+                    7,
+                ],
+            },
+        },
+        "is_present": {
+            "field": "flw2_pers_cough_dry_2",
+            "values": {"0": False, "1": True},
+        },
+    },
+]
+
+
+@pytest.mark.parametrize(
+    "source,expected",
+    [
+        (FOR_PATTERN, EXPANDED_FOR_PATTERN),
+        (FOR_PATTERN_ANY, EXPANDED_FOR_PATTERN_ANY),
+        (FOR_PATTERN_MULTI_VAR, EXPANDED_FOR_PATTERN_MULTI_VAR),
+        (FOR_PATTERN_APPLY, EXPANDED_FOR_PATTERN_APPLY),
+        (FOR_PATTERN_LIST, EXPANDED_FOR_PATTERN_LIST),
+    ],
+)
+def test_expand_for(source, expected):
+    assert parser.expand_for(source) == expected
+
+
+def test_expand_for_exceptions():
+    with pytest.raises(ValueError, match="is not a dictionary of variables"):
+        parser.expand_for(FOR_PATTERN_NOT_DICT)
+
+    with pytest.raises(ValueError, match="can only have lists or ranges"):
+        parser.expand_for(FOR_PATTERN_BAD_RULE)

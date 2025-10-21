@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 import adtl.parser as parser
 
 TEST_PARSERS_PATH = Path(__file__).parent / "parsers"
@@ -174,3 +176,148 @@ def test_apply_in_one_to_many():
     )
 
     assert apply_observations_output == APPLY_OBSERVATIONS_OUTPUT
+
+
+# Default 'if' rule data & test
+
+OBSERVATION_RULE_FIELD_OPTION_SKIP = {
+    "name": "bleeding",
+    "phase": "admission",
+    "date": "2023-05-18",
+    "is_present": {
+        "field": "bleed_ceterm_v2",
+        "values": {"1": True, "0": False},
+        "can_skip": True,
+    },
+}
+OBSERVATION_RULE_TEXT_SKIP = {
+    "name": "temperature_celsius",
+    "phase": "admission",
+    "date": "2023-05-18",
+    "value": {
+        "field": "temperature_adm",
+        "can_skip": True,
+    },
+}
+OBSERVATION_RULE_FIELD_OPTION_VALUE = {
+    "name": "temperature_celsius",
+    "phase": "admission",
+    "date": "2023-05-22",
+    "value": {
+        "field": "temp_vsorres",
+        "source_unit": {"field": "temp_vsorresu", "values": {"1": "°C", "2": "°F"}},
+    },
+}
+
+OBSERVATION_RULE_FIELD_OPTION_COMB = {
+    "name": "cough",
+    "phase": "admission",
+    "date": "2023-05-22",
+    "is_present": {
+        "combinedType": "any",
+        "fields": [
+            {"field": "cough_ceoccur_v2", "values": {"1": "true", "0": "false"}},
+            {
+                "field": "coughsput_ceoccur_v2",
+                "values": {"1": "true", "0": "false"},
+                "can_skip": "true",
+            },
+            {
+                "field": "coughhb_ceoccur_v2",
+                "values": {"1": "true", "0": "false"},
+                "can_skip": "true",
+            },
+        ],
+    },
+}
+
+OBSERVATION_RULE_FIELD_OPTION_VALUE_COMB = {
+    "name": "temperature_celsius",
+    "phase": "study",
+    "date": "2023-05-27",
+    "value": {
+        "combinedType": "max",
+        "fields": [
+            {
+                "field": "temp_v1",
+            },
+            {
+                "field": "temp_v2",
+                "can_skip": "true",
+            },
+        ],
+    },
+}
+
+
+@pytest.mark.parametrize(
+    "rule,expected",
+    [
+        (
+            OBSERVATION_RULE_FIELD_OPTION_SKIP,
+            {
+                "any": [
+                    {"bleed_ceterm_v2": "1", "can_skip": True},
+                    {"bleed_ceterm_v2": "0", "can_skip": True},
+                ]
+            },
+        ),
+        (OBSERVATION_RULE_TEXT_SKIP, {"temperature_adm": {"!=": ""}, "can_skip": True}),
+        (OBSERVATION_RULE_FIELD_OPTION_VALUE, {"temp_vsorres": {"!=": ""}}),
+        (
+            OBSERVATION_RULE_FIELD_OPTION_COMB,
+            {
+                "any": [
+                    {"cough_ceoccur_v2": "1"},
+                    {"cough_ceoccur_v2": "0"},
+                    {"coughsput_ceoccur_v2": "1", "can_skip": True},
+                    {"coughsput_ceoccur_v2": "0", "can_skip": True},
+                    {"coughhb_ceoccur_v2": "1", "can_skip": True},
+                    {"coughhb_ceoccur_v2": "0", "can_skip": True},
+                ]
+            },
+        ),
+        (
+            OBSERVATION_RULE_FIELD_OPTION_VALUE_COMB,
+            {
+                "any": [
+                    {"temp_v1": {"!=": ""}},
+                    {"temp_v2": {"!=": ""}, "can_skip": True},
+                ]
+            },
+        ),
+        (
+            {
+                "name": "demog_country",
+                "phase": "presentation",
+                "value": {
+                    "field": "slider_country",
+                    "ignoreMissingKey": True,
+                    "values": {
+                        "Russian Federation": "Russia",
+                        "Gambia": "Gambia The",
+                    },
+                },
+            },
+            {"slider_country": {"!=": ""}},
+        ),
+    ],
+    ids=[
+        "observation_rule_field_option_skip",
+        "observation_rule_text_skip",
+        "observation_rule_field_option_value",
+        "observation_rule_field_option_comb",
+        "observation_rule_field_option_value_comb",
+        "long_rule_ignore_missing_key",
+    ],
+)
+def test_default_if_rule_is_correct(rule, expected):
+    psr = parser.Parser(TEST_PARSERS_PATH / "oneToMany-missingIf.toml")
+    assert psr._default_if("observation", rule)["if"] == expected
+
+
+def test_missing_key_parse_if():
+    with pytest.raises(KeyError, match="headache_v2"):
+        parser.Parser(TEST_PARSERS_PATH / "oneToMany-missingIf.toml").parse(
+            TEST_SOURCES_PATH / "oneToManyIf-missingError.csv"
+        )

@@ -1,7 +1,12 @@
+from pathlib import Path
+
 import pytest
 from pytest_unordered import unordered
 
 import adtl.get_value as parser
+
+TEST_PARSERS_PATH = Path(__file__).parent / "parsers"
+TEST_SOURCES_PATH = Path(__file__).parent / "sources"
 
 RULE_SINGLE_FIELD = {"field": "diabetes_mhyn"}
 RULE_SINGLE_FIELD_WITH_MAPPING = {
@@ -293,6 +298,19 @@ def test_get_value_combined_type(row_rule, expected):
 )
 def test_parse_if(row_rule, expected):
     assert parser.parse_if(*row_rule) == expected
+
+
+def test_invalid_operand_parse_if():
+    with pytest.raises(ValueError, match="Unrecognized operand"):
+        parser.parse_if(
+            {"outcome_type": 1, "outcome_date": "2022-06-04"},
+            {"outcome_type": {"<>": 5}},
+        )
+    with pytest.raises(ValueError, match="if-subexpressions should be a dictionary"):
+        parser.parse_if(
+            {"outcome_type": 1, "outcome_date": "2022-06-04"},
+            {"outcome_type": {"<>", 5}},
+        )
 
 
 @pytest.mark.parametrize(
