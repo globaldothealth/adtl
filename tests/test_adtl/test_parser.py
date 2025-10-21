@@ -442,23 +442,6 @@ def test_missing_key_parse_if():
         )
 
 
-def test_validate_spec():
-    with pytest.raises(ValueError, match="Specification header requires key"):
-        _ = parser.Parser(dict())
-
-
-@pytest.mark.parametrize(
-    "source,expected",
-    [
-        (TEST_PARSERS_PATH / "oneToMany.json", ["observation"]),
-        (TEST_PARSERS_PATH / "groupBy.json", ["subject"]),
-    ],
-)
-def test_load_spec(source, expected):
-    ps = parser.Parser(source)
-    assert list(ps.tables.keys()) == expected
-
-
 def test_parse_write_buffer(snapshot):
     ps = parser.Parser(TEST_PARSERS_PATH / "groupBy.json")
     buf = ps.parse_rows(SOURCE_GROUPBY, "test_groupby").write_csv("subject")
@@ -479,38 +462,6 @@ def test_multi_id_groupby(snapshot):
         "subject"
     )
     assert buf == snapshot
-
-
-@pytest.mark.parametrize(
-    "source,error",
-    [
-        (
-            TEST_PARSERS_PATH / "groupBy-missing-kind.json",
-            "Required 'kind' attribute within 'tables' not present for",
-        ),
-        (
-            TEST_PARSERS_PATH / "groupBy-missing-table.json",
-            "Parser specification missing required",
-        ),
-        (
-            TEST_PARSERS_PATH / "groupBy-incorrect-aggregation.json",
-            "groupBy needs 'aggregation' to be set for table:",
-        ),
-        (
-            TEST_PARSERS_PATH / "oneToMany-missing-discriminator.json",
-            "discriminator is required for 'oneToMany' tables",
-        ),
-    ],
-    ids=[
-        "missing-kind",
-        "missing-table",
-        "incorrect-aggregation",
-        "missing-discriminator",
-    ],
-)
-def test_invalid_spec_raises_error(source, error):
-    with pytest.raises(ValueError, match=error):
-        _ = parser.Parser(source)
 
 
 def test_parser_clear():

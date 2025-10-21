@@ -67,8 +67,57 @@ def test_read_definition(source):
     assert parser.read_definition(source)
 
 
-def test_unsupported_format_raises_exception():
+def test_validate_spec():
+    with pytest.raises(ValueError, match="Specification header requires key"):
+        _ = parser.Parser(dict())
+
+
+@pytest.mark.parametrize(
+    "source,expected",
+    [
+        (TEST_PARSERS_PATH / "oneToMany.json", ["observation"]),
+        (TEST_PARSERS_PATH / "groupBy.json", ["subject"]),
+    ],
+)
+def test_load_spec(source, expected):
+    ps = parser.Parser(source)
+    assert list(ps.tables.keys()) == expected
+
+
+def test_unsupported_spec_format_raises_exception():
     with pytest.raises(ValueError, match="Unsupported file format"):
         parser.read_definition(TEST_PARSERS_PATH / "epoch.yml")
     with pytest.raises(ValueError, match="adtl specification format not supported"):
         parser.Parser(str(TEST_PARSERS_PATH / "epoch.yml"))
+
+
+@pytest.mark.parametrize(
+    "source,error",
+    [
+        (
+            TEST_PARSERS_PATH / "groupBy-missing-kind.json",
+            "Required 'kind' attribute within 'tables' not present for",
+        ),
+        (
+            TEST_PARSERS_PATH / "groupBy-missing-table.json",
+            "Parser specification missing required",
+        ),
+        (
+            TEST_PARSERS_PATH / "groupBy-incorrect-aggregation.json",
+            "groupBy needs 'aggregation' to be set for table:",
+        ),
+        (
+            TEST_PARSERS_PATH / "oneToMany-missing-discriminator.json",
+            "discriminator is required for 'oneToMany' tables",
+        ),
+    ],
+    ids=[
+        "missing-kind",
+        "missing-table",
+        "incorrect-aggregation",
+        "missing-discriminator",
+    ],
+)
+def test_invalid_spec_raises_error(source, error):
+    with pytest.raises(ValueError, match=error):
+        _ = parser.Parser(source)
