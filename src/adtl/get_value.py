@@ -255,13 +255,13 @@ def parse_if(
         return all(parse_if(row, r, ctx, can_skip) for r in rule[key])
     try:
         attr_value = row[key].lower() if "caseInsensitive" in rule else row[key]
-    except KeyError:
+    except KeyError as e:
         if can_skip is True:
             return False
         elif ctx:
             if skip_field(row, {"field": key}, ctx(key)):
                 return False
-        raise
+        raise ValueError(f"Column '{key}' not found.") from e
 
     if isinstance(rule[key], dict):
         cmp = next(iter(rule[key]))

@@ -706,7 +706,7 @@ class Parser:
             Iterable of transformed rows in table
         """
         if table not in self.tables:
-            raise ValueError(f"Invalid table: {table}")
+            raise ValueError(f"Invalid table name: {table}")
         for row in self.data[table]:
             yield row
 

@@ -295,6 +295,31 @@ def test_parse_if(row_rule, expected):
     assert parser.parse_if(*row_rule) == expected
 
 
+def test_invalid_operand_parse_if():
+    with pytest.raises(ValueError, match="Unrecognized operand"):
+        parser.parse_if(
+            {"outcome_type": 1, "outcome_date": "2022-06-04"},
+            {"outcome_type": {"<>": 5}},
+        )
+    with pytest.raises(ValueError, match="if-subexpressions should be a dictionary"):
+        parser.parse_if(
+            {"outcome_type": 1, "outcome_date": "2022-06-04"},
+            {"outcome_type": {"<>", 5}},
+        )
+
+
+def test_missing_key_parse_if():
+    with pytest.raises(ValueError, match="Column 'headache_v2' not found."):
+        parser.parse_if(
+            {
+                "dt": "2022-02-05",
+                "dt_1": "2022-02-06",
+                "dt_2": "2022-02-07",
+            },
+            {"headache_v2": "1"},
+        )
+
+
 @pytest.mark.parametrize(
     "rowrule,expected",
     [
