@@ -246,6 +246,8 @@ class Parser:
         else:
             self.spec = spec
         self.header = self.spec.get("adtl", {})
+        if not self.header:
+            raise ValueError("Specification missing required 'adtl' header")
         if self.specfile:
             self.include_defs = [
                 relative_path(self.specfile, definition_file)
@@ -297,11 +299,7 @@ class Parser:
 
     @lru_cache
     def get_namespace_uuid(self):
-        if self.header:
-            namespace_str = json.dumps(self.header)
-        else:
-            namespace_str = json.dumps(self.spec)
-
+        namespace_str = json.dumps(self.header)
         toml_hash = hashlib.sha1(namespace_str.encode("utf-8")).hexdigest()
         return uuid.uuid5(uuid.NAMESPACE_DNS, toml_hash)
 

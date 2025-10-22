@@ -67,9 +67,16 @@ def test_read_definition(source):
     assert parser.read_definition(source)
 
 
-def test_validate_spec():
-    with pytest.raises(ValueError, match="Specification header requires key"):
+def test_validate_spec_no_header():
+    with pytest.raises(
+        ValueError, match="Specification missing required 'adtl' header"
+    ):
         _ = parser.Parser(dict())
+
+
+def test_validate_spec_malformed_header():
+    with pytest.raises(ValueError, match="Specification header requires key"):
+        _ = parser.Parser({"adtl": {"name": "spec_without_tables"}})
 
 
 @pytest.mark.parametrize(
