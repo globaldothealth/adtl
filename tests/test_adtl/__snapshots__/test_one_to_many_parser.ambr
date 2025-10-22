@@ -1,0 +1,62 @@
+# serializer version: 1
+# name: test_generated_data
+  list([
+    dict({
+      'date': '2023-01-15',
+      'event_id': 'd141d324-a88f-550d-935c-83ff18e40be0',
+      'name': 'medi_antiviralagent',
+      'value': 'drug_2',
+    }),
+    dict({
+      'date': '2023-01-15',
+      'event_id': 'd141d324-a88f-550d-935c-83ff18e40be0',
+      'name': 'medi_route',
+      'value': 'oral',
+    }),
+    dict({
+      'date': '2023-01-15',
+      'event_id': 'd141d324-a88f-550d-935c-83ff18e40be0',
+      'name': 'medi_dose',
+      'unit': 'mg',
+      'value': 500,
+    }),
+    dict({
+      'date': '2023-01-16',
+      'event_id': 'b7ad513d-1e3e-5f5d-8066-bc2371887ba2',
+      'name': 'medi_antiviralagent',
+      'value': 'drug_4',
+    }),
+    dict({
+      'date': '2023-01-16',
+      'event_id': 'b7ad513d-1e3e-5f5d-8066-bc2371887ba2',
+      'name': 'medi_route',
+      'value': 'oral',
+    }),
+    dict({
+      'date': '2023-01-16',
+      'event_id': 'b7ad513d-1e3e-5f5d-8066-bc2371887ba2',
+      'name': 'medi_dose',
+      'unit': 'mg',
+      'value': 700,
+    }),
+    dict({
+      'date': '2023-01-17',
+      'event_id': '218c6f46-318f-5080-90e7-d7c2f33b412d',
+      'name': 'medi_antiviralagent',
+      'value': 'drug_3',
+    }),
+    dict({
+      'date': '2023-01-17',
+      'event_id': '218c6f46-318f-5080-90e7-d7c2f33b412d',
+      'name': 'medi_route',
+      'value': 'IV',
+    }),
+    dict({
+      'date': '2023-01-17',
+      'event_id': '218c6f46-318f-5080-90e7-d7c2f33b412d',
+      'name': 'medi_dose',
+      'unit': 'l/min',
+      'value': 0.1,
+    }),
+  ])
+# ---

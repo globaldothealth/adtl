@@ -306,3 +306,54 @@ OBSERVATION_RULE_FIELD_OPTION_VALUE_COMB = {
 def test_default_if_rule_is_correct(rule, expected):
     psr = parser.Parser(parser_path / "oneToMany-missingIf.toml")
     assert psr._default_if("observation", rule)["if"] == expected
+
+
+def test_generated_data(snapshot):
+    generated_output = list(
+        parser.Parser(parser_path / "onetomany_generate.toml")
+        .parse_rows(
+            [
+                {
+                    "subjid": "001",
+                    "form": "medication",
+                    "repeat_instance": "1",
+                    "med_type": "1",
+                    "antiviral_type": "2",
+                    "med_route": "1",
+                    "med_dose": 500,
+                    "med_unit": "mg",
+                    "med_start_date": "2023-01-15",
+                },
+                {
+                    "subjid": "001",
+                    "form": "medication",
+                    "repeat_instance": "2",
+                    "med_type": "1",
+                    "antiviral_type": "4",
+                    "med_route": "1",
+                    "med_dose": 700,
+                    "med_unit": "mg",
+                    "med_start_date": "2023-01-16",
+                },
+                {
+                    "subjid": "001",
+                    "form": "medication",
+                    "repeat_instance": "3",
+                    "med_type": "1",
+                    "antiviral_type": "3",
+                    "med_route": "2",
+                    "med_dose": 0.1,
+                    "med_unit": "l/min",
+                    "med_start_date": "2023-01-17",
+                },
+            ],
+            "onetomany_generate",
+        )
+        .read_table("long")
+    )
+
+    assert len(generated_output) == 9
+    unique_ids = {d["event_id"] for d in generated_output if "event_id" in d}
+    assert len(unique_ids) == 3
+
+    assert generated_output == snapshot

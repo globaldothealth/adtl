@@ -1,0 +1,29 @@
+[adtl]
+  name = "Generate"
+  description = "Example using generate"
+
+  [adtl.defs]
+    generate_med_uuid = { event_id = { generate = { "type" = "uuid", "values" = ["subjid", "repeat_instance"] } }, date = { field = "med_start_date" } }
+
+  [adtl.tables.long]
+    kind = "oneToMany"
+    discriminator = "name"
+
+[[long]]
+  name = "medi_antiviralagent"
+  ref = "generate_med_uuid"
+  value = { field = "antiviral_type", values = { 1 = "drug_1", 2 = "drug_2", 3 = "drug_3", 4 = "drug_4" } }
+  if = { antiviral_type = { "!=" = 99 } }
+
+[[long]]
+  name = "medi_route"
+  ref = "generate_med_uuid"
+  value = { field = "med_route", values = { 1 = "oral", 2 = "IV" } }
+  if = { med_route = { "!=" = 99 } }
+
+[[long]]
+  name = "medi_dose"
+  ref = "generate_med_uuid"
+  value = { field = "med_dose" }
+  unit = { field = "med_unit" }
+  if = { med_dose = { "!=" = 99 } }
