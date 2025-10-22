@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import copy
 import csv
+import hashlib
 import io
 import itertools
 import json
 import logging
 import re
+import uuid
 import warnings
 from collections import Counter, defaultdict
 from functools import lru_cache
@@ -294,6 +296,16 @@ class Parser:
         self.empty_fields = self.header.get("emptyFields", None)
 
     @lru_cache
+    def get_namespace_uuid(self):
+        if self.header:
+            namespace_str = json.dumps(self.header)
+        else:
+            namespace_str = json.dumps(self.spec)
+
+        toml_hash = hashlib.sha1(namespace_str.encode("utf-8")).hexdigest()
+        return uuid.uuid5(uuid.NAMESPACE_DNS, toml_hash)
+
+    @lru_cache
     def ctx(self, attribute: str):
         return {
             "is_date": attribute in self.date_fields,
@@ -306,6 +318,7 @@ class Parser:
                 else False
             ),
             "returnUnmatched": self.header.get("returnUnmatched", False),
+            "namespace": self.get_namespace_uuid(),
         }
 
     def validate_spec(self):

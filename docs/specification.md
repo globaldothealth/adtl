@@ -552,3 +552,43 @@ will get expanded as
   field = "field_2_4"
   if."field_2_4" = 1
 ```
+
+### Generated fields
+
+ADTL can generate content for fields. Currently, this is limited to adding a datetime stamp,
+or a UUID which can link long-format rows to eachother as may be necessary in the *oneToMany*
+case. E.g.
+
+To add a datetime stamp in an `ingestion_date` field:
+
+```toml
+[table.ingestion_date]
+  generate = {type = "datetime"}
+```
+
+or to create a UUID based off a unique data combination to link medication events:
+
+```toml
+[[long]]
+  attribute = "medi_antivial"
+  event_id = {generate = {type = "uuid", values = ["subjid", "redcap_repeat_instance", "medi_medtype", "medi_date"]}}
+  value = {field = "medi_antiviralagent"}
+  start_date = "medi_date"
+
+[[long]]
+  attribute = "medi_route"
+  event_id = {generate = {type = "uuid", values = ["subjid", "redcap_repeat_instance", "medi_medtype", "medi_date"]}}
+  value = {field = "medi_medroute", values = {1 = "Oral", 2="IV"}}
+  start_date = "medi_date"
+
+[[long]]
+  attribute = "medi_dose"
+  event_id = {generate = {type = "uuid", values = ["subjid", "redcap_repeat_instance", "medi_medtype", "medi_date"]}}
+  value_num = {field = "medi_dosage"}
+  attribute_unit = {field = "medi_units"}
+  start_date = "medi_date"
+```
+In this case the combined data in a single row of the input file from fields `subjid`, `redcap_repeat_instance`
+`medi_medtype` and `medi_date` should uniquely identify a single event. Users should ensure that
+if one or more of these fields are empty, uniqueness is not comprimised; field which are auto-filled or data-rich
+are therefore preferred.

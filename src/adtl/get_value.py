@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import re
+import uuid
 import warnings
 from datetime import datetime
 from typing import Any, Callable, Iterable, Union
@@ -232,6 +233,8 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
         return value
     elif "combinedType" in rule:
         return get_combined_type(row, rule, ctx)
+    elif "generate" in rule:
+        return generate_field(row, rule, ctx)
     else:
         raise ValueError(f"Could not return value for {rule}")
 
@@ -378,3 +381,32 @@ def get_combined_type(row: StrDict, rule: StrDict, ctx: Context = None):
             return [v for v in values if v not in excludeWhen]
     else:
         raise ValueError(f"Unknown {combined_type} in {rule}")
+
+
+def generate_field(row: StrDict, rule: StrDict, ctx: Context = None):
+    """Generates a field value based on a specified method.
+
+    Currently supports 'uuid' and 'datetime' generation methods.
+
+    Example rule for UUID generation:
+        {
+            "generate": {"type": "uuid", "values": ["field1", "field2", "field3"]}
+        }
+
+    Example rule for datetime generation (will generate a datetime in current ISO format):
+        {
+            "generate": {"type": "datetime"},
+        }
+    """
+
+    method = rule["generate"]["type"]
+
+    if method == "datetime":
+        return datetime.now().isoformat(timespec="seconds")
+    elif method == "uuid":
+        seed = [
+            str(get_value_unhashed(row, {"field": f}, ctx)).lower()
+            for f in rule["generate"]["values"]
+        ]
+        return str(uuid.uuid5(ctx["namespace"], "|".join(seed)))
+    raise ValueError(f"Unknown generation method: {method}")

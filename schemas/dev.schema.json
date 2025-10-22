@@ -94,6 +94,29 @@
                 "enum_list"
               ],
               "description": "If the field is a single field list"
+            },
+            "generate": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "enum": [
+                    "datetime",
+                    "uuid"
+                  ],
+                  "description": "Type of generated field"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Fields to use as consistent seed for generated UUID"
+                }
+              }
             }
           }
         }
