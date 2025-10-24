@@ -3,7 +3,7 @@
   description = "Example using generate"
 
   [adtl.defs]
-    generate_med_uuid = { event_id = { generate = { "type" = "uuid", "values" = ["subjid", "repeat_instance"] } }, date = { field = "med_start_date" } }
+    generate_med_uuid = { event_id = { generate = { "type" = "uuid5", "values" = ["subjid", "repeat_instance"] } }, date = { field = "med_start_date" } }
 
   [adtl.tables.long]
     kind = "oneToMany"

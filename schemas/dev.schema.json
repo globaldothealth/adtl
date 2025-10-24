@@ -105,7 +105,7 @@
                 "type": {
                   "enum": [
                     "datetime",
-                    "uuid"
+                    "uuid5"
                   ],
                   "description": "Type of generated field"
                 },

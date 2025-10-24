@@ -5,7 +5,7 @@ import logging
 import re
 import uuid
 import warnings
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Callable, Iterable, Union
 
 import pint
@@ -213,7 +213,9 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
                 if ctx and ctx.get("returnUnmatched"):
                     logger.debug(f"Could not convert {value} to a floating point")
                     return value
-                raise ValueError(f"Could not convert {value} to a floating point")
+                raise ValueError(
+                    f"Could not convert '{value}' from '{rule['field']}' to a floating point"
+                )
         if "source_date" in rule or (ctx and ctx.get("is_date")):
             assert "source_unit" not in rule and "unit" not in rule
             target_date = rule.get("date", "%Y-%m-%d")
@@ -386,11 +388,11 @@ def get_combined_type(row: StrDict, rule: StrDict, ctx: Context = None):
 def generate_field(row: StrDict, rule: StrDict, ctx: Context = None):
     """Generates a field value based on a specified method.
 
-    Currently supports 'uuid' and 'datetime' generation methods.
+    Currently supports 'uuid5' and 'datetime' generation methods.
 
     Example rule for UUID generation:
         {
-            "generate": {"type": "uuid", "values": ["field1", "field2", "field3"]}
+            "generate": {"type": "uuid5", "values": ["field1", "field2", "field3"]}
         }
 
     Example rule for datetime generation (will generate a datetime in current ISO format):
@@ -402,8 +404,8 @@ def generate_field(row: StrDict, rule: StrDict, ctx: Context = None):
     method = rule["generate"]["type"]
 
     if method == "datetime":
-        return datetime.now().isoformat(timespec="seconds")
-    elif method == "uuid":
+        return datetime.now(tz=timezone.utc).isoformat(timespec="seconds")
+    elif method == "uuid5":
         seed = [
             str(get_value_unhashed(row, {"field": f}, ctx)).lower()
             for f in rule["generate"]["values"]

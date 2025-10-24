@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from pytest_unordered import unordered
@@ -448,7 +448,7 @@ def test_invalid_combined_type():
 
 def test_generate_field_uuid():
     row_uuid = {"a": "fish", "b": "dog", "c": "horse", "d": "cat"}
-    rule_uuid = {"generate": {"type": "uuid", "values": ["a", "d"]}}
+    rule_uuid = {"generate": {"type": "uuid5", "values": ["a", "d"]}}
     value_uuid = parser.generate_field(
         row_uuid, rule_uuid, {"namespace": uuid.NAMESPACE_DNS}
     )
@@ -464,7 +464,7 @@ def test_generate_field_datetime():
     )
     # Check the UUID is reproducible
     assert isinstance(value_datetime, str)
-    assert value_datetime == datetime.now().isoformat(timespec="seconds")
+    assert value_datetime == datetime.now(tz=timezone.utc).isoformat(timespec="seconds")
 
 
 def test_error_generate_field_unknown_type():

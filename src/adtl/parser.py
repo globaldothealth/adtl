@@ -299,7 +299,7 @@ class Parser:
 
     @lru_cache
     def get_namespace_uuid(self):
-        namespace_str = json.dumps(self.header)
+        namespace_str = json.dumps(self.header, sort_keys=True)
         toml_hash = hashlib.sha1(namespace_str.encode("utf-8")).hexdigest()
         return uuid.uuid5(uuid.NAMESPACE_DNS, toml_hash)
 
