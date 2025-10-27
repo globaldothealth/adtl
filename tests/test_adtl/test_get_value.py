@@ -1,3 +1,6 @@
+import uuid
+from datetime import datetime, timezone
+
 import pytest
 from pytest_unordered import unordered
 
@@ -441,3 +444,33 @@ def test_invalid_list_exclude():
 def test_invalid_combined_type():
     with pytest.raises(ValueError, match="Unknown"):
         parser.get_combined_type(ROW_CONCISE, {"combinedType": "collage", "fields": []})
+
+
+def test_generate_field_uuid():
+    row_uuid = {"a": "fish", "b": "dog", "c": "horse", "d": "cat"}
+    rule_uuid = {"generate": {"type": "uuid5", "values": ["a", "d"]}}
+    value_uuid = parser.generate_field(
+        row_uuid, rule_uuid, {"namespace": uuid.NAMESPACE_DNS}
+    )
+    # Check the UUID is reproducible
+    assert value_uuid == "bb6519f5-e547-53bc-800c-fefc7135565e"
+
+
+def test_generate_field_datetime():
+    row_datetime = {"a": "fish", "b": "dog", "c": "horse", "d": "cat"}
+    rule_datetime = {"generate": {"type": "datetime"}}
+    value_datetime = parser.generate_field(
+        row_datetime, rule_datetime, {"namespace": uuid.NAMESPACE_DNS}
+    )
+    # Check the UUID is reproducible
+    assert isinstance(value_datetime, str)
+    assert value_datetime == datetime.now(tz=timezone.utc).isoformat(timespec="seconds")
+
+
+def test_error_generate_field_unknown_type():
+    row_unknown = {"a": "fish", "b": "dog", "c": "horse", "d": "cat"}
+    rule_unknown = {"generate": {"type": "unknown"}}
+    with pytest.raises(ValueError, match="Unknown generation method"):
+        parser.generate_field(
+            row_unknown, rule_unknown, {"namespace": uuid.NAMESPACE_DNS}
+        )
