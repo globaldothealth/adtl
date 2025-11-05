@@ -162,3 +162,29 @@ class ADTLDocument(BaseModel):
         out["wide_tables"] = wide_tables
         out["long_tables"] = long_tables
         return out
+
+    @model_validator(mode="after")
+    def check_all_tables_match(self) -> ADTLDocument:
+        adtl_tables = set(self.adtl.tables.keys())
+        wide_tables = set(self.wide_tables.keys())
+        long_tables = set(self.long_tables.keys())
+
+        duplicates = wide_tables.intersection(long_tables)
+
+        if duplicates:
+            raise ValueError(f"Tables have been defined twice: {', '.join(duplicates)}")
+
+        table_maps = wide_tables | long_tables
+
+        if adtl_tables != table_maps:
+            missing_tables = adtl_tables - table_maps
+            if missing_tables:
+                raise ValueError(
+                    f"Parser specification missing tables: {', '.join(missing_tables)}"
+                )
+            extra_tables = table_maps - adtl_tables
+            if extra_tables:
+                raise ValueError(
+                    f"Parser specification has tables not defined in the header: {', '.join(extra_tables)}"
+                )
+        return self

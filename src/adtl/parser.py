@@ -344,10 +344,6 @@ class Parser:
 
     def _set_field_names(self):
         for table in self.tables:
-            if table not in self.spec:
-                raise ValueError(
-                    f"Parser specification missing required '{table}' element"
-                )
             if self.tables[table].get("kind") != "oneToMany":
                 self.fieldnames[table] = sorted(list(self.spec[table].keys()))
             else:

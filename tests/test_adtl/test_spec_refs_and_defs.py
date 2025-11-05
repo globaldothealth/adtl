@@ -106,7 +106,7 @@ def test_unsupported_spec_format_raises_exception():
         ),
         (
             parser_path / "groupBy-missing-table.json",
-            "Parser specification missing required",
+            "Parser specification missing tables: subject",
         ),
         (
             {
