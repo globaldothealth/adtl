@@ -39,7 +39,7 @@ class IfField(ConditionalFields):
 class FieldMappingObject(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    field: Optional[str] = None
+    field: str = Field(description="Corresponding field name in source file")
     description: Optional[str] = None
     values: Optional[Dict[str, Union[str, bool, int, List[Any]]]] = None
     source_unit: Optional[FieldMapping] = None
