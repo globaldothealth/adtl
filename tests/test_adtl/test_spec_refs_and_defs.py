@@ -154,6 +154,35 @@ def test_unsupported_spec_format_raises_exception():
             },
             "aggregation is required for 'groupBy' tables",
         ),
+        (
+            {
+                "adtl": {
+                    "name": "invalid_spec",
+                    "description": "No groupby",
+                    "tables": {
+                        "table-1": {
+                            "kind": "groupBy",
+                            "groupBy": "id",
+                            "aggregation": "lastNotNull",
+                        }
+                    },
+                },
+                "table-1": [],
+            },
+            "Long format tables must be given kind 'oneToMany'",
+        ),
+        (
+            {
+                "adtl": {
+                    "name": "invalid_spec",
+                    "description": "No groupby",
+                    "tables": {"table-1": {"kind": "constant"}},
+                },
+                "table-1": {},
+                "table-2": [],
+            },
+            "Parser specification has tables not defined in the header: table-2",
+        ),
     ],
     ids=[
         "missing-kind",
@@ -162,6 +191,8 @@ def test_unsupported_spec_format_raises_exception():
         "missing-discriminator",
         "missing-groupby",
         "missing-aggregation",
+        "wrong-type-tables",
+        "extra-tables",
     ],
 )
 def test_invalid_header_raises_error(source, error):

@@ -169,11 +169,6 @@ class ADTLDocument(BaseModel):
         wide_tables = set(self.wide_tables.keys())
         long_tables = set(self.long_tables.keys())
 
-        duplicates = wide_tables.intersection(long_tables)
-
-        if duplicates:
-            raise ValueError(f"Tables have been defined twice: {', '.join(duplicates)}")
-
         table_maps = wide_tables | long_tables
 
         if adtl_tables != table_maps:
@@ -187,4 +182,10 @@ class ADTLDocument(BaseModel):
                 raise ValueError(
                     f"Parser specification has tables not defined in the header: {', '.join(extra_tables)}"
                 )
+
+        if any(self.adtl.tables[table].kind != "oneToMany" for table in long_tables):
+            raise ValueError(
+                "Long format tables must be given kind 'oneToMany' in the header"
+            )
+
         return self
