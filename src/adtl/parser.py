@@ -27,6 +27,8 @@ from tqdm.auto import tqdm
 import adtl.util as util
 from adtl.get_value import get_value, parse_if
 
+from .adtl_pydantic import ADTLDocument
+
 SUPPORTED_FORMATS = {"json": json.load, "toml": tomli.load}
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
@@ -347,6 +349,9 @@ class Parser:
             if discriminator is None and kind == "oneToMany":
                 raise ValueError("discriminator is required for 'oneToMany' tables")
 
+        # Validate the specification against the pydantic model
+        ADTLDocument.model_validate(self.spec)
+
     def validate_row(self, table, row, expanded):
         if (self.tables[table]["kind"] == "oneToMany") and expanded:
             # Need to validate each row against an individual subschema
@@ -500,7 +505,7 @@ class Parser:
         self, table: str, group_field: str, aggregation: str, rows: Iterable[StrDict]
     ):
         """
-        Applys the 'groupBy' rule and any 'combinedType' rules to the rows of data
+        Applies the 'groupBy' rule and any 'combinedType' rules to the rows of data
         grouped by the group_field (e.g. an ID number).
         """
 
