@@ -109,12 +109,50 @@ def test_unsupported_spec_format_raises_exception():
             "Parser specification missing required",
         ),
         (
-            parser_path / "groupBy-incorrect-aggregation.json",
+            {
+                "adtl": {
+                    "name": "Bad groupBy",
+                    "description": "groupBy with bad aggregation type",
+                    "tables": {
+                        "subject": {
+                            "kind": "groupBy",
+                            "groupBy": "subject_id",
+                            "aggregation": "foobar",
+                        }
+                    },
+                }
+            },
             "adtl.tables.subject.aggregation\n  Input should be 'lastNotNull' or 'applyCombinedType'",
         ),
         (
-            parser_path / "oneToMany-missing-discriminator.json",
+            {
+                "adtl": {
+                    "name": "sampleOneToMany",
+                    "description": "One to Many example",
+                    "tables": {"observation": {"kind": "oneToMany"}},
+                }
+            },
             "'discriminator' is required for 'oneToMany' tables",
+        ),
+        (
+            {
+                "adtl": {
+                    "name": "invalid_spec",
+                    "description": "No groupby",
+                    "tables": {"table-1": {"kind": "groupBy"}},
+                }
+            },
+            "groupBy key is required for 'groupBy' tables",
+        ),
+        (
+            {
+                "adtl": {
+                    "name": "invalid_spec",
+                    "description": "No groupby",
+                    "tables": {"table-1": {"kind": "groupBy", "groupBy": "id"}},
+                }
+            },
+            "aggregation is required for 'groupBy' tables",
         ),
     ],
     ids=[
@@ -122,9 +160,11 @@ def test_unsupported_spec_format_raises_exception():
         "missing-table",
         "incorrect-aggregation",
         "missing-discriminator",
+        "missing-groupby",
+        "missing-aggregation",
     ],
 )
-def test_invalid_spec_raises_error(source, error):
+def test_invalid_header_raises_error(source, error):
     with pytest.raises(ValueError, match=error):
         _ = parser.Parser(source)
 
