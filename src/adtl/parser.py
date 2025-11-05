@@ -29,7 +29,6 @@ from adtl.get_value import get_value, parse_if
 
 from .adtl_pydantic import ADTLDocument
 
-SUPPORTED_FORMATS = {"json": json.load, "toml": tomli.load}
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
 StrDict = dict[str, Any]
@@ -171,8 +170,8 @@ def relative_path(source_file, target_file):
     return Path(source_file).parent / target_file
 
 
-def read_definition(file: Path) -> dict[str, Any]:
-    "Reads definition from file into a dictionary"
+def read_file(file: Path) -> dict[str, Any]:
+    "Reads from a file into a dictionary"
     if isinstance(file, str):
         file = Path(file)
     if file.suffix == ".json":
@@ -240,11 +239,7 @@ class Parser:
             spec = Path(spec)
         if isinstance(spec, Path):
             self.specfile = spec
-            fmt = spec.suffix[1:]
-            if fmt not in SUPPORTED_FORMATS:
-                raise ValueError(f"adtl specification format not supported: {fmt}")
-            with spec.open("rb") as fp:
-                self.spec = SUPPORTED_FORMATS[fmt](fp)
+            self.spec = read_file(spec)
         else:
             self.spec = spec
 
@@ -258,7 +253,7 @@ class Parser:
         self.defs = self.header.get("defs", {})
         if self.include_defs:
             for definition_file in self.include_defs:
-                self.defs.update(read_definition(definition_file))
+                self.defs.update(read_file(definition_file))
         self.spec = expand_refs(self.spec, self.defs)
 
         for table in (t for t in self.tables if self.tables[t]["kind"] == "oneToMany"):

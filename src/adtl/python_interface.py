@@ -6,6 +6,8 @@ from typing import Literal
 import pandas as pd
 
 from adtl import Parser
+from adtl.adtl_pydantic import ADTLDocument
+from adtl.parser import read_file
 
 
 def parse(
@@ -47,3 +49,15 @@ def parse(
     if save_as:
         adtl_output.save(output or spec.name, save_as)
     return {k: pd.DataFrame(v) for k, v in adtl_output.data.items()}
+
+
+def validate_specification(spec: str | Path | dict[str, str]):
+    """Validate a specification (parser) file without running it
+
+    Args:
+        spec: Specification file to validate
+    """
+    if isinstance(spec, str | Path):
+        spec = read_file(spec)
+
+    ADTLDocument.model_validate(spec)

@@ -338,7 +338,7 @@ values = { "high temp" = "fever", headache = "cephalalgia", "muscle aches"="myal
 ignoreMissingKey = true
 ```
 
-When the parser if given a list either in square brackets, e.g. `'[high temp, headache']'`
+When the parser is given a list either in square brackets, e.g. `'[high temp, headache']'`
 or as a comma-separated string e.g. `"muscle aches, high temp"` it will attempt to turn
 convert the string into a list of values and find matches for the listed values. As with
 a standard value mapping field, it can be tagged to be case insensitive and to return

@@ -63,8 +63,8 @@ def test_external_definitions():
     [str(parser_path / "apply.toml"), parser_path / "epoch.json"],
     ids=["toml", "json"],
 )
-def test_read_definition(source):
-    assert parser.read_definition(source)
+def test_read_file(source):
+    assert parser.read_file(source)
 
 
 def test_validate_spec_no_header():
@@ -106,8 +106,8 @@ def test_load_spec(source, expected):
 
 def test_unsupported_spec_format_raises_exception():
     with pytest.raises(ValueError, match="Unsupported file format"):
-        parser.read_definition(parser_path / "epoch.yml")
-    with pytest.raises(ValueError, match="adtl specification format not supported"):
+        parser.read_file(parser_path / "epoch.yml")
+    with pytest.raises(ValueError, match="Unsupported file format"):
         parser.Parser(str(parser_path / "epoch.yml"))
 
 

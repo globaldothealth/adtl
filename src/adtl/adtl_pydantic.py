@@ -40,21 +40,55 @@ class FieldMappingObject(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     field: str = Field(description="Corresponding field name in source file")
-    description: Optional[str] = None
     values: Optional[Dict[str, Union[str, bool, int, List[Any]]]] = None
-    source_unit: Optional[FieldMapping] = None
-    unit: Optional[str] = None
-    source_date: Optional[str] = None
-    date: Optional[str] = None
+    description: Optional[str] = Field(
+        default=None,
+        description="Description of the source field, usually from an underlying data dictionary",
+    )
+    source_unit: Optional[FieldMapping] = Field(
+        default=None, description="Specifies unit of the field in the source file"
+    )
+    unit: Optional[str] = Field(
+        default=None,
+        description=(
+            "Specifies the unit that source_unit should be converted to."
+            "Both source_unit and unit take unit names from the pint Python library"
+        ),
+    )
+    source_date: Optional[str] = Field(
+        default=None, description="Source date format, specified in strftime(3) format"
+    )
+    date: Optional[str] = Field(
+        default=None,
+        description="Format to convert source_date format to, in strftime(3) format",
+    )
     apply: Optional[Apply] = None
     generate: Optional[Generate] = None
-    fieldPattern: Optional[str] = None
+    fieldPattern: Optional[str] = Field(
+        default=None,
+        description="This is only used with combinedType, specifies a regular expression matching multiple fields",
+    )
     if_: Optional[Dict[str, str | int | IfField]] = Field(default=None, alias="if")
-    sensitive: Optional[Literal[True]] = None
+    sensitive: Optional[Literal[True]] = Field(
+        default=None,
+        description=(
+            "Indicates to the parser whether the field is sensitive."
+            "Usually a sensitive field is hashed or encrypted before storing in the database."
+        ),
+    )
     ref: Optional[str] = None
     ignoreMissingKey: Optional[Literal[True]] = None
     can_skip: Optional[Literal[True]] = None
     caseInsensitive: Optional[Literal[True]] = None
+    type_: Optional[Literal["enum_list"]] = Field(
+        default=None,
+        alias="type",
+        description=(
+            "Use when a list is the required output format."
+            "Indicates the field contains a list of comma-separated values (with or without "
+            "a square bracket surround) which should be converted to a list of strings."
+        ),
+    )
 
 
 class CombinedMappingObject(BaseModel):
