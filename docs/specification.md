@@ -41,7 +41,7 @@ These metadata fields are defined under a header key `adtl`.
 
   * *kind*: If this is set to *groupBy* the parser will group
     rows together according to the *groupBy* key. The other
-    allowed value is *oneToMany* when multiple rows are
+    allowed values are *constant*, where the table is a single value, *oneToOne*, where one row in the source data corresponds to one row in the output data, and *oneToMany* when multiple rows are
     generated from the same row.
   * *groupBy*: Attribute(s) to group by
   * *discriminator*: Column name used to choose between subschemas with kind *oneToMany*

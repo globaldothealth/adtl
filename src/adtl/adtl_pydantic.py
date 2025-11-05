@@ -89,13 +89,28 @@ class LongEntry(BaseModel):
 class TableDef(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    kind: Optional[Literal["constant", "groupBy", "oneToMany", "oneToOne"]] = None
+    kind: Literal["constant", "groupBy", "oneToMany", "oneToOne"]
     schema_: Optional[str] = Field(default=None, alias="schema")
     groupBy: Optional[str] = None
     aggregation: Optional[Literal["lastNotNull", "applyCombinedType"]] = None
-    common: Optional[Dict[str, Any]] = None
+    common: Optional[Dict[str, FieldMapping]] = None
     discriminator: Optional[str] = None
     optional_fields: Optional[List[str]] = Field(default=None, alias="optional-fields")
+
+    @model_validator(mode="after")
+    def check_groupby_aggregation_present(self) -> TableDef:
+        if self.kind == "groupBy":
+            if not self.groupBy:
+                raise ValueError("groupBy key is required for 'groupBy' tables")
+            if not self.aggregation:
+                raise ValueError("aggregation is required for 'groupBy' tables")
+        return self
+
+    @model_validator(mode="after")
+    def check_discriminator_present(self) -> TableDef:
+        if self.kind == "oneToMany" and not self.discriminator:
+            raise ValueError("'discriminator' is required for 'oneToMany' tables")
+        return self
 
 
 # ---------- ADTL root object ----------

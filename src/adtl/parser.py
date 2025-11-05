@@ -247,9 +247,9 @@ class Parser:
                 self.spec = SUPPORTED_FORMATS[fmt](fp)
         else:
             self.spec = spec
-        self.header = self.spec.get("adtl", {})
-        if not self.header:
-            raise ValueError("Specification missing required 'adtl' header")
+
+        self.validate_spec()
+        self.header = self.spec["adtl"]
         if self.specfile:
             self.include_defs = [
                 relative_path(self.specfile, definition_file)
@@ -261,7 +261,6 @@ class Parser:
                 self.defs.update(read_definition(definition_file))
         self.spec = expand_refs(self.spec, self.defs)
 
-        self.validate_spec()
         for table in (t for t in self.tables if self.tables[t]["kind"] == "oneToMany"):
             self.spec[table] = expand_for(self.spec[table])
         for table in self.tables:
@@ -323,34 +322,12 @@ class Parser:
 
     def validate_spec(self):
         "Raises exceptions if specification is invalid"
-        for required in ["tables", "name", "description"]:
-            if required not in self.header:
-                raise ValueError(f"Specification header requires key: {required}")
-        self.tables = self.header["tables"]
-        self.name = self.header["name"]
-        self.description = self.header["description"]
-
-        for table in self.tables:
-            aggregation = self.tables[table].get("aggregation")
-            group_field = self.tables[table].get("groupBy")
-            kind = self.tables[table].get("kind")
-            discriminator = self.tables[table].get("discriminator")
-            if kind is None:
-                raise ValueError(
-                    f"Required 'kind' attribute within 'tables' not present for {table}"
-                )
-            if group_field is not None and aggregation not in [
-                "lastNotNull",
-                "applyCombinedType",
-            ]:
-                raise ValueError(
-                    f"groupBy needs 'aggregation' to be set for table: {table}"
-                )
-            if discriminator is None and kind == "oneToMany":
-                raise ValueError("discriminator is required for 'oneToMany' tables")
-
         # Validate the specification against the pydantic model
         ADTLDocument.model_validate(self.spec)
+
+        self.tables = self.spec["adtl"]["tables"]
+        self.name = self.spec["adtl"]["name"]
+        self.description = self.spec["adtl"]["description"]
 
     def validate_row(self, table, row, expanded):
         if (self.tables[table]["kind"] == "oneToMany") and expanded:

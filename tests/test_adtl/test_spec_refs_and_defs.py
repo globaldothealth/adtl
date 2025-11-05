@@ -68,14 +68,12 @@ def test_read_definition(source):
 
 
 def test_validate_spec_no_header():
-    with pytest.raises(
-        ValueError, match="Specification missing required 'adtl' header"
-    ):
+    with pytest.raises(ValueError, match="adtl\n  Field required"):
         _ = parser.Parser(dict())
 
 
 def test_validate_spec_malformed_header():
-    with pytest.raises(ValueError, match="Specification header requires key"):
+    with pytest.raises(ValueError, match="adtl.description\n  Field required"):
         _ = parser.Parser({"adtl": {"name": "spec_without_tables"}})
 
 
@@ -104,7 +102,7 @@ def test_unsupported_spec_format_raises_exception():
     [
         (
             parser_path / "groupBy-missing-kind.json",
-            "Required 'kind' attribute within 'tables' not present for",
+            "adtl.tables.subject.kind\n  Field required",
         ),
         (
             parser_path / "groupBy-missing-table.json",
@@ -112,11 +110,11 @@ def test_unsupported_spec_format_raises_exception():
         ),
         (
             parser_path / "groupBy-incorrect-aggregation.json",
-            "groupBy needs 'aggregation' to be set for table:",
+            "adtl.tables.subject.aggregation\n  Input should be 'lastNotNull' or 'applyCombinedType'",
         ),
         (
             parser_path / "oneToMany-missing-discriminator.json",
-            "discriminator is required for 'oneToMany' tables",
+            "'discriminator' is required for 'oneToMany' tables",
         ),
     ],
     ids=[
