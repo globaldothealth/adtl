@@ -57,7 +57,7 @@ def validate_specification(spec: str | Path | dict[str, str]):
     Args:
         spec: Specification file to validate
     """
-    if isinstance(spec, str | Path):
+    if isinstance(spec, (str, Path)):
         spec = read_file(spec)
 
     ADTLDocument.model_validate(spec)
