@@ -77,6 +77,20 @@ def test_validate_spec_malformed_header():
         _ = parser.Parser({"adtl": {"name": "spec_without_tables"}})
 
 
+def test_validate_spec_unexpected_fields():
+    with pytest.raises(ValueError, match="Table 'table-1' must be either"):
+        _ = parser.Parser(
+            {
+                "adtl": {
+                    "name": "invalid_spec",
+                    "description": "No groupby",
+                    "tables": {"table-1": {"kind": "constant"}},
+                },
+                "table-1": 5,
+            }
+        )
+
+
 @pytest.mark.parametrize(
     "source,expected",
     [

@@ -158,7 +158,9 @@ class ADTLDocument(BaseModel):
             elif isinstance(v, dict):
                 wide_tables[k] = v
             else:
-                out[k] = v  # unexpected - keep as-is, will error later
+                raise ValueError(
+                    f"Table '{k}' must be either a dict (constant, groupBy, oneToOne tables) or a list (oneToMany)"
+                )
         out["wide_tables"] = wide_tables
         out["long_tables"] = long_tables
         return out
