@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Iterable
 
+import pandas as pd
 import pytest
 import responses
 from shared import parser_path, schemas_path, sources_path
@@ -96,3 +97,20 @@ def test_parse_save_report():
         "validation_errors": {},
     }
     Path("epoch-report.json").unlink()
+
+
+def test_parse_check(tmp_path):
+    file_path = tmp_path / "test_data.csv"
+
+    pd.DataFrame(
+        {
+            "subjid": ["S001", "S002", "S003"],
+            "dsstdat": ["2020-06-01", "2020-06-02", "2020-06-03"],
+            "hostdat": ["2020-05-20", "2020-05-21", "2020-05-22"],
+        }
+    ).to_csv(file_path, index=False)
+
+    with pytest.raises(
+        ValueError, match="There are 1 fields present in your spec file"
+    ):
+        adtl.main(["check", str(parser_path / "groupBy.json"), str(file_path)])
