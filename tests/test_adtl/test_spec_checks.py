@@ -51,12 +51,12 @@ def test_check_spec_fields(tmp_path, data, expected_missing, expected_absent):
 def test_check_mapping_error(tmp_path):
     file_path = tmp_path / "test_data.csv"
 
-    pd.DataFrame(field_missing).to_csv(file_path, index=False)
+    pd.DataFrame({}).to_csv(file_path)
 
     with pytest.raises(
         ValueError, match="There are 1 fields present in your spec file"
     ):
-        adtl.check_mapping(parser_path / "groupBy.json", file_path)
+        adtl.check_mapping(parser_path / "oneToMany.json", file_path)
 
 
 def test_check_mapping_warning(tmp_path):
