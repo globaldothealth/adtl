@@ -63,20 +63,32 @@ def test_external_definitions():
     [str(parser_path / "apply.toml"), parser_path / "epoch.json"],
     ids=["toml", "json"],
 )
-def test_read_definition(source):
-    assert parser.read_definition(source)
+def test_read_file(source):
+    assert parser.read_file(source)
 
 
 def test_validate_spec_no_header():
-    with pytest.raises(
-        ValueError, match="Specification missing required 'adtl' header"
-    ):
+    with pytest.raises(ValueError, match="adtl\n  Field required"):
         _ = parser.Parser(dict())
 
 
 def test_validate_spec_malformed_header():
-    with pytest.raises(ValueError, match="Specification header requires key"):
+    with pytest.raises(ValueError, match="adtl.description\n  Field required"):
         _ = parser.Parser({"adtl": {"name": "spec_without_tables"}})
+
+
+def test_validate_spec_unexpected_fields():
+    with pytest.raises(ValueError, match="Table 'table-1' must be either"):
+        _ = parser.Parser(
+            {
+                "adtl": {
+                    "name": "invalid_spec",
+                    "description": "No groupby",
+                    "tables": {"table-1": {"kind": "constant"}},
+                },
+                "table-1": 5,
+            }
+        )
 
 
 @pytest.mark.parametrize(
@@ -94,8 +106,8 @@ def test_load_spec(source, expected):
 
 def test_unsupported_spec_format_raises_exception():
     with pytest.raises(ValueError, match="Unsupported file format"):
-        parser.read_definition(parser_path / "epoch.yml")
-    with pytest.raises(ValueError, match="adtl specification format not supported"):
+        parser.read_file(parser_path / "epoch.yml")
+    with pytest.raises(ValueError, match="Unsupported file format"):
         parser.Parser(str(parser_path / "epoch.yml"))
 
 
@@ -104,19 +116,86 @@ def test_unsupported_spec_format_raises_exception():
     [
         (
             parser_path / "groupBy-missing-kind.json",
-            "Required 'kind' attribute within 'tables' not present for",
+            "adtl.tables.subject.kind\n  Field required",
         ),
         (
             parser_path / "groupBy-missing-table.json",
-            "Parser specification missing required",
+            "Parser specification missing tables: subject",
         ),
         (
-            parser_path / "groupBy-incorrect-aggregation.json",
-            "groupBy needs 'aggregation' to be set for table:",
+            {
+                "adtl": {
+                    "name": "Bad groupBy",
+                    "description": "groupBy with bad aggregation type",
+                    "tables": {
+                        "subject": {
+                            "kind": "groupBy",
+                            "groupBy": "subject_id",
+                            "aggregation": "foobar",
+                        }
+                    },
+                }
+            },
+            "adtl.tables.subject.aggregation\n  Input should be 'lastNotNull' or 'applyCombinedType'",
         ),
         (
-            parser_path / "oneToMany-missing-discriminator.json",
-            "discriminator is required for 'oneToMany' tables",
+            {
+                "adtl": {
+                    "name": "sampleOneToMany",
+                    "description": "One to Many example",
+                    "tables": {"observation": {"kind": "oneToMany"}},
+                }
+            },
+            "'discriminator' is required for 'oneToMany' tables",
+        ),
+        (
+            {
+                "adtl": {
+                    "name": "invalid_spec",
+                    "description": "No groupby",
+                    "tables": {"table-1": {"kind": "groupBy"}},
+                }
+            },
+            "groupBy key is required for 'groupBy' tables",
+        ),
+        (
+            {
+                "adtl": {
+                    "name": "invalid_spec",
+                    "description": "No groupby",
+                    "tables": {"table-1": {"kind": "groupBy", "groupBy": "id"}},
+                }
+            },
+            "aggregation is required for 'groupBy' tables",
+        ),
+        (
+            {
+                "adtl": {
+                    "name": "invalid_spec",
+                    "description": "No groupby",
+                    "tables": {
+                        "table-1": {
+                            "kind": "groupBy",
+                            "groupBy": "id",
+                            "aggregation": "lastNotNull",
+                        }
+                    },
+                },
+                "table-1": [],
+            },
+            "Long format tables must be given kind 'oneToMany'",
+        ),
+        (
+            {
+                "adtl": {
+                    "name": "invalid_spec",
+                    "description": "No groupby",
+                    "tables": {"table-1": {"kind": "constant"}},
+                },
+                "table-1": {},
+                "table-2": [],
+            },
+            "Parser specification has tables not defined in the header: table-2",
         ),
     ],
     ids=[
@@ -124,9 +203,13 @@ def test_unsupported_spec_format_raises_exception():
         "missing-table",
         "incorrect-aggregation",
         "missing-discriminator",
+        "missing-groupby",
+        "missing-aggregation",
+        "wrong-type-tables",
+        "extra-tables",
     ],
 )
-def test_invalid_spec_raises_error(source, error):
+def test_invalid_header_raises_error(source, error):
     with pytest.raises(ValueError, match=error):
         _ = parser.Parser(source)
 

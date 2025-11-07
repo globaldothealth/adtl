@@ -27,7 +27,8 @@ from tqdm.auto import tqdm
 import adtl.util as util
 from adtl.get_value import get_value, parse_if
 
-SUPPORTED_FORMATS = {"json": json.load, "toml": tomli.load}
+from .adtl_pydantic import ADTLDocument
+
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
 StrDict = dict[str, Any]
@@ -169,8 +170,8 @@ def relative_path(source_file, target_file):
     return Path(source_file).parent / target_file
 
 
-def read_definition(file: Path) -> dict[str, Any]:
-    "Reads definition from file into a dictionary"
+def read_file(file: Path) -> dict[str, Any]:
+    "Reads from a file into a dictionary"
     if isinstance(file, str):
         file = Path(file)
     if file.suffix == ".json":
@@ -238,16 +239,12 @@ class Parser:
             spec = Path(spec)
         if isinstance(spec, Path):
             self.specfile = spec
-            fmt = spec.suffix[1:]
-            if fmt not in SUPPORTED_FORMATS:
-                raise ValueError(f"adtl specification format not supported: {fmt}")
-            with spec.open("rb") as fp:
-                self.spec = SUPPORTED_FORMATS[fmt](fp)
+            self.spec = read_file(spec)
         else:
             self.spec = spec
-        self.header = self.spec.get("adtl", {})
-        if not self.header:
-            raise ValueError("Specification missing required 'adtl' header")
+
+        self.validate_spec()
+        self.header = self.spec["adtl"]
         if self.specfile:
             self.include_defs = [
                 relative_path(self.specfile, definition_file)
@@ -256,10 +253,9 @@ class Parser:
         self.defs = self.header.get("defs", {})
         if self.include_defs:
             for definition_file in self.include_defs:
-                self.defs.update(read_definition(definition_file))
+                self.defs.update(read_file(definition_file))
         self.spec = expand_refs(self.spec, self.defs)
 
-        self.validate_spec()
         for table in (t for t in self.tables if self.tables[t]["kind"] == "oneToMany"):
             self.spec[table] = expand_for(self.spec[table])
         for table in self.tables:
@@ -321,31 +317,12 @@ class Parser:
 
     def validate_spec(self):
         "Raises exceptions if specification is invalid"
-        for required in ["tables", "name", "description"]:
-            if required not in self.header:
-                raise ValueError(f"Specification header requires key: {required}")
-        self.tables = self.header["tables"]
-        self.name = self.header["name"]
-        self.description = self.header["description"]
+        # Validate the specification against the pydantic model
+        ADTLDocument.model_validate(self.spec)
 
-        for table in self.tables:
-            aggregation = self.tables[table].get("aggregation")
-            group_field = self.tables[table].get("groupBy")
-            kind = self.tables[table].get("kind")
-            discriminator = self.tables[table].get("discriminator")
-            if kind is None:
-                raise ValueError(
-                    f"Required 'kind' attribute within 'tables' not present for {table}"
-                )
-            if group_field is not None and aggregation not in [
-                "lastNotNull",
-                "applyCombinedType",
-            ]:
-                raise ValueError(
-                    f"groupBy needs 'aggregation' to be set for table: {table}"
-                )
-            if discriminator is None and kind == "oneToMany":
-                raise ValueError("discriminator is required for 'oneToMany' tables")
+        self.tables = self.spec["adtl"]["tables"]
+        self.name = self.spec["adtl"]["name"]
+        self.description = self.spec["adtl"]["description"]
 
     def validate_row(self, table, row, expanded):
         if (self.tables[table]["kind"] == "oneToMany") and expanded:
@@ -362,10 +339,6 @@ class Parser:
 
     def _set_field_names(self):
         for table in self.tables:
-            if table not in self.spec:
-                raise ValueError(
-                    f"Parser specification missing required '{table}' element"
-                )
             if self.tables[table].get("kind") != "oneToMany":
                 self.fieldnames[table] = sorted(list(self.spec[table].keys()))
             else:
@@ -500,7 +473,7 @@ class Parser:
         self, table: str, group_field: str, aggregation: str, rows: Iterable[StrDict]
     ):
         """
-        Applys the 'groupBy' rule and any 'combinedType' rules to the rows of data
+        Applies the 'groupBy' rule and any 'combinedType' rules to the rows of data
         grouped by the group_field (e.g. an ID number).
         """
 

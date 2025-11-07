@@ -3,9 +3,9 @@ import importlib.metadata
 import json
 
 from adtl.parser import Parser
-from adtl.python_interface import parse
+from adtl.python_interface import parse, validate_specification
 
-__all__ = ["Parser", "parse"]
+__all__ = ["Parser", "parse", "validate_specification"]
 
 __version__ = importlib.metadata.version("adtl")
 

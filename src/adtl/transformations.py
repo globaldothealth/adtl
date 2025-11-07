@@ -11,7 +11,7 @@ from dateutil.relativedelta import relativedelta
 try:
     import zoneinfo
 except ImportError:  # pragma: no cover
-    from backports import zoneinfo  # noqa
+    from backports import zoneinfo  # type: ignore
 
 import re
 import warnings
@@ -166,7 +166,7 @@ def yearsElapsed(
         )
 
 
-def durationDays(startdate: str, currentdate: str) -> int:
+def durationDays(startdate: str, currentdate: str, format: str = "%Y-%m-%d") -> int:
     """
     Returns the number of days between two dates.
     Preferable to Y-M-D elapsed, as month length is ambiguous -
@@ -175,8 +175,8 @@ def durationDays(startdate: str, currentdate: str) -> int:
     if startdate in [None, ""] or currentdate in [None, ""]:
         return None
 
-    bd = datetime.strptime(startdate, "%Y-%m-%d")
-    cd = datetime.strptime(currentdate, "%Y-%m-%d")
+    bd = datetime.strptime(startdate, format)
+    cd = datetime.strptime(currentdate, format)
 
     days = cd - bd
     return days.days

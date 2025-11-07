@@ -58,7 +58,7 @@ def skip_field(row: StrDict, rule: StrDict, ctx: Context = None):
     return False
 
 
-def apply_fuction(value, row: StrDict, rule: StrDict, ctx: Context):
+def apply_function(value, row: StrDict, rule: StrDict, ctx: Context):
     # apply data transformations.
     transformation = rule["apply"]["function"]
     params = None
@@ -190,7 +190,7 @@ def get_value_unhashed(row: StrDict, rule: Rule, ctx: Context = None) -> Any:
             return None
         value = row[rule["field"]]
         if "apply" in rule:
-            value = apply_fuction(value, row, rule, ctx)
+            value = apply_function(value, row, rule, ctx)
         if value == "":
             return None
         if "values" in rule:
