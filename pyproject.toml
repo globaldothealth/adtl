@@ -34,7 +34,7 @@ dependencies = [
   "pandas[parquet]==2.*",
   "joblib"
 ]
-  scripts = { adtl = "adtl:main", adtl-autoparser = "adtl.autoparser:main" }
+  scripts = { adtl = "adtl.cli:main", adtl-autoparser = "adtl.autoparser:main" }
 
 [project.urls]
 homepage = "https://adtl.readthedocs.io"
