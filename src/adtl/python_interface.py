@@ -69,6 +69,11 @@ def check_mapping(spec: str | Path | dict, data: str):
     Checks the specification file against the data provided to ensure all fields are mapped,
     there are no fields specified in the mapping which are not present in the data,
     and raises warnings or errors as appropriate.
+
+    Note: This function checks for `field` keys in the spec only. If certain fields are
+    only used in e.g. conditional tags (e.g. `if` statements like `if = {field_name = 2}`)
+    where the field name is used as the key, they will not be checked here and will be
+    returned as 'missing' fields.
     """
 
     parser = Parser(spec)

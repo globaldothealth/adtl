@@ -802,14 +802,16 @@ class Parser:
             raise ValueError(f"'Parser.save()': Invalid format: {format}")
 
     def check_spec_fields(self, file) -> tuple[set, set]:
-        """Compares fields in a data file to a given specification, to check for unmapped
+        """
+        Compares fields in a data file to a given specification, to check for unmapped
         (present in data but not in spec) and absent (present in spec but not in data) fields
 
         Args:
             file: File to compare
 
         Returns:
-            tuple[set, set]: Fields missing from schema, fields in schema but not in file
+            A tuple (missing, absent), where 'missing' is a set of fields missing from schema,
+            and 'absent' is a set of fields present in schema but not in file.
         """
 
         def find_all_keys(data, target_key):
