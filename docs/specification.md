@@ -11,8 +11,8 @@ Specification files can be in TOML or JSON, with TOML preferred due to readabili
 Each specification file can refer to one or more tables, which are
 created in parallel from one source file.
 
-[JSON schema](../schemas/dev.schema.json): This is a partial JSON schema to validate
-adtl parser files.
+[Pydantic schema](../src/adtl/adtl_pydantic.py): This is a [Pydantic](https://docs.pydantic.dev/latest/)
+model to validate adtl parser files.
 
 ## Type conversion
 
@@ -48,7 +48,7 @@ These metadata fields are defined under a header key `adtl`.
   * *aggregation*: Aggregation type. Currently either
     type *lastNotNull* or *applyCombinedType* is supported which sets a particular
     attribute to the last non-null value in the grouped dataset. *applyCombinedType* applies
-    [combinedType](#combined-Type) rules over all the rows being grouped, while *lastNotNull*
+    [combinedType](#combined-type) rules over all the rows being grouped, while *lastNotNull*
     only applies those rules along a single row, and retains the last row regardless.
   * *schema* (optional): Specifies JSON schema to use for validation,
     can be a relative path, or a URL
@@ -221,7 +221,7 @@ be shown if values map to True/False:
 ```toml
 [[table]]
   name = "vomiting_nausea"
-  is_present = { field = "Admission Symptoms.Vomiting", values = {1 = True, 0 = False} } # values = ['0', 'Unknown', '1', 'UNKNOWN', '']
+  is_present = { field = "Admission Symptoms.Vomiting", values = {1 = true, 0 = false} } # values = ['0', 'Unknown', '1', 'UNKNOWN', '']
   # if.any = [{ "Admission Symptoms.Vomiting" = '1'}, { "Admission Symptoms.Vomiting" = '0'}] <- rule assumed by adtl
 ```
 

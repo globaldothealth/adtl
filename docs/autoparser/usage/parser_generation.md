@@ -11,7 +11,7 @@ and the JSON schema(s) for the target table format(s).
 
 Parser generation is a 2-step process.
 
-## Generate intermedaite mappings (CSV)
+## Generate intermediate mappings (CSV)
 First, an intermediate mapping file is created which can look like this, for a wide-format table:
 
 | target_field      | source_description | source_field     | common_values                                            | target_values                                              | value_mapping                                                                            |
