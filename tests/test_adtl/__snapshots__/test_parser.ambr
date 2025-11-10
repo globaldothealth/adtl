@@ -38,6 +38,21 @@
   
   '''
 # ---
+# name: test_show_report
+  '''
+  
+  |table       	|valid	|total	|percentage_valid|
+  |---------------|-------|-------|----------------|
+  |table         	|8	|10	|80.000000% |
+  
+  ## table
+  
+  * 1: data must be valid exactly by one definition (0 matches found)
+  * 1: data must contain ['epoch'] properties
+  
+  
+  '''
+# ---
 # name: test_skip_field_pattern_absent
   '''
   adtl_valid,adtl_error,cough,epoch,followup_cough,headache,id,text

@@ -800,3 +800,39 @@ class Parser:
 
         else:
             raise ValueError(f"'Parser.save()': Invalid format: {format}")
+
+    def check_spec_fields(self, file) -> tuple[set, set]:
+        """
+        Compares fields in a data file to a given specification, to check for unmapped
+        (present in data but not in spec) and absent (present in spec but not in data) fields
+
+        Args:
+            file: File to compare
+
+        Returns:
+            A tuple (missing, absent), where 'missing' is a set of fields missing from schema,
+            and 'absent' is a set of fields present in schema but not in file.
+        """
+
+        def find_all_keys(data, target_key):
+            """
+            Recursively yield all values in a nested structure for a given key.
+            Works with nested dicts and lists.
+            """
+            if isinstance(data, dict):
+                for key, value in data.items():
+                    if key == target_key:
+                        yield value
+                    # Recurse into the value if it's a dict or list
+                    yield from find_all_keys(value, target_key)
+            elif isinstance(data, list):
+                for item in data:
+                    yield from find_all_keys(item, target_key)
+
+        spec = self.spec
+
+        df = pd.read_csv(file)
+        file_fields = set(df.columns)
+        schema_fields = set(find_all_keys(spec, "field"))
+
+        return file_fields - schema_fields, schema_fields - file_fields
