@@ -34,6 +34,7 @@ maxdepth: 2
 caption: Examples
 ---
 examples/example
+examples/example_with_dict
 examples/cli_example
 ```
 

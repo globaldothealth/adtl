@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import collections
+import contextlib
+import io
 import json
 import warnings
 
@@ -354,3 +357,23 @@ def test_subschema_validation_for_large_schemas(snapshot):
         .data["long"]
     )
     assert transformed_csv_data == snapshot
+
+
+def test_show_report(snapshot):
+    ps = parser.Parser(parser_path / "epoch.json")
+    ps.report = {
+        "total": {"table": 10},
+        "total_valid": {"table": 8},
+        "validation_errors": {
+            "table": collections.Counter(
+                [
+                    "data must be valid exactly by one definition (0 matches found)",
+                    "data must contain ['epoch'] properties",
+                ]
+            )
+        },
+    }
+    ps.report_available = True
+    with contextlib.redirect_stdout(io.StringIO()) as f:
+        ps.show_report()
+    assert f.getvalue() == snapshot
