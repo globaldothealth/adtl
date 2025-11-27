@@ -20,6 +20,12 @@ field_missing = {
 }
 
 
+def test_get_spec_fields():
+    ps = parser.Parser(parser_path / "groupBy.json")
+    spec_fields = ps.get_spec_fields()
+    assert spec_fields == {"sex", "subjid", "dsstdat", "hostdat"}
+
+
 @pytest.mark.parametrize(
     "data, expected_missing, expected_absent",
     [

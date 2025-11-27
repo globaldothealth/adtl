@@ -801,6 +801,34 @@ class Parser:
         else:
             raise ValueError(f"'Parser.save()': Invalid format: {format}")
 
+    def get_spec_fields(self) -> set:
+        """
+        Returns all fields mapped in the specification (parser) file.
+
+        Returns:
+            schema_fields: A set of fields present in the specification
+        """
+
+        def find_all_values(data, target_key):
+            """
+            Recursively yield all values in a nested structure for a given key.
+            Works with nested dicts and lists.
+            """
+            if isinstance(data, dict):
+                for key, value in data.items():
+                    if key == target_key:
+                        yield value
+                    # Recurse into the value if it's a dict or list
+                    yield from find_all_values(value, target_key)
+            elif isinstance(data, list):
+                for item in data:
+                    yield from find_all_values(item, target_key)
+
+        spec = self.spec
+        schema_fields = set(find_all_values(spec, "field"))
+
+        return schema_fields
+
     def check_spec_fields(self, file) -> tuple[set, set]:
         """
         Compares fields in a data file to a given specification, to check for unmapped
@@ -814,25 +842,8 @@ class Parser:
             and 'absent' is a set of fields present in schema but not in file.
         """
 
-        def find_all_keys(data, target_key):
-            """
-            Recursively yield all values in a nested structure for a given key.
-            Works with nested dicts and lists.
-            """
-            if isinstance(data, dict):
-                for key, value in data.items():
-                    if key == target_key:
-                        yield value
-                    # Recurse into the value if it's a dict or list
-                    yield from find_all_keys(value, target_key)
-            elif isinstance(data, list):
-                for item in data:
-                    yield from find_all_keys(item, target_key)
-
-        spec = self.spec
-
         df = pd.read_csv(file)
         file_fields = set(df.columns)
-        schema_fields = set(find_all_keys(spec, "field"))
+        schema_fields = self.get_spec_fields()
 
         return file_fields - schema_fields, schema_fields - file_fields
