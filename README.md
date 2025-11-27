@@ -60,7 +60,7 @@ adtl can be used from the command line or as a Python library
 
 As a CLI:
 ```bash
-adtl specification-file input-file
+adtl parse specification-file input-file
 ```
 
 Here *specification-file* is the parser specification (as TOML or JSON)
@@ -71,11 +71,18 @@ If adtl is not in your PATH, this may give an error. Either add the location
 where the adtl script is installed to your PATH, or try running adtl as a module
 
 ```shell
-python3 -m adtl specification-file input-file
+python3 -m adtl parse specification-file input-file
 ```
 
 Running adtl will create output files with the name of the parser, suffixed with
 table names in the current working directory.
+
+Before trying to transform your data, you can check that your specification file matches
+the format adtl expects, and for fields which may have been either misspelled or missed out
+during the mapping, by using:
+```bash
+adtl check specification-file input-file
+```
 
 Python library:
 ```python

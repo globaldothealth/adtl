@@ -8,9 +8,12 @@ The following functions can be used to create the intermediate mapping CSV requi
 
 ## Class definitions
 
-You can also interact with the base class `Mapper`
+You can also interact with the base classes `WideMapper` and `LongMapper`
 
 ```{eval-rst}
-.. autoclass:: adtl.autoparser.Mapper
+.. autoclass:: adtl.autoparser.WideMapper
+    :members:
+
+.. autoclass:: adtl.autoparser.LongMapper
     :members:
 ```
