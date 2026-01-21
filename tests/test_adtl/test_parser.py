@@ -410,3 +410,11 @@ def test_providing_custom_transformations():
             "animal_type": "FISH",
         }
     ]
+
+
+def test_providing_custom_transformations_bad_path_error():
+    with pytest.raises(FileNotFoundError, match="No such file:"):
+        parser.Parser(
+            parser_path / "custom_transformations.toml",
+            include_transform=parser_path / "missing_file.py",
+        )

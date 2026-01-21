@@ -199,7 +199,7 @@ def load_custom_transformations(filepath: str):
 
     # Load the module from file
     spec = importlib.util.spec_from_file_location("custom_transformations", filepath)
-    if spec is None or spec.loader is None:
+    if spec is None or spec.loader is None:  # pragma: no cover
         raise ValueError(f"Cannot load transformations from {filepath}")
 
     module = importlib.util.module_from_spec(spec)
