@@ -89,7 +89,7 @@ def add_check_subparser(subparsers):
         "check", help="Run validation checks on an ADTL specification"
     )
     cmd.add_argument("spec", help="Specification file to check")
-    cmd.add_argument("file", help="file to read in")
+    cmd.add_argument("file", help="optional, data file", default=None, nargs="?")
     cmd.set_defaults(func=handle_check)
 
 
