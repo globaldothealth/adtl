@@ -64,7 +64,7 @@ def validate_specification(spec: str | Path | dict[str, str]):
     ADTLDocument.model_validate(spec)
 
 
-def check_mapping(spec: str | Path | dict, data: str):
+def check_mapping(spec: str | Path | dict, data: str | None = None):
     """
     Checks the specification file against the data provided to ensure all fields are mapped,
     there are no fields specified in the mapping which are not present in the data,
@@ -76,17 +76,20 @@ def check_mapping(spec: str | Path | dict, data: str):
     returned as 'missing' fields.
     """
 
-    parser = Parser(spec)
-    missing, absent = parser.check_spec_fields(data)
+    validate_specification(spec)
 
-    if len(absent) > 0:
-        msg = f"There are {len(absent)} fields present in your spec file, but not in the dataset:"
-        for field in sorted(absent):
-            msg += f"\n - {field}"
-        raise ValueError(msg)
+    if data:
+        parser = Parser(spec)
+        missing, absent = parser.check_spec_fields(data)
 
-    if len(missing) > 0:
-        msg = f"There are {len(missing)} fields missing from your spec file:"
-        for field in sorted(missing):
-            msg += f"\n - {field}"
-        warnings.warn(msg, UserWarning)
+        if len(absent) > 0:
+            msg = f"There are {len(absent)} fields present in your spec file, but not in the dataset:"
+            for field in sorted(absent):
+                msg += f"\n - {field}"
+            raise ValueError(msg)
+
+        if len(missing) > 0:
+            msg = f"There are {len(missing)} fields missing from your spec file:"
+            for field in sorted(missing):
+                msg += f"\n - {field}"
+            warnings.warn(msg, UserWarning)

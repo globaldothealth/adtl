@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Discriminator, Field, Tag, model_validator
 
 
 class Apply(BaseModel):
@@ -34,6 +34,10 @@ class IfField(ConditionalFields):
     all: Optional[list[dict[str, ConditionalFields]]] = Field(default=None, alias="all")
     any: Optional[list[dict[str, ConditionalFields]]] = Field(default=None, alias="any")
     not_: Optional[dict[str, ConditionalFields]] = Field(default=None, alias="not")
+
+
+class ForField(BaseModel):
+    range: Optional[list[int]] = None
 
 
 class FieldMappingObject(BaseModel):
@@ -102,12 +106,39 @@ class CombinedMappingObject(BaseModel):
     )
 
 
-FieldMapping = Union[str, bool, FieldMappingObject]
-Mapping = Union[FieldMapping, CombinedMappingObject]
+# ---------- Discriminated unions for mappings ----------
 
 
-class ForField(BaseModel):
-    range: Optional[list[int]] = None
+def field_discriminator(v) -> str:
+    if isinstance(v, dict):
+        return "field"
+    if isinstance(v, str):
+        return "string"
+    if isinstance(v, bool):
+        return "bool"
+
+
+def mapping_discriminator(v) -> str:
+    if isinstance(v, dict) and "combinedType" in v:
+        return "combined"
+    return "single"
+
+
+FieldMapping = Annotated[
+    Union[
+        Annotated[str, Tag("string")],
+        Annotated[bool, Tag("bool")],
+        Annotated[FieldMappingObject, Tag("field")],
+    ],
+    Discriminator(field_discriminator),
+]
+Mapping = Annotated[
+    Union[
+        Annotated[FieldMapping, Tag("single")],
+        Annotated[CombinedMappingObject, Tag("combined")],
+    ],
+    Discriminator(mapping_discriminator),
+]
 
 
 class LongEntry(BaseModel):
