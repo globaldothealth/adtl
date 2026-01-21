@@ -3,6 +3,8 @@ from __future__ import annotations
 import copy
 import csv
 import hashlib
+import importlib
+import inspect
 import io
 import itertools
 import json
@@ -24,6 +26,7 @@ from joblib import Parallel, delayed
 from more_itertools import unique_everseen
 from tqdm.auto import tqdm
 
+import adtl.transformations as tf
 import adtl.util as util
 from adtl.get_value import get_value, parse_if
 
@@ -184,6 +187,31 @@ def read_file(file: Path) -> dict[str, Any]:
         raise ValueError(f"Unsupported file format: {file}")
 
 
+def load_custom_transformations(filepath: str):
+    """
+    Load custom transformation functions from a Python file.
+
+    Args:
+        filepath: Path to a Python file containing transformation functions
+    """
+    if not Path(filepath).exists():
+        raise FileNotFoundError(f"No such file: {filepath!r}")
+
+    # Load the module from file
+    spec = importlib.util.spec_from_file_location("custom_transformations", filepath)
+    if spec is None or spec.loader is None:
+        raise ValueError(f"Cannot load transformations from {filepath}")
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    # Merge functions into the tf namespace
+    for name, obj in inspect.getmembers(module):
+        if callable(obj) and not name.startswith("_"):
+            setattr(tf, name, obj)
+            logger.info(f"Loaded custom transformation: {name}")
+
+
 class Parser:
     """Main parser class that loads a specification
 
@@ -202,6 +230,7 @@ class Parser:
         self,
         spec: Union[str, Path, StrDict],
         include_defs: list[str] = [],
+        include_transform: str | None = None,
         quiet: bool = False,
         verbose: bool = False,
         parallel: bool = False,
@@ -213,6 +242,7 @@ class Parser:
                 the specification loaded into a dictionary
             include_defs: Definition files to include. These are spliced
                 directly into the adtl.defs section of the :ref:`specification`.
+            include_transform: File with external transform functions to include.
             quiet: Boolean that switches on the verbosity of the parser, default False
             verbose: Boolean that switches on extra verbosity to show e.g. overwrite warnings, default False
             parallel: Boolean that switches on parallel processing for parsing, default False
@@ -223,6 +253,7 @@ class Parser:
         self.fieldnames: dict[str, list[str]] = {}
         self.specfile = None
         self.include_defs = include_defs
+        self.include_transform = include_transform
         self.validators: StrDict = {}
         self.schemas: StrDict = {}
         self.quiet = quiet
@@ -255,6 +286,9 @@ class Parser:
             for definition_file in self.include_defs:
                 self.defs.update(read_file(definition_file))
         self.spec = expand_refs(self.spec, self.defs)
+
+        if self.include_transform:
+            load_custom_transformations(self.include_transform)
 
         for table in (t for t in self.tables if self.tables[t]["kind"] == "oneToMany"):
             self.spec[table] = expand_for(self.spec[table])
