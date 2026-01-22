@@ -5,6 +5,7 @@ import contextlib
 import io
 import json
 import warnings
+from types import SimpleNamespace
 
 import pytest
 from pytest_unordered import unordered
@@ -377,3 +378,58 @@ def test_show_report(snapshot):
     with contextlib.redirect_stdout(io.StringIO()) as f:
         ps.show_report()
     assert f.getvalue() == snapshot
+
+
+def test_providing_custom_transformations():
+    data = [
+        {
+            "subjid": "S007",
+            "brthdtc": "1996-02-24",
+            "dsstdat": "2023-02-24",
+            "age": "22",
+            "ageu": 1,
+            "icu_hostdat": 1,
+            "type": "fish",
+        }
+    ]
+
+    apply_values_present_output = list(
+        parser.Parser(
+            parser_path / "custom_transformations.toml",
+            include_transform=parser_path / "custom_transforms.py",
+        )
+        .parse_rows(data, "apply")
+        .read_table("subject")
+    )
+
+    assert apply_values_present_output == [
+        {
+            "subject_id": "S007",
+            "age": pytest.approx(27.0, 0.001),
+            "icu_admitted": True,
+            "dob_year": 1974,
+            "animal_type": "FISH",
+        }
+    ]
+
+
+def test_providing_custom_transformations_bad_path_error():
+    with pytest.raises(FileNotFoundError, match="No such file:"):
+        parser.Parser(
+            parser_path / "custom_transformations.toml",
+            include_transform=parser_path / "missing_file.py",
+        )
+
+
+def test_providing_custom_transformations_transform_overwrite_warning(monkeypatch):
+    # Create a fresh dummy 'tf' module object
+    fake_tf = SimpleNamespace(getFloat=lambda x: x)
+    monkeypatch.setattr(parser, "tf", fake_tf)
+
+    with pytest.warns(
+        UserWarning, match="Overwriting existing transformation function:"
+    ):
+        parser.Parser(
+            parser_path / "custom_transformations.toml",
+            include_transform=parser_path / "bad_custom_transforms.py",
+        )

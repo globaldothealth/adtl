@@ -49,14 +49,20 @@ def add_parse_subparser(subparsers):
         action="append",
         help="include external definition (TOML or JSON)",
     )
+    cmd.add_argument(
+        "--include-transform",
+        help="include external transforms (single .py file with functions)",
+    )
     cmd.set_defaults(func=handle_parse)
 
 
 def handle_parse(args):
     include_defs = args.include_def or []
+    include_transform = args.include_transform or None
     spec = Parser(
         args.spec,
         include_defs=include_defs,
+        include_transform=include_transform,
         quiet=args.quiet,
         verbose=args.verbose,
         parallel=args.parallel,
