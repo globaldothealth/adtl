@@ -418,3 +418,13 @@ def test_providing_custom_transformations_bad_path_error():
             parser_path / "custom_transformations.toml",
             include_transform=parser_path / "missing_file.py",
         )
+
+
+def test_providing_custom_transformations_transform_overwrite_warning():
+    with pytest.warns(
+        UserWarning, match="Overwriting existing transformation function:"
+    ):
+        parser.Parser(
+            parser_path / "custom_transformations.toml",
+            include_transform=parser_path / "bad_custom_transforms.py",
+        )

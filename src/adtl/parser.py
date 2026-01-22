@@ -208,6 +208,10 @@ def load_custom_transformations(filepath: str):
     # Merge functions into the tf namespace
     for name, obj in inspect.getmembers(module):
         if callable(obj) and not name.startswith("_"):
+            if getattr(tf, name, None):
+                warnings.warn(
+                    f"Overwriting existing transformation function: {name}", UserWarning
+                )
             setattr(tf, name, obj)
             logger.info(f"Loaded custom transformation: {name}")
 
