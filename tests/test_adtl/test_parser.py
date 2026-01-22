@@ -5,6 +5,7 @@ import contextlib
 import io
 import json
 import warnings
+from types import SimpleNamespace
 
 import pytest
 from pytest_unordered import unordered
@@ -420,7 +421,11 @@ def test_providing_custom_transformations_bad_path_error():
         )
 
 
-def test_providing_custom_transformations_transform_overwrite_warning():
+def test_providing_custom_transformations_transform_overwrite_warning(monkeypatch):
+    # Create a fresh dummy 'tf' module object
+    fake_tf = SimpleNamespace(getFloat=lambda x: x)
+    monkeypatch.setattr(parser, "tf", fake_tf)
+
     with pytest.warns(
         UserWarning, match="Overwriting existing transformation function:"
     ):
