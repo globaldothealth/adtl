@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 
-import google.generativeai as gemini
+from google import genai
+from google.genai import types
 
 from .base_llm import LLMBase
 from .data_structures import ColumnDescriptionRequest, MappingRequest, ValuesRequest
@@ -12,8 +13,7 @@ from .data_structures import ColumnDescriptionRequest, MappingRequest, ValuesReq
 
 class GeminiLanguageModel(LLMBase):
     def __init__(self, api_key, model: str = "gemini-1.5-flash"):
-        gemini.configure(api_key=api_key)
-        self.client = gemini.GenerativeModel(model)
+        self.client = genai.Client(api_key=api_key)
         self.model = model
 
         if self.model not in self.valid_models():
@@ -29,7 +29,7 @@ class GeminiLanguageModel(LLMBase):
         """
         Get the definitions of the columns in the dataset using the Gemini API.
         """
-        result = self.client.generate_content(
+        result = self.client.models.generate_content(
             [
                 (
                     "You are an expert at structured data extraction. "
@@ -41,7 +41,7 @@ class GeminiLanguageModel(LLMBase):
                 ),
                 f"{headers}",
             ],
-            generation_config=gemini.GenerationConfig(
+            config=types.GenerationConfig(
                 response_mime_type="application/json",
                 response_schema=ColumnDescriptionRequest,
             ),
@@ -57,7 +57,7 @@ class GeminiLanguageModel(LLMBase):
         """
         Calls the Gemini API to generate a draft mapping between two datasets.
         """
-        result = self.client.generate_content(
+        result = self.client.models.generate_content(
             [
                 (
                     "You are an expert at structured data extraction. "
@@ -74,7 +74,7 @@ class GeminiLanguageModel(LLMBase):
                     f"These are the source descriptions: {source_fields}"
                 ),
             ],
-            generation_config=gemini.GenerationConfig(
+            config=types.GenerationConfig(
                 response_mime_type="application/json",
                 response_schema=MappingRequest,
             ),
@@ -87,7 +87,7 @@ class GeminiLanguageModel(LLMBase):
         """
         Calls the Gemini API to generate a set of value mappings for the fields.
         """
-        result = self.client.generate_content(
+        result = self.client.models.generate_content(
             [
                 (
                     "You are an expert at structured data extraction. "
@@ -110,7 +110,7 @@ class GeminiLanguageModel(LLMBase):
                 ),
                 f"These are the field, source, target value sets: {values}",
             ],
-            generation_config=gemini.GenerationConfig(
+            config=types.GenerationConfig(
                 response_mime_type="application/json",
                 response_schema=ValuesRequest,
             ),
