@@ -11,7 +11,7 @@ def test_init():
     model = GeminiLanguageModel("1234")
 
     assert model.client is not None
-    assert model.model == "gemini-1.5-flash"
+    assert model.model == "gemini-2.5-flash"
 
 
 def test_init_invalid_model_raises():

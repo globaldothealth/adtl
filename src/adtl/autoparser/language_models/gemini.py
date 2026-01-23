@@ -5,14 +5,13 @@ from __future__ import annotations
 import json
 
 from google import genai
-from google.genai import types
 
 from .base_llm import LLMBase
 from .data_structures import ColumnDescriptionRequest, MappingRequest, ValuesRequest
 
 
 class GeminiLanguageModel(LLMBase):
-    def __init__(self, api_key, model: str = "gemini-1.5-flash"):
+    def __init__(self, api_key, model: str = "gemini-2.5-flash"):
         self.client = genai.Client(api_key=api_key)
         self.model = model
 
@@ -23,14 +22,21 @@ class GeminiLanguageModel(LLMBase):
 
     @classmethod
     def valid_models(cls):
-        return ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"]
+        return [
+            "gemini-2.0-flash",
+            "gemini-2.0-flash-lite",
+            "gemini-2.5-flash-lite",
+            "gemini-2.5-flash",
+            "gemini-2.5-pro",
+        ]
 
     def get_definitions(self, headers: list[str], language: str) -> dict[str, str]:
         """
         Get the definitions of the columns in the dataset using the Gemini API.
         """
         result = self.client.models.generate_content(
-            [
+            model=self.model,
+            contents=[
                 (
                     "You are an expert at structured data extraction. "
                     "The following is a list of headers from a data file in "
@@ -41,10 +47,10 @@ class GeminiLanguageModel(LLMBase):
                 ),
                 f"{headers}",
             ],
-            config=types.GenerationConfig(
-                response_mime_type="application/json",
-                response_schema=ColumnDescriptionRequest,
-            ),
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": ColumnDescriptionRequest,
+            },
         )
         descriptions = ColumnDescriptionRequest.model_validate(
             json.loads(result.text)
@@ -58,7 +64,8 @@ class GeminiLanguageModel(LLMBase):
         Calls the Gemini API to generate a draft mapping between two datasets.
         """
         result = self.client.models.generate_content(
-            [
+            model=self.model,
+            contents=[
                 (
                     "You are an expert at structured data extraction. "
                     "You will be given two lists of phrases, one is the headers for a "
@@ -74,10 +81,10 @@ class GeminiLanguageModel(LLMBase):
                     f"These are the source descriptions: {source_fields}"
                 ),
             ],
-            config=types.GenerationConfig(
-                response_mime_type="application/json",
-                response_schema=MappingRequest,
-            ),
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": MappingRequest,
+            },
         )
         return MappingRequest.model_validate(json.loads(result.text))
 
@@ -88,7 +95,8 @@ class GeminiLanguageModel(LLMBase):
         Calls the Gemini API to generate a set of value mappings for the fields.
         """
         result = self.client.models.generate_content(
-            [
+            model=self.model,
+            contents=[
                 (
                     "You are an expert at structured data extraction. "
                     "You will be given a list of tuples, where each tuple contains "
@@ -110,9 +118,9 @@ class GeminiLanguageModel(LLMBase):
                 ),
                 f"These are the field, source, target value sets: {values}",
             ],
-            config=types.GenerationConfig(
-                response_mime_type="application/json",
-                response_schema=ValuesRequest,
-            ),
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": ValuesRequest,
+            },
         )
         return ValuesRequest.model_validate(json.loads(result.text))
