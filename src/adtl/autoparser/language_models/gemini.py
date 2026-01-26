@@ -4,16 +4,15 @@ from __future__ import annotations
 
 import json
 
-import google.generativeai as gemini
+from google import genai
 
 from .base_llm import LLMBase
 from .data_structures import ColumnDescriptionRequest, MappingRequest, ValuesRequest
 
 
 class GeminiLanguageModel(LLMBase):
-    def __init__(self, api_key, model: str = "gemini-1.5-flash"):
-        gemini.configure(api_key=api_key)
-        self.client = gemini.GenerativeModel(model)
+    def __init__(self, api_key, model: str = "gemini-2.5-flash"):
+        self.client = genai.Client(api_key=api_key)
         self.model = model
 
         if self.model not in self.valid_models():
@@ -23,14 +22,21 @@ class GeminiLanguageModel(LLMBase):
 
     @classmethod
     def valid_models(cls):
-        return ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"]
+        return [
+            "gemini-2.0-flash",
+            "gemini-2.0-flash-lite",
+            "gemini-2.5-flash-lite",
+            "gemini-2.5-flash",
+            "gemini-2.5-pro",
+        ]
 
     def get_definitions(self, headers: list[str], language: str) -> dict[str, str]:
         """
         Get the definitions of the columns in the dataset using the Gemini API.
         """
-        result = self.client.generate_content(
-            [
+        result = self.client.models.generate_content(
+            model=self.model,
+            contents=[
                 (
                     "You are an expert at structured data extraction. "
                     "The following is a list of headers from a data file in "
@@ -41,10 +47,10 @@ class GeminiLanguageModel(LLMBase):
                 ),
                 f"{headers}",
             ],
-            generation_config=gemini.GenerationConfig(
-                response_mime_type="application/json",
-                response_schema=ColumnDescriptionRequest,
-            ),
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": ColumnDescriptionRequest,
+            },
         )
         descriptions = ColumnDescriptionRequest.model_validate(
             json.loads(result.text)
@@ -57,8 +63,9 @@ class GeminiLanguageModel(LLMBase):
         """
         Calls the Gemini API to generate a draft mapping between two datasets.
         """
-        result = self.client.generate_content(
-            [
+        result = self.client.models.generate_content(
+            model=self.model,
+            contents=[
                 (
                     "You are an expert at structured data extraction. "
                     "You will be given two lists of phrases, one is the headers for a "
@@ -74,10 +81,10 @@ class GeminiLanguageModel(LLMBase):
                     f"These are the source descriptions: {source_fields}"
                 ),
             ],
-            generation_config=gemini.GenerationConfig(
-                response_mime_type="application/json",
-                response_schema=MappingRequest,
-            ),
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": MappingRequest,
+            },
         )
         return MappingRequest.model_validate(json.loads(result.text))
 
@@ -87,8 +94,9 @@ class GeminiLanguageModel(LLMBase):
         """
         Calls the Gemini API to generate a set of value mappings for the fields.
         """
-        result = self.client.generate_content(
-            [
+        result = self.client.models.generate_content(
+            model=self.model,
+            contents=[
                 (
                     "You are an expert at structured data extraction. "
                     "You will be given a list of tuples, where each tuple contains "
@@ -110,9 +118,9 @@ class GeminiLanguageModel(LLMBase):
                 ),
                 f"These are the field, source, target value sets: {values}",
             ],
-            generation_config=gemini.GenerationConfig(
-                response_mime_type="application/json",
-                response_schema=ValuesRequest,
-            ),
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": ValuesRequest,
+            },
         )
         return ValuesRequest.model_validate(json.loads(result.text))
