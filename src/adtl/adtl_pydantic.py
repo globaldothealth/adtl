@@ -30,10 +30,32 @@ class ConditionalFields(BaseModel):
     reg: Optional[str] = Field(default=None, alias="=~")
 
 
+# Type for condition values: can be a comparison operator object, or simple equality value
+ConditionValue = Union[ConditionalFields, str, int]
+
+
 class IfField(ConditionalFields):
-    all: Optional[list[dict[str, ConditionalFields]]] = Field(default=None, alias="all")
-    any: Optional[list[dict[str, ConditionalFields]]] = Field(default=None, alias="any")
-    not_: Optional[dict[str, ConditionalFields]] = Field(default=None, alias="not")
+    all: Optional[list[dict[str, ConditionValue]]] = Field(default=None, alias="all")
+    any: Optional[list[dict[str, ConditionValue]]] = Field(default=None, alias="any")
+    not_: Optional[dict[str, ConditionValue]] = Field(default=None, alias="not")
+
+
+def if_discriminator(v) -> str:
+    """Discriminates between field-based conditions and top-level all/any/not."""
+    if isinstance(v, dict):
+        if "all" in v or "any" in v or "not" in v:
+            return "iffield"
+    return "fieldconditions"
+
+
+# Union type for 'if' field: either field-based conditions or top-level logical conditions
+IfCondition = Annotated[
+    Union[
+        Annotated[Dict[str, Union[str, int, IfField]], Tag("fieldconditions")],
+        Annotated[IfField, Tag("iffield")],
+    ],
+    Discriminator(if_discriminator),
+]
 
 
 class ForField(BaseModel):
@@ -72,7 +94,7 @@ class FieldMappingObject(BaseModel):
         default=None,
         description="This is only used with combinedType, specifies a regular expression matching multiple fields",
     )
-    if_: Optional[Dict[str, str | int | IfField]] = Field(default=None, alias="if")
+    if_: Optional[IfCondition] = Field(default=None, alias="if")
     sensitive: Optional[Literal[True]] = Field(
         default=None,
         description=(
@@ -146,7 +168,7 @@ class LongEntry(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     ref: Optional[str] = None
-    if_: Optional[Dict[str, int | IfField | str]] = Field(default=None, alias="if")
+    if_: Optional[IfCondition] = Field(default=None, alias="if")
     for_: Optional[Dict[str, list[int] | ForField]] = Field(default=None, alias="for")
 
 
