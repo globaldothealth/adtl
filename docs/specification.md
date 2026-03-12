@@ -435,7 +435,7 @@ Notice that in this case `can_skip` does not need to be added to the fields with
 ### Data transformations (apply)
 
 Arbitrary functions can be applied to source fields. adtl ships with a library
-found in the `transformations.py` file, but users may add their own by using the `--import-transform`
+found in the `transformations.py` file, but users may add their own by using the `--include-transform`
 flag and providing a single python file where their custom functions are provided. Custom functions will only execute if using Python's stdlib, or one of adtl's dependencies. Parameters other than the source field which need to be parsed into the transformation
 function must be listed as `params`, in the same order as they should be
 passed to the transformation function.

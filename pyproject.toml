@@ -13,7 +13,7 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = "adtl"
-version = "0.13.1"
+version = "0.13.2"
 description = "Another data transformation language"
 authors = [
   {name = "Abhishek Dasgupta" },
@@ -32,6 +32,7 @@ dependencies = [
   "python-dateutil",
   "more_itertools",
   "pandas[parquet]==2.*",
+  "pydantic>=2.9.2",
   "joblib"
 ]
   scripts = { adtl = "adtl.cli:main", adtl-autoparser = "adtl.autoparser:main" }
@@ -52,7 +53,6 @@ autoparser = [
     "numpy==2.*",
     "openai>=1.52.2",
     "openpyxl>=3.1.5",
-    "pydantic>=2.9.2",
     "eval_type_backport; python_version < '3.10'",
     "pandera[pandas]",
     "fastparquet>=2024.11.0",
