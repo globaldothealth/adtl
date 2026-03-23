@@ -42,6 +42,7 @@ class DataDictionaryProcessed(DataDictionaryEntry):
     @pa.check("common_values")
     def check_list_of_strings(cls, s: Series[Any]) -> Series[bool]:
         return s.apply(
-            lambda x: isinstance(x, (list, np.ndarray))
-            and all(isinstance(i, str) for i in x)
+            lambda x: (
+                isinstance(x, (list, np.ndarray)) and all(isinstance(i, str) for i in x)
+            )
         )
