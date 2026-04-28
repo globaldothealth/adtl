@@ -23,7 +23,6 @@ import pandas as pd
 import requests
 import tomli
 from joblib import Parallel, delayed
-from more_itertools import unique_everseen
 from tqdm.auto import tqdm
 
 import adtl.transformations as tf
@@ -167,7 +166,13 @@ def make_fields_optional(
                 ):
                     _schema.pop(opt)
                 else:
-                    _schema[opt] = list(unique_everseen(_schema[opt]))
+                    # De-duplicate list using dictionary keys, as lists are unhashable
+                    _schema[opt] = list(
+                        {
+                            json.dumps(option, sort_keys=True): option
+                            for option in _schema[opt]
+                        }.values()
+                    )
     return _schema
 
 
