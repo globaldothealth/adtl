@@ -413,6 +413,56 @@ def test_providing_custom_transformations():
     ]
 
 
+def test_providing_custom_transformations_parallel():
+    data = [
+        {
+            "subjid": "S007",
+            "brthdtc": "1996-02-24",
+            "dsstdat": "2023-02-24",
+            "age": "22",
+            "ageu": 1,
+            "icu_hostdat": 1,
+            "type": "fish",
+        },
+        {
+            "subjid": "S008",
+            "brthdtc": "1997-02-24",
+            "dsstdat": "2023-02-24",
+            "age": "20",
+            "ageu": 1,
+            "icu_hostdat": 0,
+            "type": "cat",
+        },
+    ]
+
+    apply_values_present_output = list(
+        parser.Parser(
+            parser_path / "custom_transformations.toml",
+            include_transform=parser_path / "custom_transforms.py",
+            parallel=True,
+        )
+        .parse_rows(data, "apply")
+        .read_table("subject")
+    )
+
+    assert apply_values_present_output == [
+        {
+            "subject_id": "S007",
+            "age": pytest.approx(27.0, 0.001),
+            "icu_admitted": True,
+            "dob_year": 1974,
+            "animal_type": "FISH",
+        },
+        {
+            "subject_id": "S008",
+            "age": pytest.approx(26.0, 0.001),
+            "icu_admitted": True,
+            "dob_year": 1977,
+            "animal_type": "CAT",
+        },
+    ]
+
+
 def test_providing_custom_transformations_bad_path_error():
     with pytest.raises(FileNotFoundError, match="No such file:"):
         parser.Parser(

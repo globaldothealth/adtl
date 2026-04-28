@@ -38,6 +38,8 @@ StrDict = dict[str, Any]
 
 logger = logging.getLogger(__name__)
 
+_LOADED_CUSTOM_TRANSFORMS: set[str] = set()
+
 
 def expand_refs(spec_fragment: StrDict, defs: StrDict) -> Union[StrDict, list[StrDict]]:
     "Expand all references (ref) with definitions (defs)"
@@ -187,7 +189,7 @@ def read_file(file: Path) -> dict[str, Any]:
         raise ValueError(f"Unsupported file format: {file}")
 
 
-def load_custom_transformations(filepath: str):
+def load_custom_transformations(filepath: str | Path):
     """
     Load custom transformation functions from a Python file.
 
@@ -198,7 +200,9 @@ def load_custom_transformations(filepath: str):
         raise FileNotFoundError(f"No such file: {filepath!r}")
 
     # Load the module from file
-    spec = importlib.util.spec_from_file_location("custom_transformations", filepath)
+    spec = importlib.util.spec_from_file_location(
+        "custom_transformations", str(filepath)
+    )
     if spec is None or spec.loader is None:  # pragma: no cover
         raise ValueError(f"Cannot load transformations from {filepath}")
 
@@ -214,6 +218,21 @@ def load_custom_transformations(filepath: str):
                 )
             setattr(tf, name, obj)
             logger.info(f"Loaded custom transformation: {name}")
+
+
+def ensure_custom_transformations(filepath: str | Path | None):
+    """Load custom transforms once per process.
+
+    In parallel mode each worker has its own module state, so ensure the
+    transforms module is patched in each process before row parsing starts.
+    """
+    if not filepath:
+        return
+    normalized = str(Path(filepath).resolve())
+    if normalized in _LOADED_CUSTOM_TRANSFORMS:
+        return
+    load_custom_transformations(normalized)
+    _LOADED_CUSTOM_TRANSFORMS.add(normalized)
 
 
 class Parser:
@@ -291,8 +310,7 @@ class Parser:
                 self.defs.update(read_file(definition_file))
         self.spec = expand_refs(self.spec, self.defs)
 
-        if self.include_transform:
-            load_custom_transformations(self.include_transform)
+        ensure_custom_transformations(self.include_transform)
 
         for table in (t for t in self.tables if self.tables[t]["kind"] == "oneToMany"):
             self.spec[table] = expand_for(self.spec[table])
@@ -402,8 +420,20 @@ class Parser:
         string or values not mapped in the rule.
         """
 
+        def _get_required_fields(option: dict[str, Any]) -> str | None:
+            """Checks for required fields in the schema, including conditional required fields"""
+            required = option.get("required")
+            if required:
+                return required[0]
+
+            then_required = option.get("then", {}).get("required")
+            if then_required:
+                return then_required[0]
+
+            return None
+
         data_options = [
-            option["required"][0] for option in self.schemas[table]["oneOf"]
+            _get_required_fields(option) for option in self.schemas[table]["oneOf"]
         ]
 
         option = set(data_options).intersection(rule.keys()).pop()
@@ -644,6 +674,8 @@ class Parser:
         def process_row(row):
             """Process a single row in the data file"""
 
+            ensure_custom_transformations(self.include_transform)
+
             row_store = dict.fromkeys(self.tables, None)
 
             for table in self.tables:
@@ -864,6 +896,8 @@ class Parser:
 
         spec = self.spec
         schema_fields = set(find_all_values(spec, "field"))
+
+        # TODO: add a way to check 'if' fields as well, which may not be captured by 'field' keys
 
         return schema_fields
 
