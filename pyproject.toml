@@ -30,7 +30,6 @@ dependencies = [
   "fastjsonschema==2.16.*",
   "tqdm",
   "python-dateutil",
-  "more_itertools",
   "pandas[parquet]==2.*",
   "pydantic>=2.9.2",
   "joblib"
