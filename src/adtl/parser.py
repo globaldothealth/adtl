@@ -441,6 +441,12 @@ class Parser:
             _get_required_fields(option) for option in self.schemas[table]["oneOf"]
         ]
 
+        if all(x is None for x in data_options):
+            raise ValueError(
+                f"No required fields found in schema for table {table!r}, cannot "
+                "create default 'if' rules."
+            )
+
         option = set(data_options).intersection(rule.keys()).pop()
 
         if "combinedType" not in rule[option]:

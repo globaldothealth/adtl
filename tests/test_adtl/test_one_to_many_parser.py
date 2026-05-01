@@ -308,6 +308,68 @@ def test_default_if_rule_is_correct(rule, expected):
     assert psr._default_if("observation", rule)["if"] == expected
 
 
+def test_default_if_rule_uses_then_required_field():
+    psr = parser.Parser(parser_path / "oneToMany-missingIf.toml")
+    psr.schemas["observation"]["oneOf"] = [
+        {
+            "if": {
+                "properties": {
+                    "attribute_status": {
+                        "const": "VAL",
+                    },
+                },
+            },
+            "then": {
+                "required": [
+                    "value_num",
+                    "attribute_unit",
+                ],
+            },
+        },
+        {
+            "required": [
+                "text",
+            ],
+        },
+    ]
+
+    rule = {
+        "name": "demog_height_cm",
+        "value_num": {
+            "field": "height_cm",
+        },
+    }
+
+    assert psr._default_if("observation", rule)["if"] == {"height_cm": {"!=": ""}}
+
+
+def test_default_if_rule_fails_with_no_required_fields():
+    psr = parser.Parser(parser_path / "oneToMany-missingIf.toml")
+
+    # remove 'required' fields
+    del psr.schemas["observation"]["required"]
+
+    psr.schemas["observation"]["oneOf"] = [
+        {
+            "properties": {
+                "name": {
+                    "const": "demog_height_cm",
+                },
+            },
+        },
+    ]
+
+    rule = {
+        "name": "demog_height_cm",
+        "value": {
+            "field": "height_cm",
+        },
+    }
+
+    with pytest.raises(ValueError, match="No required fields found in schema"):
+        psr._default_if("observation", rule)["if"] == {"height_cm": {"!=": ""}}
+
+
 def test_generated_data(snapshot):
     generated_output = list(
         parser.Parser(parser_path / "onetomany_generate.toml")
