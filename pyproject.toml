@@ -20,7 +20,7 @@ authors = [
   {name = "Pip Liggins" }
 ]
 license = {file = "LICENSE"}
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 readme = "README.md"
 classifiers = ["License :: OSI Approved :: MIT License"]
 dependencies = [
@@ -30,7 +30,6 @@ dependencies = [
   "fastjsonschema==2.16.*",
   "tqdm",
   "python-dateutil",
-  "more_itertools",
   "pandas[parquet]==2.*",
   "pydantic>=2.9.2",
   "joblib"
