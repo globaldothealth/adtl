@@ -1,6 +1,6 @@
 # adtl – another data transformation language
 
-[![Python 3.9+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
 [![tests](https://github.com/globaldothealth/adtl/actions/workflows/tests.yml/badge.svg)](https://github.com/globaldothealth/adtl/actions/workflows/tests.yml)
 [![codecov](https://codecov.io/gh/globaldothealth/adtl/branch/main/graph/badge.svg?token=QTD7HRR3TO)](https://codecov.io/gh/globaldothealth/adtl)
@@ -11,8 +11,6 @@ adtl is a data transformation language (DTL) used by some applications in
 [Global.health](https://global.health), notably for the ISARIC clinical data pipeline at
 [globaldothealth/isaric](https://github.com/globaldothealth/isaric) and the InsightBoard
 project dashboard at [globaldothealth/InsightBoard](https://github.com/globaldothealth/InsightBoard)
-
-**adtl is currently a prototype and is subject to major revisions**
 
 ## Motivation
 
@@ -36,7 +34,9 @@ maxdepth: 1
 ---
 
 getting_started/installation
+getting_started/concepts
 getting_started/usage
+getting_started/troubleshooting
 ```
 
 ```{toctree}

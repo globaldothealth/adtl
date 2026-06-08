@@ -78,6 +78,83 @@ if not present in a datafile, following the same syntax as `fieldPattern` key.
 Excel file with 'NA' in all the unfilled cells), use this field to specify what that
 code is so it can be stripped out.
 
+### groupBy tables
+
+A `groupBy` table collapses multiple source rows that share the same key into a
+single output row. This is useful when subjects appear across multiple rows in the
+source data — for example, a longitudinal dataset where each visit is a separate row, or where multiple forms (each presenting as a separate row in the source data) are filled in per day while a subject is hospitalised.
+
+```toml
+[adtl]
+name = "study"
+description = "Study data with repeated visits"
+
+[adtl.tables.subject]
+kind = "groupBy"
+groupBy = "subject_id"
+aggregation = "lastNotNull"
+
+[subject]
+subject_id     = { field = "patient_id" }
+sex_at_birth   = { field = "sex", values = { 1 = "male", 2 = "female" } }
+enrolment_date = { field = "enrol_date" }
+outcome        = { field = "disch_outcome", values = { 1 = "discharged", 2 = "death" } }
+```
+
+With `aggregation = "lastNotNull"`, when a patient appears in multiple rows the parser
+keeps the last non-null value for each field. This means that if `outcome` is only
+filled in on the final visit row, it will still appear correctly in the output.
+
+`aggregation = "applyCombinedType"` is an alternative that applies `combinedType` rules
+across all rows in the group — for example, `combinedType = "any"` on a `has_comorbidity`
+field would be `true` if *any row* for that patient has the comorbidity recorded, rather than only if *any fields* in the **final** row are true.
+
+### oneToMany tables
+
+A `oneToMany` table generates multiple output rows from a single source row — for example,
+one row per clinical observation rather than one row per patient. This is equivalent
+to reformatting a 'wide' table to a 'long' one.
+
+In the `[adtl.tables]` block, set `kind = "oneToMany"` and optionally:
+- `discriminator`: the output field used for JSON schema validation when the schema uses
+ `oneOf` based on that field (makes validation of large data files much faster)
+- `common`: mappings applied to *every* row in the table, avoiding the need for repetition
+
+```toml
+[adtl]
+name = "study"
+description = "Study data"
+
+[adtl.tables.observation]
+kind = "oneToMany"
+discriminator = "name"
+common = { subject_id = { field = "patient_id" }, date = { field = "admit_date" } }
+
+[[observation]]
+name = "headache"
+is_present = { field = "headache_yn", values = { 1 = true, 0 = false } }
+
+[[observation]]
+name = "cough"
+is_present = { field = "cough_yn", values = { 1 = true, 0 = false } }
+
+[[observation]]
+name = "fever"
+is_present = { field = "fever_yn", values = { 1 = true, 0 = false } }
+```
+
+For a source row with `patient_id = "P001"`, `admit_date = "2023-01-15"`,
+`headache_yn = 1`, `cough_yn = 0`, `fever_yn = ""`, this parser would emit:
+
+| subject_id | date       | name     | is_present |
+|------------|------------|----------|------------|
+| P001       | 2023-01-15 | headache | true       |
+| P001       | 2023-01-15 | cough    | false      |
+
+The `fever` row is suppressed because `fever_yn` is empty and maps to null — adtl
+automatically skips rows where all mapped fields are null. Add an explicit `if` condition
+to override this default behaviour.
+
 ## Validation
 
 adtl supports validation using [JSON

@@ -3,43 +3,86 @@ title: Usage
 ---
 # Usage
 
-adtl can be used from the command line or as a Python library
+adtl can be used from the command line or as a Python library.
+
+## Parsing data
 
 **As a CLI**:
 ```bash
 adtl parse specification-file input-file
 ```
 
-Here *specification-file* is the [parser specification](/specification) (as TOML or JSON)
+Here *specification-file* is the [parser specification](../specification) (as TOML or JSON)
 and *input-file* is the data file (not the data dictionary) that adtl
 will transform using the instructions in the specification.
 
 If adtl is not in your PATH, this may give an error. Either add the location
-where the adtl script is installed to your PATH, or try running adtl as a module
+where the adtl script is installed to your PATH, or try running adtl as a module:
 
 ```shell
 python3 -m adtl parse specification-file input-file
 ```
 
-Running adtl will create output files with the name of the parser, suffixed with
-table names in the current working directory.
+**Output files** are created in the current working directory, named after the parser
+and suffixed with each table name defined in the specification. For example, a parser
+named `study` with tables `subject` and `observation` will produce `study-subject.csv`
+and `study-observation.csv`.
 
 **As a Python library**:
 ```python
 import adtl
 
 parser = adtl.Parser(specification)
-print(parser.tables) # list of tables created
+print(parser.tables)  # list of tables created
 
 for row in parser.parse().read_table(table):
     print(row)
 ```
-alternatively to get an output file as a data table, similarly to the CLI:
+
+Alternatively, to get output as a dictionary of pandas DataFrames (one per table):
 ```python
 import adtl
 
 data = adtl.parse("specification-file", "input-file")
 ```
-where `data` is returned as a dictionary of pandas dataframes, one for each table.
 
-# Specification tools
+## Validation columns
+
+When a table has an associated JSON schema (set via the `schema` key in the specification),
+adtl adds two extra columns to the output:
+
+* `adtl_valid` (boolean): `True` if the row is valid according to the schema, `False` otherwise
+* `adtl_error` (string): validation error message when `adtl_valid` is `False`
+
+These columns are always present if a schema is configured for the table — even for valid rows,
+where `adtl_valid` will be `True` and `adtl_error` will be empty.
+
+## Checking a specification
+
+Before running a full parse, you can check that a specification file is valid and
+that its field names match those in a data file:
+
+```bash
+adtl check specification-file
+adtl check specification-file data-file  # also cross-checks field names against data
+```
+
+This will:
+- Validate the specification structure
+- Report fields referenced in the spec but absent from the data file (error)
+- Report fields present in the data file but not mapped in the spec (warning)
+
+## CLI options
+
+Key options for `adtl parse`:
+
+| Option | Description |
+|--------|-------------|
+| `-o FILE, --output FILE` | Write output to a specific file (single table only) |
+| `--parquet` | Save outputs as Parquet files instead of CSV |
+| `--encoding ENC` | Source file encoding (default: UTF-8) |
+| `--include-def FILE` | Include an additional definitions file at runtime |
+| `--include-transform FILE` | Include a Python file with custom transformation functions |
+| `-p, --parallel` | Process data in parallel |
+
+Run `adtl parse --help` for the full list.
