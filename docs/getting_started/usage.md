@@ -83,6 +83,27 @@ Key options for `adtl parse`:
 | `--encoding ENC` | Source file encoding (default: UTF-8) |
 | `--include-def FILE` | Include an additional definitions file at runtime |
 | `--include-transform FILE` | Include a Python file with custom transformation functions |
-| `-p, --parallel` | Process data in parallel |
+| `-p, --parallel` | Process data in parallel (recommended for large datasets) |
+| `-q, --quiet` | Suppress progress bar and summary output |
+| `--save-report FILE` | Save a validation summary as JSON |
 
 Run `adtl parse --help` for the full list.
+
+### Parallel processing
+
+For large source files, pass `-p` / `--parallel` to process rows across multiple CPU
+cores simultaneously:
+
+```bash
+adtl parse specification-file large-data.csv -p
+```
+
+This can give a significant speed improvement when parsing files with many rows.
+It is not recommended for small datasets, where the overhead of spawning workers
+outweighs the benefit.
+
+The same flag is available in the Python interface:
+
+```python
+data = adtl.parse("specification-file", "large-data.csv", parallel=True)
+```

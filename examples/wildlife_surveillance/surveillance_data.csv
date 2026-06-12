@@ -1,0 +1,10 @@
+case_id,report_date,animal,sex,age_years,age_months,weight_kg,weight_lbs,country,region,fever_yn,cough_yn,dyspnea_yn,cond_diabetes,cond_obesity,cond_cardiac,outcome,outcome_date,severity,test1_name,test1_result,test2_name,test2_result,test3_name,test3_result
+C001,12/03/2024,1,M,3,,12.5,,COL,Bogotá,1,1,0,1,1,0,2,,moderate,PCR,positive,antibody,negative,,
+C001,15/03/2024,,,,,,,,,,,,,,,1,15/03/2024,,,,,,,
+C002,14/03/2024,2,F,,18,,8.8,COL,Medellín,0,1,0,0,0,0,2,,mild,PCR,negative,,,,
+C003,15/03/2024,1,M,5,,,34.0,COL,Bogotá,1,0,1,0,0,1,1,20/03/2024,severe,PCR,positive,culture,positive,antibody,positive
+C004,16/03/2024,3,F,2,,1.8,,COL,Cali,1,1,1,0,1,0,2,,MILD,,,,,,
+C005,17/03/2024,1,F,,36,8.2,,COL,Medellín,1,0,0,0,0,0,2,,mild,PCR,positive,antibody,positive,,
+C006,18/03/2024,2,M,7,,5.1,,COL,Bogotá,0,0,0,0,0,0,2,,Moderate,culture,negative,,,,
+C007,19/03/2024,1,F,4,,11.0,,COL,Cali,1,1,0,0,0,0,2,,moderate,PCR,positive,antibody,positive,culture,negative
+C008,20/03/2024,3,M,6,,2.2,,COL,Bogotá,0,1,0,0,0,0,3,22/03/2024,critical,PCR,negative,antibody,negative,,

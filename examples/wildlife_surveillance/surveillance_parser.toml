@@ -1,0 +1,137 @@
+# Surveillance parser — demonstrates a range of ADTL features.
+# Pair with surveillance_data.csv and the README for a walkthrough.
+#
+# Features demonstrated:
+#   groupBy table            — collapse duplicate case rows
+#   oneToMany + for loop     — expand repeated test columns into rows
+#   defs                     — reusable value mappings
+#   value mappings           — coded fields to human-readable strings
+#   combinedType firstNonNull — prefer one field, fall back to another
+#   unit conversion           — weight lbs → kg; age months → years
+#   combinedType any          — true if any field in the list is true
+#   combinedType set          — collect unique values across condition columns
+#   if (field-level)         — only populate a field when a condition is met
+#   if (row-level)           — only emit a test row when a condition is met
+#   can_skip                  — tolerate a column being absent in some data files
+
+[adtl]
+  name = "surveillance"
+  description = "Wildlife disease surveillance example"
+  defaultDateFormat = "%d/%m/%Y"
+
+  # --- Reusable definitions ---
+  # Any block in the parser can pull these in with ref = "name".
+
+  [adtl.defs]
+    yn = { values = { 1 = true, 0 = false } }
+
+    # --- Table declarations ---
+
+  # cases: one row per case, collapsing duplicate reports with lastNotNull.
+  # When a case appears in two source rows (e.g. initial entry then follow-up
+  # update), the last non-null value wins for each field individually. An
+  # updated outcome added in a second row is picked up without losing the
+  # demographic data from the first row.
+  [adtl.tables.cases]
+    kind = "groupBy"
+    groupBy = "case_id"
+    aggregation = "lastNotNull"
+    schema = "cases.schema.json"
+
+  # tests: one row per lab test per case, generated from repeated columns.
+  # Fields in 'common' are added to every emitted row without being repeated
+  # in each [[tests]] block.
+  [adtl.tables.tests]
+    kind = "oneToMany"
+    discriminator = "test_name"
+    schema = "tests.schema.json"
+    common = { case_id = { field = "case_id" }, report_date = { field = "report_date" } }
+
+    # =============================================================================
+    # Cases table
+    # =============================================================================
+
+[cases]
+  case_id = { field = "case_id" }
+  report_date = { field = "report_date", source_date = "%d/%m/%Y" }
+  country = { field = "country" }
+  region = { field = "region" }
+
+  # Species: source stores a numeric code; map to readable string via a
+  # reusable definition.
+  [cases.species]
+    field = "animal"
+    values = { 1 = "dog", 2 = "cat", 3 = "rabbit" }
+
+  # Sex: source uses single-letter codes.
+  [cases.sex]
+    field = "sex"
+    values = { M = "male", F = "female" }
+
+  # Age in years: some records have age_years filled in, others only
+  # age_months. firstNonNull tries each field in order and returns the first
+  # non-null result; age_months is converted to years via pint.
+  [cases.age_years]
+    combinedType = "firstNonNull"
+    fields = [{ field = "age_years" }, { field = "age_months", unit = "years", source_unit = "months" }]
+
+  # Weight in kg: some field workers record in kg, others in lbs.
+  # Fall back to weight_lbs with unit conversion when weight_kg is absent.
+  [cases.weight_kg]
+    combinedType = "firstNonNull"
+    fields = [{ field = "weight_kg" }, { field = "weight_lbs", unit = "kg", source_unit = "lbs" }]
+
+  # Has any respiratory symptom: true if fever, cough, OR dyspnea is present.
+  [cases.has_respiratory_symptom]
+    combinedType = "any"
+    fields = [{ field = "fever_yn", ref = "yn" }, { field = "cough_yn", ref = "yn" }, { field = "dyspnea_yn", ref = "yn" }]
+
+  # Conditions: collect any recorded conditions into a deduplicated list.
+  # set removes duplicates; excludeWhen = "none" drops null values so cases
+  # with no conditions produce an empty list, not [null, null, null].
+  [cases.conditions]
+    combinedType = "set"
+    excludeWhen = "none"
+    fields = [{ field = "cond_diabetes", values = { 1 = "diabetes mellitus" } }, { field = "cond_obesity", values = { 1 = "obesity" } }, { field = "cond_cardiac", values = { 1 = "cardiac disease" } }]
+
+  # Severity: field worker's assessment — passed through directly from the source.
+  # The schema expects "mild", "moderate", or "severe"; any other value (including
+  # wrong capitalisation) will produce adtl_valid = False for that row.
+  [cases.severity]
+    field = "severity"
+
+  # Outcome: numeric code → readable string.
+  [cases.outcome]
+    field = "outcome"
+    values = { 1 = "recovered", 2 = "still under observation", 3 = "euthanised" }
+
+  # outcome_date uses a field-level if condition: only populate this field
+  # when the outcome is final (recovered or euthanised). Cases still under
+  # observation have no outcome date yet, so returning null for them is
+  # correct — this if condition makes the intent explicit rather than relying
+  # on the source data being empty.
+  [cases.outcome_date]
+    field = "outcome_date"
+    source_date = "%d/%m/%Y"
+    if.any = [{ outcome = 1 }, { outcome = 3 }]
+
+    # =============================================================================
+    # Tests table
+    # =============================================================================
+    #
+    # The source data stores up to three tests per case as separate column pairs:
+    #   test1_name / test1_result
+    #   test2_name / test2_result
+    #   test3_name / test3_result
+    #
+    # A single [[tests]] block with a for loop expands to three blocks — one per
+    # value of n. The variable {n} is substituted into field names before parsing.
+    #
+    # The row-level if condition suppresses rows for empty test slots (cases with
+    # fewer than three tests leave the remaining name/result columns blank).
+
+[[tests]]
+  test_name = { field = "test{n}_name" }
+  test_result = { field = "test{n}_result" }
+  if."test{n}_name" = { "!=" = "" }
+  for.n.range = [1, 3]
