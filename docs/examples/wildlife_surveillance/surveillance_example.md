@@ -395,7 +395,7 @@ print(cases[~cases.adtl_valid]["adtl_error"].value_counts())
 ### Fixing the parser
 
 The root cause is inconsistent source data: different field workers recorded
-severity using different capitalisation and terminology. As an exercise, using the information in this example and in the extended [specification](../../docs/specification.md) file, see if you can edit the `severity` field to get a 100% validation rate.
+severity using different capitalisation and terminology. As an exercise, using the information in this example and in the extended [specification](../../specification.md) file, see if you can edit the `severity` field to get a 100% validation rate.
 
 <details>
 
@@ -435,7 +435,7 @@ source is explicitly mapped to a canonical output value. However, if your source
 case, but it's not as robust as it could be.
 
 **Solution - mix and match**
-The best option is to mix both options 1 & 2, and use an additional [`ignoreMissingKey`](../../docs/specification.md#field-with-value-mapping) flag.
+The best option is to mix both options 1 & 2, and use an additional [`ignoreMissingKey`](../../specification.md#field-with-value-mapping) flag.
 ```toml
 [cases.severity]
   field = "severity"
@@ -452,6 +452,6 @@ This is less verbose that option 2, but still covers all the errors while defend
 
 ## Further reading
 
-- [ADTL specification](../../docs/specification.md) — full reference for all mapping rules
-- [Concepts](../../docs/getting_started/concepts.md) — mental model: source → parser → schema
-- [Troubleshooting](../../docs/getting_started/troubleshooting.md) — common errors
+- [ADTL specification](../../specification.md) — full reference for all mapping rules
+- [Concepts](../../getting_started/concepts.md) — mental model: source → parser → schema
+- [Troubleshooting](../../getting_started/troubleshooting.md) — common errors
