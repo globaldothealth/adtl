@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Surveillance test result",
+  "type": "object",
+  "properties": {
+    "case_id":     { "type": "string" },
+    "report_date": { "type": "string" },
+    "test_name":   { "type": "string" },
+    "test_result": { "type": "string", "enum": ["positive", "negative", "inconclusive"] }
+  },
+  "required": ["case_id", "test_name", "test_result"]
+}

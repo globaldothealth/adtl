@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Wildlife disease surveillance case",
+  "description": "One row per case in the wildlife disease surveillance dataset.",
+  "type": "object",
+  "properties": {
+    "case_id":     { "type": "string" },
+    "report_date": { "type": "string", "format": "date" },
+    "country":     { "type": "string", "minLength": 1 },
+    "region":      { "type": "string" },
+    "species":     { "type": "string", "enum": ["dog", "cat", "rabbit"] },
+    "sex":         { "type": "string", "enum": ["male", "female"] },
+    "age_years":   { "type": "number", "minimum": 0 },
+    "weight_kg":   { "type": "number", "minimum": 0 },
+    "has_respiratory_symptom": { "type": "boolean" },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["diabetes mellitus", "obesity", "cardiac disease"]
+      }
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["mild", "moderate", "severe"],
+      "description": "Field worker assessment of case severity."
+    },
+    "outcome": {
+      "type": "string",
+      "enum": ["recovered", "still under observation", "euthanised"]
+    },
+    "outcome_date": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "Null for cases still under observation."
+    }
+  },
+  "required": ["case_id", "report_date", "species", "sex", "age_years", "weight_kg", "severity", "outcome"]
+}
