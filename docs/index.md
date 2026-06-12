@@ -49,6 +49,14 @@ specification
 
 ```{toctree}
 ---
+caption: Examples
+maxdepth: 1
+---
+examples
+```
+
+```{toctree}
+---
 caption: AutoParser
 maxdepth: 1
 ---
