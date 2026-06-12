@@ -41,24 +41,27 @@ Source row
     │
     ├─── oneToOne  ──► one output row (e.g. one subject record per admission)
     │
-    ├─── oneToMany ──► many output rows (e.g. one row per symptom observed)
+    ├─── groupBy   ──► one output row per group (e.g. collapse repeated visits
+    │                   into a single subject record)
     │
-    └─── groupBy   ──► one output row per group (e.g. collapse repeated visits
-                       into a single subject record)
+    └─── oneToMany ──► many output rows (e.g. one row per symptom observed)
 ```
 
+### Wide-format tables
 **`oneToOne`** is the default and simplest kind. Each row in the source produces
 exactly one row in the output.
-
-**`oneToMany`** is used when one source row should fan out into multiple output rows —
-for example, when a source row records many symptoms and you want one row per symptom.
-Each variant is written as a `[[table]]` block (double brackets in TOML) with an optional
-`if` condition controlling when it is emitted.
 
 **`groupBy`** is used when the same subject appears across multiple source rows (e.g. a
 longitudinal dataset) and you want to collapse those rows into one. You specify which
 field to group by and how to aggregate conflicting values.
 
+### Long-format tables
+**`oneToMany`** is used when one source row should expand out into multiple output rows —
+for example, when a source row records many symptoms and you want one row per symptom.
+Each variant is written as a `[[table]]` block (double brackets in TOML) with an optional
+`if` condition controlling when it is emitted.
+
+### Single values
 **`constant`** produces a fixed table whose rows do not depend on the source data at all — useful for embedding metadata.
 
 ## A minimal parser
