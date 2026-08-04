@@ -5,6 +5,7 @@ import pytest
 from pytest_unordered import unordered
 
 import adtl.get_value as parser
+import adtl.transformations as tf
 
 RULE_SINGLE_FIELD = {"field": "diabetes_mhyn"}
 RULE_SINGLE_FIELD_WITH_MAPPING = {
@@ -423,6 +424,53 @@ def test_missing_apply_function():
         parser.get_value_unhashed(
             {"brthdtc": "2020-02-04", "dsstdat": "2023-04-06"},
             {"field": "brthdtc", "apply": {"function": "undefinedFunction"}},
+        )
+
+
+def test_missing_apply_function_suggests_transformations_file():
+    "A missing transformation points at a possibly missing transformations file"
+    with pytest.raises(
+        AttributeError, match="No additional transformations file was provided"
+    ):
+        parser.get_value_unhashed(
+            {"status": "1"},
+            {"field": "status", "apply": {"function": "attribute_status_fill"}},
+        )
+
+
+def test_missing_apply_function_with_transformations_file():
+    "If a transformations file was provided, the error names it"
+    with pytest.raises(
+        AttributeError, match="isaric_transformations.py' was provided, but does not"
+    ):
+        parser.get_value_unhashed(
+            {"status": "1"},
+            {"field": "status", "apply": {"function": "attribute_status_fill"}},
+            ctx={"include_transform": "isaric_transformations.py"},
+        )
+
+
+def test_missing_apply_function_suggests_close_match():
+    "Typos in transformation names get a suggestion"
+    with pytest.raises(AttributeError, match="Did you mean: getFloat"):
+        parser.get_value_unhashed(
+            {"num": "1.5"},
+            {"field": "num", "apply": {"function": "getFloat_"}},
+        )
+
+
+def test_apply_function_attribute_error_not_swallowed(monkeypatch):
+    "An AttributeError from within a transformation is not reported as missing"
+
+    def brokenTransformation(value):
+        return value.no_such_attribute
+
+    monkeypatch.setattr(tf, "brokenTransformation", brokenTransformation, raising=False)
+
+    with pytest.raises(AttributeError, match="no_such_attribute"):
+        parser.get_value_unhashed(
+            {"num": "5"},
+            {"field": "num", "apply": {"function": "brokenTransformation"}},
         )
 
 
