@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import difflib
 import hashlib
 import logging
 import re
@@ -58,6 +59,34 @@ def skip_field(row: StrDict, rule: StrDict, ctx: Context = None):
     return False
 
 
+def missing_transformation_error(transformation: str, ctx: Context) -> AttributeError:
+    """Constructs the error raised when a transformation function is not defined
+
+    Most commonly this happens because the parser relies on custom transformations
+    which live in a separate Python file, and that file has not been passed to adtl.
+    """
+    message = [
+        f"Error using a data transformation: '{transformation}' has not been defined."
+    ]
+
+    suggestions = difflib.get_close_matches(
+        transformation, [f for f in dir(tf) if not f.startswith("_")], n=3
+    )
+    if suggestions:
+        message.append(f"Did you mean: {', '.join(suggestions)}?")
+
+    include_transform = ctx.get("include_transform") if ctx else None
+    if include_transform:
+        message.append(
+            f"Transformations file {str(include_transform)!r} was provided, but does "
+            f"not define '{transformation}'."
+        )
+    else:
+        message.append("No additional transformations file was provided.")
+
+    return AttributeError(" ".join(message))
+
+
 def apply_function(value, row: StrDict, rule: StrDict, ctx: Context):
     # apply data transformations.
     transformation = rule["apply"]["function"]
@@ -85,18 +114,20 @@ def apply_function(value, row: StrDict, rule: StrDict, ctx: Context):
             else:
                 params.append(rule["apply"]["params"][i])
 
+    # look the function up before calling it, so that an AttributeError raised
+    # inside the transformation is not mistaken for a missing transformation
+    try:
+        function = getattr(tf, transformation)
+    except AttributeError:
+        raise missing_transformation_error(transformation, ctx) from None
+
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", category=AdtlTransformationWarning)
             if params:
-                value = getattr(tf, transformation)(value, *params)
+                value = function(value, *params)
             else:
-                value = getattr(tf, transformation)(value)
-    except AttributeError:
-        raise AttributeError(
-            f"Error using a data transformation: Function {transformation} "
-            "has not been defined."
-        )
+                value = function(value)
     except AdtlTransformationWarning as e:
         if ctx and ctx.get("returnUnmatched"):
             warnings.warn(str(e), AdtlTransformationWarning)

@@ -374,6 +374,7 @@ class Parser:
             ),
             "returnUnmatched": self.header.get("returnUnmatched", False),
             "namespace": self.get_namespace_uuid(),
+            "include_transform": self.include_transform,
         }
 
     def validate_spec(self):
