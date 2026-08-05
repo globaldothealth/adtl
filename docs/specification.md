@@ -1,6 +1,7 @@
 ---
 title: Specification
 ---
+(specification)=
 # Specification
 
 The ADTL specification describes the field mappings from the source file to the

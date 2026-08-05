@@ -46,6 +46,9 @@ import adtl
 data = adtl.parse("specification-file", "input-file")
 ```
 
+See {py:func}`adtl.parse` in the [module reference](../api/adtl) for the full list of
+options, and {py:class}`adtl.Parser` for the lower-level interface.
+
 ## Validation columns
 
 When a table has an associated JSON schema (set via the `schema` key in the specification),
@@ -71,6 +74,9 @@ This will:
 - Validate the specification structure
 - Report fields referenced in the spec but absent from the data file (error)
 - Report fields present in the data file but not mapped in the spec (warning)
+
+The same checks are available in Python as {py:func}`adtl.check_mapping`, with
+{py:func}`adtl.validate_specification` covering specification validation alone.
 
 ## CLI options
 
