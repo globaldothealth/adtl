@@ -89,7 +89,7 @@ Python library:
 import adtl
 
 parser = adtl.Parser(specification)
-print(parser.tables) # list of tables created
+print(parser.tables)  # list of tables created
 
 for row in parser.parse().read_table(table):
     print(row)
