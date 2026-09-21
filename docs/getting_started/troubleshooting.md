@@ -51,6 +51,7 @@ null, a value is outside the allowed enum, or a type mismatch.
 3. To investigate interactively, load the output CSV and filter for `adtl_valid == False`:
    ```python
    import pandas as pd
+
    df = pd.read_csv("parser-table.csv")
    print(df[df.adtl_valid == False][["adtl_error"]].value_counts())
    ```
